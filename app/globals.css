@@ -2,26 +2,64 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --begonia400: #fe6c75;
+  --begonia500: #e1545d;
+  --begonia600: #f06069;
+  --gunpowder50: #f4f7fb;
+  --gunpowder100: #dfeefb;
+  --gunpowder150: #c8d5e3;
+  --gunpowder200: #a8b8cc;
+  --gunpowder300: #8a9bb3;
+  --gunpowder400: #6b7d99;
+  --gunpowder500: #728198;
+  --gunpowder600: #3f4960;
+  --gunpowder700: #424e65;
+  --gunpowder800: #2a3347;
+  --gunpowder900: #0f1d2c;
+  --cerulean25: #f0f8fd;
+  --cerulean50: #e0f1fa;
+  --cerulean100: #b3ddf2;
+  --cerulean400: #15a0da;
+  --cerulean500: #0089c2;
+  --accent-green: #4dd35b;
+  --accent-orange: #ffb421;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Plus Jakarta Sans', Arial, sans-serif;
+  color: #212529;
+  background: #fff;
+  overflow-x: hidden;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+/* Progress bar animation */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes floatIcon {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* Template card preview — responsive iframe thumbnail */
+.template-preview {
+  position: relative;
+  overflow: hidden;
+  background: #f0f0f0;
+  height: 240px;
+}
+.template-preview iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1200px;
+  height: 3000px;
+  border: none;
+  pointer-events: none;
+  transform-origin: top left;
 }
