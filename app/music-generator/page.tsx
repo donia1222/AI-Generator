@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import ProgressBar from "@/components/ProgressBar";
 import { addToHistory } from "@/lib/history";
 import { startGeneration, getGeneration, clearGeneration, subscribe } from "@/lib/generation-store";
-import { playAudio, stopAudio as stopGlobalAudio } from "@/lib/audio-store";
+import { playAudio } from "@/lib/audio-store";
 import PasswordModal, { isAuthenticated } from "@/components/PasswordModal";
 
 const PROGRESS_STEPS_CREATE = [

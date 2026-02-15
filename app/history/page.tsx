@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { getHistory, clearHistory, updateLatestHistory, type HistoryItem, type HistoryType } from "@/lib/history";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { getHistory, clearHistory, type HistoryItem, type HistoryType } from "@/lib/history";
 import { injectEditingCapabilities } from "@/lib/iframe-editing";
 
 const TABS: { label: string; type: HistoryType }[] = [
