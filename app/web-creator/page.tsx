@@ -264,7 +264,7 @@ export default function WebCreatorPage() {
   return (
     <>
       {/* HERO / INPUT */}
-      <section className="bg-gradient-to-b from-[#fffbf2] to-[#fffcf5] py-16 max-md:py-10 max-md:pt-24 overflow-x-clip overflow-y-visible">
+      <section className="bg-gradient-to-b from-[#fffbf2] to-[#fffcf5] py-16 max-md:py-10  overflow-x-clip overflow-y-visible">
         <div className="max-w-[1200px] mx-auto px-6 max-md:px-4">
           <div className="text-center max-w-[720px] mx-auto">
             <h1 className="text-[64px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-6 max-md:text-[30px] max-md:mb-4">
