@@ -100,18 +100,12 @@ export async function POST(req: NextRequest) {
     const hasInstructions = (instructions || "").length > 0;
 
     if (hasLyrics) {
-      // Custom mode: lyrics in prompt, style tags in style field
-      // Suno's style field supports descriptive text, not just tags
-      // Combine genre tags + instructions in style for best results
+      // Custom mode: lyrics go clean in prompt (only section metatags like [Verse], [Chorus])
+      // Style prompt controls ALL sonic direction: genre, instruments, sounds, mood, mix
+      // Suno ignores production/sound cues inside lyrics - they MUST go in style field
       let fullStyle = cleanStyle;
       if (hasInstructions) {
         fullStyle = `${cleanStyle}, ${instructions}`.substring(0, 500);
-      }
-
-      // Integrate instructions using Suno-compatible section markers
-      let fullPrompt = prompt;
-      if (hasInstructions) {
-        fullPrompt = `[Intro: ${instructions}]\n\n${prompt}\n\n[Instrumental Break: ${instructions}]\n\n[Outro: ${instructions}]`;
       }
 
       body = {
@@ -119,7 +113,7 @@ export async function POST(req: NextRequest) {
         customMode: true,
         instrumental: !!instrumental,
         callBackUrl: "https://example.com/callback",
-        prompt: fullPrompt,
+        prompt: prompt,
         style: fullStyle,
         title: title || "Untitled",
       };

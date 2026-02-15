@@ -15,13 +15,27 @@ export function injectEditingCapabilities(html: string): string {
   cursor: pointer !important;
   pointer-events: auto !important;
   z-index: 999999 !important;
-  border-radius: 4px !important;
 }
 .__sora-img-overlay:hover { opacity: 1 !important; }
 .__sora-img-wrap {
   position: relative !important;
-  display: inline-block !important;
 }
+.__sora-bg-overlay {
+  position: absolute !important;
+  top: 8px !important; right: 8px !important;
+  width: 36px !important; height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(0,0,0,0.6) !important;
+  border-radius: 10px !important;
+  opacity: 0 !important;
+  transition: opacity 0.18s !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  z-index: 999999 !important;
+}
+*:hover > .__sora-bg-overlay { opacity: 1 !important; }
 .__sora-text-pencil {
   position: absolute !important;
   top: -4px !important; right: -4px !important;
@@ -42,9 +56,6 @@ export function injectEditingCapabilities(html: string): string {
   position: relative !important;
 }
 .__sora-text-wrap:hover > .__sora-text-pencil {
-  opacity: 1 !important;
-}
-.__sora-img-wrap:hover > .__sora-img-overlay {
   opacity: 1 !important;
 }
 .__sora-editing {
@@ -77,9 +88,11 @@ export function injectEditingCapabilities(html: string): string {
   document.body.appendChild(fileInput);
 
   var targetImg = null;
+  var targetBgEl = null;
 
   // Camera SVG
   var cameraSVG = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>';
+  var cameraSVGSmall = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>';
 
   // Pencil SVG
   var pencilSVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
@@ -102,8 +115,23 @@ export function injectEditingCapabilities(html: string): string {
 
   function getCleanHTML() {
     var clone = document.documentElement.cloneNode(true);
+    // Remove all sora editing elements from clone
+    var soraEls = clone.querySelectorAll('[class*="__sora"], #__sora-editing-active, .__sora-file-input');
+    for (var i = 0; i < soraEls.length; i++) {
+      soraEls[i].parentNode.removeChild(soraEls[i]);
+    }
+    // Remove sora classes from elements
+    var wraps = clone.querySelectorAll('.__sora-text-wrap, .__sora-img-wrap');
+    for (var j = 0; j < wraps.length; j++) {
+      wraps[j].classList.remove('__sora-text-wrap', '__sora-img-wrap', '__sora-editing');
+    }
+    // Remove the injected style and script block
     var html = clone.outerHTML;
-    html = html.replace(/<!-- SORA_EDIT_START -->[\\s\\S]*?<!-- SORA_EDIT_END -->/, '');
+    var startIdx = html.indexOf('<!-- SORA_EDIT_START -->');
+    var endIdx = html.indexOf('<!-- SORA_EDIT_END -->');
+    if (startIdx !== -1 && endIdx !== -1) {
+      html = html.substring(0, startIdx) + html.substring(endIdx + '<!-- SORA_EDIT_END -->'.length);
+    }
     return '<!DOCTYPE html>' + html;
   }
 
@@ -111,14 +139,28 @@ export function injectEditingCapabilities(html: string): string {
     window.parent.postMessage({ type: 'sora-edit', html: getCleanHTML() }, '*');
   }
 
-  // Setup images
+  // Setup <img> elements
   var images = document.querySelectorAll('img');
   images.forEach(function(img) {
     if (img.closest('.__sora-img-wrap')) return;
 
+    // Preserve the image display mode - don't force inline-block
+    var parent = img.parentNode;
+    var computedDisplay = window.getComputedStyle(img).display;
+    var computedWidth = window.getComputedStyle(img).width;
+
     var wrap = document.createElement('div');
     wrap.className = '__sora-img-wrap';
-    img.parentNode.insertBefore(wrap, img);
+
+    // Match the image layout
+    if (computedDisplay === 'block' || parseInt(computedWidth) > 200) {
+      wrap.style.display = 'block';
+      wrap.style.width = '100%';
+    } else {
+      wrap.style.display = 'inline-block';
+    }
+
+    parent.insertBefore(wrap, img);
     wrap.appendChild(img);
 
     var overlay = document.createElement('div');
@@ -130,17 +172,55 @@ export function injectEditingCapabilities(html: string): string {
       e.preventDefault();
       e.stopPropagation();
       targetImg = img;
+      targetBgEl = null;
+      fileInput.click();
+    });
+  });
+
+  // Setup elements with background-image
+  var allEls = document.querySelectorAll('*');
+  allEls.forEach(function(el) {
+    if (isSoraEl(el)) return;
+    var bg = window.getComputedStyle(el).backgroundImage;
+    if (!bg || bg === 'none' || bg.indexOf('gradient') !== -1) return;
+    if (!bg.match(/url\\(/)) return;
+
+    // Only target elements with significant size (likely hero/banner images)
+    var rect = el.getBoundingClientRect();
+    if (rect.width < 100 || rect.height < 60) return;
+
+    // Make sure element is positioned for the overlay
+    var pos = window.getComputedStyle(el).position;
+    if (pos === 'static') {
+      el.style.position = 'relative';
+    }
+
+    var bgOverlay = document.createElement('div');
+    bgOverlay.className = '__sora-bg-overlay';
+    bgOverlay.innerHTML = cameraSVGSmall;
+    el.appendChild(bgOverlay);
+
+    bgOverlay.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      targetImg = null;
+      targetBgEl = el;
       fileInput.click();
     });
   });
 
   fileInput.addEventListener('change', function() {
-    if (!fileInput.files || !fileInput.files[0] || !targetImg) return;
+    if (!fileInput.files || !fileInput.files[0]) return;
     var reader = new FileReader();
     reader.onload = function(e) {
-      targetImg.src = e.target.result;
+      if (targetImg) {
+        targetImg.src = e.target.result;
+      } else if (targetBgEl) {
+        targetBgEl.style.backgroundImage = 'url(' + e.target.result + ')';
+      }
       sendUpdate();
       targetImg = null;
+      targetBgEl = null;
     };
     reader.readAsDataURL(fileInput.files[0]);
     fileInput.value = '';
@@ -153,7 +233,6 @@ export function injectEditingCapabilities(html: string): string {
     if (!hasDirectText(el)) return;
     if (el.closest('.__sora-text-wrap')) return;
 
-    // Make wrapper
     var origPos = window.getComputedStyle(el).position;
     if (origPos === 'static') {
       el.style.position = 'relative';

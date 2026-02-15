@@ -649,10 +649,10 @@ export default function MusicGeneratorPage() {
               {mode === "upload" && (
                 <div className="mb-5">
                   <label className="block text-sm font-semibold text-gunpowder-600 mb-2">
-                    Audio-Datei hochladen
+                    Referenz-Audio hochladen
                   </label>
                   <p className="text-xs text-gunpowder-400 mb-3">
-                    Sube tu audio cantando (max. 8 min). La IA genera un instrumental/beat en el estilo que elijas basado en tu melodía. Tu voz se conserva — luego puedes mezclar ambos.
+                    Lade ein Audio als Referenz hoch (max. 8 Min). Die KI analysiert den Stil und generiert einen neuen Song im gleichen oder ähnlichen Stil.
                   </p>
 
                   {!uploadedFile ? (
@@ -719,13 +719,13 @@ export default function MusicGeneratorPage() {
               {mode === "mix" && (
                 <div className="mb-5 space-y-4">
                   <p className="text-xs text-gunpowder-400">
-                    Sube tu voz y Suno genera un instrumental que encaje con tu ritmo y tiempos. Opcionalmente puedes subir un instrumental de referencia. Elige el género abajo.
+                    Lade deine Stimme hoch und die KI generiert ein Instrumental, das zu deinem Rhythmus und Timing passt. Optional kannst du ein Referenz-Instrumental hochladen. Wähle das Genre unten.
                   </p>
 
                   {/* Vocal file */}
                   <div>
                     <label className="block text-sm font-semibold text-gunpowder-600 mb-2">
-                      Tu voz (sin música)
+                      Deine Stimme (ohne Musik)
                     </label>
                     {!mixVocalFile ? (
                       <button
@@ -738,7 +738,7 @@ export default function MusicGeneratorPage() {
                           <line x1="12" y1="19" x2="12" y2="23" />
                           <line x1="8" y1="23" x2="16" y2="23" />
                         </svg>
-                        <span className="text-sm font-semibold text-gunpowder-500">Archivo de voz</span>
+                        <span className="text-sm font-semibold text-gunpowder-500">Stimmdatei auswählen</span>
                         <span className="text-xs text-gunpowder-300">MP3, WAV, M4A</span>
                       </button>
                     ) : (
@@ -758,7 +758,7 @@ export default function MusicGeneratorPage() {
                   {/* Instrumental file */}
                   <div>
                     <label className="block text-sm font-semibold text-gunpowder-600 mb-2">
-                      Instrumental / Beat de referencia (opcional)
+                      Instrumental / Beat als Referenz (optional)
                     </label>
                     {!mixInstFile ? (
                       <button
@@ -770,7 +770,7 @@ export default function MusicGeneratorPage() {
                           <circle cx="6" cy="18" r="3" />
                           <circle cx="18" cy="16" r="3" />
                         </svg>
-                        <span className="text-sm font-semibold text-gunpowder-500">Archivo instrumental</span>
+                        <span className="text-sm font-semibold text-gunpowder-500">Instrumental-Datei auswählen</span>
                         <span className="text-xs text-gunpowder-300">MP3, WAV, M4A</span>
                       </button>
                     ) : (
@@ -791,13 +791,13 @@ export default function MusicGeneratorPage() {
                   <div className="flex gap-4">
                     <div className="flex-1">
                       <label className="text-xs font-semibold text-gunpowder-500 mb-1 block">
-                        Volumen voz: {Math.round(vocalVol * 100)}%
+                        Stimme: {Math.round(vocalVol * 100)}%
                       </label>
                       <input type="range" min="0" max="1.5" step="0.05" value={vocalVol} onChange={(e) => setVocalVol(parseFloat(e.target.value))} className="w-full accent-purple-500" />
                     </div>
                     <div className="flex-1">
                       <label className="text-xs font-semibold text-gunpowder-500 mb-1 block">
-                        Volumen instrumental: {Math.round(instVol * 100)}%
+                        Instrumental: {Math.round(instVol * 100)}%
                       </label>
                       <input type="range" min="0" max="1.5" step="0.05" value={instVol} onChange={(e) => setInstVol(parseFloat(e.target.value))} className="w-full accent-orange-500" />
                     </div>
@@ -825,7 +825,7 @@ export default function MusicGeneratorPage() {
               {mode !== "mix" && (
                 <div className="mb-3">
                   <label className="block text-sm font-semibold text-gunpowder-600 mb-1.5">
-                    {mode === "upload" ? "Beschreibung / Anweisungen" : "Lyrics / Songtext"}
+                    {mode === "upload" ? "Beschreibung / Stil-Anweisungen" : "Lyrics / Songtext"}
                   </label>
                   {mode === "create" && (
                     <p className="text-xs text-gunpowder-400 mb-2">
@@ -843,7 +843,7 @@ export default function MusicGeneratorPage() {
                     }}
                     placeholder={
                       mode === "upload"
-                        ? "z.B. Generiere einen Hip-Hop-Beat mit kräftigen Bässen zu meiner Stimme..."
+                        ? "z.B. Generiere einen Song im gleichen Stil wie das hochgeladene Audio, mit mehr Energie..."
                         : "z.B. Vers 1:\nDie Sonne scheint auf mein Gesicht\nIch spüre den Wind, er flüstert leis...\n\nRefrain:\nDas ist unser Sommer..."
                     }
                     rows={mode === "create" ? 6 : 4}
@@ -974,7 +974,7 @@ export default function MusicGeneratorPage() {
                       <circle cx="6" cy="18" r="3" />
                       <circle cx="18" cy="16" r="3" />
                     </svg>
-                    {mode === "mix" ? "Audios mischen" : mode === "upload" ? "Musik aus Audio generieren" : "Musik generieren"}
+                    {mode === "mix" ? "Audios mischen" : mode === "upload" ? "Song im Referenz-Stil generieren" : "Musik generieren"}
                   </button>
                 </div>
               )}
@@ -1119,7 +1119,7 @@ export default function MusicGeneratorPage() {
                 {audioUrl && (
                   <div className="bg-white rounded-xl border-2 border-orange-200 p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-bold text-orange-600">Instrumental generado por IA (Suno)</p>
+                      <p className="text-xs font-bold text-orange-600">KI-generiertes Instrumental (Suno)</p>
                       <button
                         onClick={() => {
                           const link = document.createElement("a");
@@ -1136,7 +1136,7 @@ export default function MusicGeneratorPage() {
                           <polyline points="7 10 12 15 17 10" />
                           <line x1="12" y1="15" x2="12" y2="3" />
                         </svg>
-                        Descargar
+                        Herunterladen
                       </button>
                     </div>
                     <audio ref={instrumentalRef} controls className="w-full" src={audioUrl} />
@@ -1145,7 +1145,7 @@ export default function MusicGeneratorPage() {
 
                 {originalAudioUrl && (
                   <div className="bg-white rounded-xl border-2 border-purple-200 p-4">
-                    <p className="text-xs font-bold text-purple-600 mb-2">Tu voz (Original)</p>
+                    <p className="text-xs font-bold text-purple-600 mb-2">Deine Stimme (Original)</p>
                     <audio ref={originalRef} controls className="w-full" src={originalAudioUrl} />
                   </div>
                 )}

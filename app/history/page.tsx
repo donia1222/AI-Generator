@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getHistory, clearHistory, type HistoryItem, type HistoryType } from "@/lib/history";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { getHistory, clearHistory, updateLatestHistory, type HistoryItem, type HistoryType } from "@/lib/history";
+import { injectEditingCapabilities } from "@/lib/iframe-editing";
 
 const TABS: { label: string; type: HistoryType }[] = [
   { label: "Videos", type: "video" },
@@ -187,14 +188,102 @@ function WebCard({ item, onPreview }: { item: HistoryItem; onPreview: (html: str
   );
 }
 
+function WebPreviewModal({ html, onClose, onUpdate }: { html: string; onClose: () => void; onUpdate: (html: string) => void }) {
+  // Only inject editing on initial open, not on every inline edit
+  const [displayHTML] = useState(() => injectEditingCapabilities(html));
+  const htmlRef = useRef(html);
+
+  const onUpdateRef = useRef(onUpdate);
+  onUpdateRef.current = onUpdate;
+
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === "sora-edit" && event.data.html) {
+        htmlRef.current = event.data.html;
+        onUpdateRef.current(event.data.html);
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-[8px]" onClick={onClose} />
+      <div className="relative w-[85%] h-[90%] flex flex-col bg-white overflow-hidden rounded-2xl shadow-2xl max-md:w-full max-md:h-full max-md:rounded-none">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-black/5 bg-white shrink-0">
+          <button
+            onClick={onClose}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-none bg-[#e8f0fe] cursor-pointer text-[#1a3a5c] hover:bg-[#d4e4fc] transition-all text-[14px] font-semibold"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 12H5" />
+              <path d="M12 19l-7-7 7-7" />
+            </svg>
+            Zurück
+          </button>
+          <button
+            onClick={() => {
+              const blob = new Blob([htmlRef.current], { type: "text/html" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "website.html";
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-none bg-gunpowder-100 cursor-pointer text-gunpowder-600 hover:bg-gunpowder-200 transition-all text-[13px] font-semibold"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Herunterladen
+          </button>
+        </div>
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <iframe
+            srcDoc={displayHTML}
+            sandbox="allow-same-origin allow-scripts"
+            title="Web Vorschau"
+            className="w-full h-full border-none block"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function HistoryPage() {
   const [activeTab, setActiveTab] = useState<HistoryType>("video");
   const [items, setItems] = useState<HistoryItem[]>([]);
   const [previewHTML, setPreviewHTML] = useState<string | null>(null);
+  const [counts, setCounts] = useState<Record<HistoryType, number>>({ video: 0, music: 0, web: 0 });
 
   useEffect(() => {
     setItems(getHistory(activeTab));
+    setCounts({
+      video: getHistory("video").length,
+      music: getHistory("music").length,
+      web: getHistory("web").length,
+    });
   }, [activeTab]);
+
+  const previewHTMLRef = useRef(previewHTML);
+  previewHTMLRef.current = previewHTML;
+
+  const handleWebEdit = useCallback((newHtml: string) => {
+    // Save to localStorage without re-rendering the modal
+    const webItems = getHistory("web");
+    const oldHtml = previewHTMLRef.current;
+    const idx = webItems.findIndex((i) => i.metadata?.html === oldHtml);
+    if (idx >= 0) {
+      webItems[idx].metadata = { ...webItems[idx].metadata, html: newHtml };
+      localStorage.setItem("history_web", JSON.stringify(webItems));
+    }
+    previewHTMLRef.current = newHtml;
+  }, []);
 
   const handleClear = () => {
     clearHistory(activeTab);
@@ -226,24 +315,29 @@ export default function HistoryPage() {
           {/* Tabs */}
           <div className="flex justify-center mb-8">
             <div className="inline-flex bg-white border-2 border-gunpowder-150 rounded-2xl p-1">
-              {TABS.map((tab) => (
-                <button
-                  key={tab.type}
-                  onClick={() => setActiveTab(tab.type)}
-                  className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
-                    activeTab === tab.type
-                      ? `bg-gradient-to-r ${tabColors[tab.type]} text-white shadow-md`
-                      : "text-gunpowder-500 hover:text-gunpowder-700"
-                  }`}
-                >
-                  {tab.label}
-                  {items.length > 0 && activeTab === tab.type && (
-                    <span className="ml-1.5 bg-white/25 text-white text-xs px-1.5 py-0.5 rounded-full">
-                      {items.length}
+              {TABS.map((tab) => {
+                const count = counts[tab.type];
+                return (
+                  <button
+                    key={tab.type}
+                    onClick={() => setActiveTab(tab.type)}
+                    className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                      activeTab === tab.type
+                        ? `bg-gradient-to-r ${tabColors[tab.type]} text-white shadow-md`
+                        : "text-gunpowder-500 hover:text-gunpowder-700"
+                    }`}
+                  >
+                    {tab.label}
+                    <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
+                      activeTab === tab.type
+                        ? "bg-white/25 text-white"
+                        : "bg-gunpowder-100 text-gunpowder-400"
+                    }`}>
+                      {count}
                     </span>
-                  )}
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -292,50 +386,15 @@ export default function HistoryPage() {
 
       {/* Web Preview Modal */}
       {previewHTML && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-[8px]" onClick={() => setPreviewHTML(null)} />
-          <div className="relative w-[85%] h-[90%] flex flex-col bg-white overflow-hidden rounded-2xl shadow-2xl max-md:w-full max-md:h-full max-md:rounded-none">
-            <div className="flex items-center justify-between px-5 py-3 border-b border-black/5 bg-white shrink-0">
-              <button
-                onClick={() => setPreviewHTML(null)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-none bg-[#e8f0fe] cursor-pointer text-[#1a3a5c] hover:bg-[#d4e4fc] transition-all text-[14px] font-semibold"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 12H5" />
-                  <path d="M12 19l-7-7 7-7" />
-                </svg>
-                Zurück
-              </button>
-              <button
-                onClick={() => {
-                  const blob = new Blob([previewHTML], { type: "text/html" });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = "website.html";
-                  a.click();
-                  URL.revokeObjectURL(url);
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-none bg-gunpowder-100 cursor-pointer text-gunpowder-600 hover:bg-gunpowder-200 transition-all text-[13px] font-semibold"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                Herunterladen
-              </button>
-            </div>
-            <div className="flex-1 min-h-0 overflow-hidden">
-              <iframe
-                srcDoc={previewHTML}
-                sandbox="allow-same-origin allow-scripts"
-                title="Web Vorschau"
-                className="w-full h-full border-none block"
-              />
-            </div>
-          </div>
-        </div>
+        <WebPreviewModal
+          html={previewHTML}
+          onClose={() => {
+            setPreviewHTML(null);
+            // Refresh items to show updated thumbnails
+            setItems(getHistory(activeTab));
+          }}
+          onUpdate={handleWebEdit}
+        />
       )}
     </>
   );
