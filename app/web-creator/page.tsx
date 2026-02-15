@@ -2,7 +2,6 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import ProgressBar from "@/components/ProgressBar";
-import TemplateCard from "@/components/TemplateCard";
 import { TEMPLATES, TEMPLATE_NAMES } from "@/lib/prompts";
 import { startGeneration, getGeneration, clearGeneration, subscribe } from "@/lib/generation-store";
 import { addToHistory } from "@/lib/history";
@@ -55,7 +54,6 @@ export default function WebCreatorPage() {
   const [selectedTemplate, setSelectedTemplate] = useState(-1);
   const [currentHTML, setCurrentHTML] = useState("");
   const [resultHTML, setResultHTML] = useState("");
-  const [showResult, setShowResult] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [progressPct, setProgressPct] = useState(0);
   const [progressText, setProgressText] = useState("");

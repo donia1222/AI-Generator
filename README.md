@@ -1,37 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lweb KI Creator Suite
 
-## Getting Started
+KI-gestützte Creative Suite von [Lweb.ch](https://www.lweb.ch) — generiere Websites, Videos und Musik mit modernster KI-Technologie.
 
-First, run the development server:
+## Features
+
+### KI Web Creator
+- Beschreibe deine Traumwebsite in Worten und erhalte in Sekunden eine vollständige, responsive Website
+- 8+ professionelle Vorlagen (Restaurant, Fitness, Portfolio, Arztpraxis, Tech, Bäckerei, Immobilien, Yoga)
+- Vorlagen anpassen oder komplett neue Designs generieren
+- Generierte Websites herunterladen als HTML
+- Powered by **Gemini AI**
+
+### Sora Video Generator
+- Text-zu-Video-Generierung mit OpenAI Sora
+- Verschiedene Auflösungen und Seitenverhältnisse (16:9, 9:16, 1:1)
+- Generierte Videos herunterladen
+
+### KI Musik Generator
+- Songs erstellen aus Lyrics und/oder Beschreibungen
+- Getrennte Eingabe für Lyrics und KI-Anweisungen
+- Genres: Pop, Rock, Hip-Hop, Electronic, Jazz, Classical und mehr
+- Stimmenwahl (Männlich / Weiblich / Instrumental)
+- Audio-Upload & Instrumental-Mix (Upload-Cover-Modus)
+- Powered by **Suno V5** via Kie.ai
+
+### Verlauf
+- Letzte 10 Generierungen pro Kategorie gespeichert (Browser-Speicher)
+- Vorschau und Download früherer Generierungen
+
+## Tech Stack
+
+- **Framework:** Next.js 14 (App Router)
+- **Styling:** Tailwind CSS
+- **Sprache:** TypeScript
+- **APIs:** OpenAI Sora, Kie.ai (Suno V5), Gemini (via PHP Proxy)
+- **Deployment:** Vercel
+
+## Setup
+
+### 1. Repository klonen
+
+```bash
+git clone https://github.com/DEIN-USER/sora-app.git
+cd sora-app
+```
+
+### 2. Dependencies installieren
+
+```bash
+npm install
+```
+
+### 3. Umgebungsvariablen konfigurieren
+
+Erstelle eine `.env.local` Datei:
+
+```env
+OPENAI_API_KEY=dein-openai-key
+KIE_API_KEY=dein-kie-api-key
+HF_API_TOKEN=dein-huggingface-token
+GEMINI_PHP_URL=dein-gemini-endpoint-url
+```
+
+### 4. Entwicklungsserver starten
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Die App läuft unter [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deployment (Vercel)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Repository mit Vercel verbinden
+2. Umgebungsvariablen in Vercel Dashboard konfigurieren (Settings > Environment Variables)
+3. Automatisches Deployment bei jedem Push
 
-## Learn More
+## Projektstruktur
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/
+  page.tsx              # Startseite mit Übersicht
+  web-creator/          # KI Web Creator
+  video-generator/      # Sora Video Generator
+  music-generator/      # KI Musik Generator
+  history/              # Verlauf aller Generierungen
+  api/
+    generate-website/   # Gemini API Route
+    generate-video/     # Sora API Route
+    generate-music/     # Kie.ai API Route
+    mix-audio/          # Audio-Mixing Route
+    upload-audio/       # Audio-Upload Route
+    transcribe-audio/   # Whisper Transkription
+components/             # Wiederverwendbare UI-Komponenten
+lib/                    # Utilities, Prompts, Stores
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Lizenz
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# AI-Generator
+Proprietary — [Lweb.ch](https://www.lweb.ch)

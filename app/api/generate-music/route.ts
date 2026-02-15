@@ -4,7 +4,6 @@ export const maxDuration = 300;
 
 const KIE_GENERATE_URL = "https://api.kie.ai/api/v1/generate";
 const KIE_COVER_URL = "https://api.kie.ai/api/v1/generate/upload-cover";
-const KIE_ADD_INSTRUMENTAL_URL = "https://api.kie.ai/api/v1/generate/add-instrumental";
 const KIE_POLL_URL = "https://api.kie.ai/api/v1/generate/record-info";
 
 async function pollForResult(taskId: string, apiKey: string): Promise<{
@@ -53,7 +52,7 @@ async function pollForResult(taskId: string, apiKey: string): Promise<{
 }
 
 export async function POST(req: NextRequest) {
-  const { prompt, style, title, instrumental, instructions, lyrics, vocal, uploadUrl, useAddInstrumental } = await req.json();
+  const { prompt, style, title, instrumental, instructions, vocal, uploadUrl, useAddInstrumental } = await req.json();
 
   const apiKey = process.env.KIE_API_KEY;
   if (!apiKey) {
