@@ -29,7 +29,18 @@ export async function POST(req: NextRequest) {
       }),
     });
 
-    const data = await response.json();
+    const responseText = await response.text();
+
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      console.error("Gemini API returned invalid JSON:", responseText.substring(0, 500));
+      return NextResponse.json(
+        { status: "error", message: "Gemini API returned an invalid response. The server may have timed out." },
+        { status: 502 }
+      );
+    }
 
     if (!response.ok) {
       console.error("Gemini PHP error:", response.status, JSON.stringify(data));

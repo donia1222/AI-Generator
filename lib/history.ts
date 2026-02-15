@@ -49,6 +49,14 @@ export function addToHistory(item: Omit<HistoryItem, "id" | "createdAt">): void 
   localStorage.setItem(STORAGE_KEYS[item.type], JSON.stringify(updated));
 }
 
+export function updateLatestHistory(type: HistoryType, metadata: Record<string, string>): void {
+  if (typeof window === "undefined") return;
+  const history = getHistory(type);
+  if (history.length === 0) return;
+  history[0].metadata = { ...history[0].metadata, ...metadata };
+  localStorage.setItem(STORAGE_KEYS[type], JSON.stringify(history));
+}
+
 export function clearHistory(type?: HistoryType): void {
   if (typeof window === "undefined") return;
   if (type) {

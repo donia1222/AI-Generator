@@ -33,10 +33,24 @@ const STYLE_CHIPS = [
 ];
 
 export default function VideoGeneratorPage() {
-  const [prompt, setPrompt] = useState("");
-  const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
-  const [duration, setDuration] = useState("4");
-  const [orientation, setOrientation] = useState("landscape");
+  const [prompt, setPrompt] = useState(() => {
+    if (typeof window !== "undefined") return sessionStorage.getItem("video_prompt") || "";
+    return "";
+  });
+  const [selectedStyles, setSelectedStyles] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      try { return JSON.parse(sessionStorage.getItem("video_styles") || "[]"); } catch { return []; }
+    }
+    return [];
+  });
+  const [duration, setDuration] = useState(() => {
+    if (typeof window !== "undefined") return sessionStorage.getItem("video_duration") || "4";
+    return "4";
+  });
+  const [orientation, setOrientation] = useState(() => {
+    if (typeof window !== "undefined") return sessionStorage.getItem("video_orientation") || "landscape";
+    return "landscape";
+  });
   const [isGenerating, setIsGenerating] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [progressPct, setProgressPct] = useState(0);
@@ -49,6 +63,12 @@ export default function VideoGeneratorPage() {
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Persist form fields to sessionStorage
+  useEffect(() => { sessionStorage.setItem("video_prompt", prompt); }, [prompt]);
+  useEffect(() => { sessionStorage.setItem("video_styles", JSON.stringify(selectedStyles)); }, [selectedStyles]);
+  useEffect(() => { sessionStorage.setItem("video_duration", duration); }, [duration]);
+  useEffect(() => { sessionStorage.setItem("video_orientation", orientation); }, [orientation]);
 
   // Restore state from global store on mount
   useEffect(() => {

@@ -102,7 +102,7 @@ export default function Header() {
       <header className="fixed top-0 left-0 w-full z-50 bg-white/92 backdrop-blur-[12px] h-[72px] shadow-[0_1px_0_rgba(0,0,0,0.04)]">
         <div className="flex items-center justify-between h-[72px] max-w-[1200px] mx-auto px-8 max-md:px-5">
           <Link
-            href="/"
+            href={pathname === "/" ? "https://www.lweb.ch" : "/"}
             className="flex items-center gap-2.5 text-[22px] font-extrabold text-gunpowder-900 hover:text-begonia-400 transition-colors"
           >
             <svg

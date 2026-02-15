@@ -50,13 +50,38 @@ const MOOD_CHIPS = [
 type Mode = "create" | "upload" | "mix";
 
 export default function MusicGeneratorPage() {
-  const [mode, setMode] = useState<Mode>("create");
-  const [prompt, setPrompt] = useState("");
-  const [instructions, setInstructions] = useState("");
-  const [title, setTitle] = useState("");
-  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
-  const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
-  const [vocal, setVocal] = useState<"male" | "female" | "none">("male");
+  const [mode, setMode] = useState<Mode>(() => {
+    if (typeof window !== "undefined") return (sessionStorage.getItem("music_mode") as Mode) || "create";
+    return "create";
+  });
+  const [prompt, setPrompt] = useState(() => {
+    if (typeof window !== "undefined") return sessionStorage.getItem("music_prompt") || "";
+    return "";
+  });
+  const [instructions, setInstructions] = useState(() => {
+    if (typeof window !== "undefined") return sessionStorage.getItem("music_instructions") || "";
+    return "";
+  });
+  const [title, setTitle] = useState(() => {
+    if (typeof window !== "undefined") return sessionStorage.getItem("music_title") || "";
+    return "";
+  });
+  const [selectedGenres, setSelectedGenres] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      try { return JSON.parse(sessionStorage.getItem("music_genres") || "[]"); } catch { return []; }
+    }
+    return [];
+  });
+  const [selectedMoods, setSelectedMoods] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      try { return JSON.parse(sessionStorage.getItem("music_moods") || "[]"); } catch { return []; }
+    }
+    return [];
+  });
+  const [vocal, setVocal] = useState<"male" | "female" | "none">(() => {
+    if (typeof window !== "undefined") return (sessionStorage.getItem("music_vocal") as "male" | "female" | "none") || "male";
+    return "male";
+  });
   const [isGenerating, setIsGenerating] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [progressPct, setProgressPct] = useState(0);
@@ -88,6 +113,15 @@ export default function MusicGeneratorPage() {
   const instrumentalRef = useRef<HTMLAudioElement>(null);
   const originalRef = useRef<HTMLAudioElement>(null);
   const mixedRef = useRef<HTMLAudioElement>(null);
+
+  // Persist form fields to sessionStorage
+  useEffect(() => { sessionStorage.setItem("music_mode", mode); }, [mode]);
+  useEffect(() => { sessionStorage.setItem("music_prompt", prompt); }, [prompt]);
+  useEffect(() => { sessionStorage.setItem("music_instructions", instructions); }, [instructions]);
+  useEffect(() => { sessionStorage.setItem("music_title", title); }, [title]);
+  useEffect(() => { sessionStorage.setItem("music_genres", JSON.stringify(selectedGenres)); }, [selectedGenres]);
+  useEffect(() => { sessionStorage.setItem("music_moods", JSON.stringify(selectedMoods)); }, [selectedMoods]);
+  useEffect(() => { sessionStorage.setItem("music_vocal", vocal); }, [vocal]);
 
   // Restore state from global store on mount
   useEffect(() => {

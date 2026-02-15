@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import ProgressBar from "@/components/ProgressBar";
 import { TEMPLATES, TEMPLATE_NAMES } from "@/lib/prompts";
 import { startGeneration, getGeneration, clearGeneration, subscribe } from "@/lib/generation-store";
-import { addToHistory } from "@/lib/history";
+import { addToHistory, updateLatestHistory } from "@/lib/history";
 import PasswordModal, { isAuthenticated } from "@/components/PasswordModal";
+import { injectEditingCapabilities } from "@/lib/iframe-editing";
 
 const TAB_COLORS = [
   "#d4a574", // Restaurant - gold
@@ -64,9 +65,31 @@ export default function WebCreatorPage() {
   const [previewTab, setPreviewTab] = useState(-1);
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [lastAIHTML, setLastAIHTML] = useState("");
+  const [showModifyPanel, setShowModifyPanel] = useState(false);
+  const [modifyPrompt, setModifyPrompt] = useState("");
+  const [isModifying, setIsModifying] = useState(false);
 
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const iframeResultRef = useRef<HTMLIFrameElement>(null);
+
+  const displayHTML = useMemo(() => {
+    if (!lastAIHTML) return "";
+    return injectEditingCapabilities(lastAIHTML);
+  }, [lastAIHTML]);
+
+  // Listen for inline edits from iframe
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === "sora-edit" && event.data.html) {
+        setResultHTML(event.data.html);
+        setCurrentHTML(event.data.html);
+        updateLatestHistory("web", { html: event.data.html });
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, []);
 
   // Restore state from global store on mount
   useEffect(() => {
@@ -90,6 +113,7 @@ export default function WebCreatorPage() {
         const html = extractHTML(r.botReply);
         setCurrentHTML(html);
         setResultHTML(html);
+        setLastAIHTML(html);
         setResultModalOpen(true);
       }
     }
@@ -107,6 +131,7 @@ export default function WebCreatorPage() {
       const html = extractHTML(data.botReply);
       setCurrentHTML(html);
       setResultHTML(html);
+      setLastAIHTML(html);
       setResultModalOpen(true);
 
       // Save to history
@@ -174,6 +199,35 @@ export default function WebCreatorPage() {
     } catch (err) {
       console.error("Error generating preview:", err);
       finishProgress();
+    }
+  };
+
+  const handleAIModify = async () => {
+    if (!modifyPrompt.trim() || isModifying) return;
+    setIsModifying(true);
+
+    const userMessage = `Here is the current HTML of the website:\n\n${resultHTML}\n\nThe user wants this change: ${modifyPrompt}`;
+
+    try {
+      const res = await fetch("/api/generate-website", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userMessage, isModify: true }),
+      });
+      const data = await res.json();
+      if (data.status === "success" && data.botReply) {
+        const html = extractHTML(data.botReply);
+        setResultHTML(html);
+        setCurrentHTML(html);
+        setLastAIHTML(html);
+        updateLatestHistory("web", { html });
+        setModifyPrompt("");
+        setShowModifyPanel(false);
+      }
+    } catch (err) {
+      console.error("AI modify error:", err);
+    } finally {
+      setIsModifying(false);
     }
   };
 
@@ -450,6 +504,21 @@ export default function WebCreatorPage() {
                 </button>
               </div>
 
+              {/* AI Modify button */}
+              <button
+                onClick={() => setShowModifyPanel(!showModifyPanel)}
+                className={`flex items-center justify-center w-9 h-9 rounded-xl border-none cursor-pointer transition-all ${
+                  showModifyPanel
+                    ? "bg-purple-200 text-purple-700"
+                    : "bg-purple-50 text-purple-500 hover:bg-purple-100 hover:text-purple-700"
+                }`}
+                title="KI-Bearbeitung"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26z" />
+                </svg>
+              </button>
+
               <button
                 onClick={() => {
                   const blob = new Blob([resultHTML], { type: "text/html" });
@@ -471,10 +540,10 @@ export default function WebCreatorPage() {
               </button>
             </div>
             {/* Iframe */}
-            <div className="flex-1 min-h-0 overflow-hidden flex items-start justify-center bg-gunpowder-50/50">
+            <div className="flex-1 min-h-0 overflow-hidden flex items-start justify-center bg-gunpowder-50/50 relative">
               <iframe
                 ref={iframeResultRef}
-                srcDoc={resultHTML}
+                srcDoc={displayHTML}
                 sandbox="allow-same-origin allow-scripts"
                 title="Website Vorschau"
                 className={`h-full border-none block bg-white transition-all duration-300 ${
@@ -483,6 +552,51 @@ export default function WebCreatorPage() {
                     : "w-full"
                 }`}
               />
+
+              {/* AI Modify Panel */}
+              {showModifyPanel && (
+                <div className="absolute bottom-4 right-4 w-[380px] max-w-[calc(100%-2rem)] bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.15)] border border-gunpowder-100 z-10 overflow-hidden max-md:w-[calc(100%-2rem)] max-md:left-4 max-md:right-4">
+                  <div className="px-4 py-3 border-b border-gunpowder-100 flex items-center justify-between bg-gradient-to-r from-purple-50 to-white">
+                    <div className="flex items-center gap-2">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26z" />
+                      </svg>
+                      <span className="text-sm font-bold text-gunpowder-700">KI-Bearbeitung</span>
+                    </div>
+                    <button
+                      onClick={() => setShowModifyPanel(false)}
+                      className="flex items-center justify-center w-7 h-7 rounded-lg border-none bg-gunpowder-50 cursor-pointer text-gunpowder-400 hover:bg-gunpowder-100 hover:text-gunpowder-600 transition-all"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                        <path d="M18 6L6 18" />
+                        <path d="M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="p-4">
+                    <textarea
+                      value={modifyPrompt}
+                      onChange={(e) => setModifyPrompt(e.target.value)}
+                      placeholder="z.B. Ändere die Hintergrundfarbe zu Blau, mache den Header grösser..."
+                      rows={3}
+                      className="w-full px-3 py-2.5 border border-gunpowder-200 rounded-xl text-sm leading-relaxed resize-none focus:outline-none focus:border-purple-400 focus:shadow-[0_0_0_3px_rgba(124,58,237,0.08)] placeholder:text-gunpowder-300 font-jakarta"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                          e.preventDefault();
+                          handleAIModify();
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={handleAIModify}
+                      disabled={isModifying || !modifyPrompt.trim()}
+                      className="mt-3 w-full h-10 rounded-xl text-sm font-semibold transition-all cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed bg-purple-600 text-white hover:bg-purple-700 shadow-[0_2px_8px_rgba(124,58,237,0.25)]"
+                    >
+                      {isModifying ? "Wird bearbeitet..." : "Änderung anwenden"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
             {/* Modal footer */}
             <div className="px-5 py-4 border-t border-black/5 bg-white flex items-center justify-center gap-4 max-md:px-3 max-md:py-3">

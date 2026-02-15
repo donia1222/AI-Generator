@@ -105,13 +105,13 @@ export async function POST(req: NextRequest) {
       // Combine genre tags + instructions in style for best results
       let fullStyle = cleanStyle;
       if (hasInstructions) {
-        fullStyle = `${cleanStyle}, ${instructions}`.substring(0, 200);
+        fullStyle = `${cleanStyle}, ${instructions}`.substring(0, 500);
       }
 
-      // Also add instructions as stage directions in the lyrics
+      // Integrate instructions using Suno-compatible section markers
       let fullPrompt = prompt;
       if (hasInstructions) {
-        fullPrompt = `[Instrumental Intro: ${instructions}]\n\n${prompt}\n\n[Outro: ${instructions}]`;
+        fullPrompt = `[Intro: ${instructions}]\n\n${prompt}\n\n[Instrumental Break: ${instructions}]\n\n[Outro: ${instructions}]`;
       }
 
       body = {
