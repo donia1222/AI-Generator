@@ -103,7 +103,7 @@ export default function Header() {
         <div className="flex items-center justify-between h-[72px] max-w-[1200px] mx-auto px-8 max-md:px-5">
           <Link
             href={pathname === "/" ? "https://www.lweb.ch" : "/"}
-            className="flex items-center gap-2.5 text-[22px] font-extrabold text-gunpowder-900 hover:text-begonia-400 transition-colors"
+            className="flex items-center gap-2.5 text-[22px] max-md:text-[17px] font-extrabold text-gunpowder-900 hover:text-begonia-400 transition-colors"
           >
             <svg
               width="20"
@@ -119,14 +119,14 @@ export default function Header() {
               <path d="M15 18l-6-6 6-6" />
             </svg>
             <span className="flex flex-col leading-none">
-              <span className="text-[22px] font-extrabold">Lweb</span>
+              <span className="text-[22px] max-md:text-[17px] font-extrabold">Lweb</span>
               <span className="flex items-center gap-1 mt-0.5">
                 <svg width="16" height="16" viewBox="0 0 16 16" className="flex-shrink-0">
                   <rect width="16" height="16" rx="3" fill="#EE0000" />
                   <rect x="7" y="3" width="2" height="10" fill="#fff" />
                   <rect x="3" y="7" width="10" height="2" fill="#fff" />
                 </svg>
-                <span className="text-[12px] font-semibold text-gunpowder-400">Schweiz</span>
+                <span className="text-[12px] max-md:text-[10px] font-semibold text-gunpowder-400">Schweiz</span>
               </span>
             </span>
           </Link>
@@ -139,11 +139,12 @@ export default function Header() {
 
           {/* Mobile: hamburger button */}
           <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="hidden max-md:flex items-center justify-center w-10 h-10 rounded-xl bg-gunpowder-50 border border-gunpowder-150 transition-all active:scale-95"
+            type="button"
+            onClick={() => setMenuOpen((prev) => !prev)}
+            className="hidden max-md:flex relative z-[70] items-center justify-center w-10 h-10 rounded-xl bg-gunpowder-50 border border-gunpowder-150 transition-all active:scale-95"
             aria-label="Menü öffnen"
           >
-            <div className="flex flex-col gap-[5px]">
+            <div className="flex flex-col gap-[5px] pointer-events-none">
               <span className={`block w-5 h-[2px] bg-gunpowder-700 rounded-full transition-all duration-300 ${menuOpen ? "rotate-45 translate-y-[7px]" : ""}`} />
               <span className={`block w-5 h-[2px] bg-gunpowder-700 rounded-full transition-all duration-300 ${menuOpen ? "opacity-0 scale-0" : ""}`} />
               <span className={`block w-5 h-[2px] bg-gunpowder-700 rounded-full transition-all duration-300 ${menuOpen ? "-rotate-45 -translate-y-[7px]" : ""}`} />
@@ -201,7 +202,7 @@ export default function Header() {
             {/* Footer */}
             <div className="px-5 py-3 border-t border-gunpowder-100 bg-gunpowder-50/50">
               <p className="text-[11px] text-gunpowder-400 text-center font-medium">
-                KI Creator Suite — Powered by Gemini & Sora
+                KI Creator Suite — Powered by Gemini, Suno & Sora
               </p>
             </div>
           </div>

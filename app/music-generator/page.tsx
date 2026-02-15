@@ -627,13 +627,13 @@ export default function MusicGeneratorPage() {
       <section className="bg-gradient-to-b from-[#fff5f0] to-[#fff8f5] py-16 max-md:py-10 overflow-x-clip overflow-y-visible">
         <div className="max-w-[1200px] mx-auto px-6 max-md:px-4">
           <div className="text-center max-w-[720px] mx-auto">
-            <h1 className="text-[56px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-6 max-md:text-[28px] max-md:mb-4">
+            <h1 className="text-[64px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-6 max-md:text-[28px] max-md:mb-4">
               Erstelle deine{" "}
               <span className="bg-gradient-to-r from-orange-500 to-rose-500 bg-clip-text text-transparent">
                 KI-Musik
               </span>
             </h1>
-            <p className="text-[18px] leading-relaxed text-gunpowder-500 mb-10 max-md:text-[15px] max-md:mb-6">
+            <p className="text-[20px] leading-relaxed text-gunpowder-500 mb-10 max-md:text-[13px] max-md:mb-6">
               Beschreibe deinen Song, wähle Genre und Stimmung — oder lade einen Audio-Track hoch.
             </p>
 
@@ -1025,7 +1025,7 @@ export default function MusicGeneratorPage() {
         <section ref={resultRef} className="py-16 bg-gunpowder-50 flex-1 max-md:py-10">
           <div className="max-w-[640px] mx-auto px-6 max-md:px-4">
             <div className="flex items-center justify-between mb-8 max-md:mb-5 max-md:flex-col max-md:items-start max-md:gap-3">
-              <h2 className="text-[36px] font-extrabold text-gunpowder-900 max-md:text-[24px]">
+              <h2 className="text-[42px] font-extrabold text-gunpowder-900 max-md:text-[18px]">
                 Dein Song
               </h2>
               <button
@@ -1236,6 +1236,60 @@ export default function MusicGeneratorPage() {
           </div>
         </section>
       )}
+
+      {/* Examples of generated music */}
+      <section className="py-16 bg-gradient-to-b from-white to-[#fff8f5] max-md:py-10">
+        <div className="max-w-[800px] mx-auto px-6 max-md:px-4">
+          <h3 className="text-[42px] font-extrabold text-gunpowder-900 mb-3 max-md:text-[18px]">
+            Beispiele{" "}
+            <span className="bg-gradient-to-r from-orange-500 to-rose-500 bg-clip-text text-transparent">
+              generierter Musik
+            </span>
+          </h3>
+          <p className="text-[16px] text-gunpowder-500 mb-8 max-md:text-[13px]">
+            Höre dir an, was unsere KI bereits erstellt hat.
+          </p>
+          <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1" ref={(el) => {
+            if (!el) return;
+            const audios = el.querySelectorAll<HTMLAudioElement>("audio");
+            audios.forEach((a) => {
+              if (a.dataset.bound) return;
+              a.dataset.bound = "1";
+              a.addEventListener("play", () => {
+                audios.forEach((other) => { if (other !== a) other.pause(); });
+              });
+            });
+          }}>
+            {[
+              { src: "/images/mp3/5e608c9160444666bff460b623ad3fdf.mp3", title: "Sommernacht Vibes" },
+              { src: "/images/mp3/aad9e02c60e74a998b84b2308aaee1c7.mp3", title: "Chill Lo-Fi Beat" },
+              { src: "/images/mp3/c59c57330dd74c92bf4d59b538b4f974.mp3", title: "Urban Groove" },
+              { src: "/images/mp3/f609e0acd2de4724b28a194044f89d06.mp3", title: "Melodie der Nacht" },
+            ].map((track, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-2xl border border-gunpowder-150 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+              >
+                <div className="bg-gradient-to-r from-orange-500 to-rose-500 px-5 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm flex-shrink-0">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 18V5l12-2v13" />
+                        <circle cx="6" cy="18" r="3" />
+                        <circle cx="18" cy="16" r="3" />
+                      </svg>
+                    </div>
+                    <h4 className="text-white font-bold text-sm truncate">{track.title}</h4>
+                  </div>
+                </div>
+                <div className="p-4">
+                  <audio controls className="w-full h-10" src={track.src} preload="none" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <PasswordModal
         open={showPasswordModal}

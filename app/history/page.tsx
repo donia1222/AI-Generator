@@ -85,7 +85,17 @@ function VideoCard({ item }: { item: HistoryItem }) {
   );
 }
 
-function MusicCard({ item }: { item: HistoryItem }) {
+function MusicCard({ item, onPlay }: { item: HistoryItem; onPlay: (audio: HTMLAudioElement) => void }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    const handlePlay = () => onPlay(el);
+    el.addEventListener("play", handlePlay);
+    return () => el.removeEventListener("play", handlePlay);
+  }, [onPlay]);
+
   return (
     <div className="bg-white rounded-2xl border border-gunpowder-150 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       <div className="bg-gradient-to-r from-orange-500 to-rose-500 px-5 py-4">
@@ -117,7 +127,7 @@ function MusicCard({ item }: { item: HistoryItem }) {
             </span>
           )}
         </div>
-        <audio controls className="w-full h-10" src={item.url} preload="none" />
+        <audio ref={audioRef} controls className="w-full h-10" src={item.url} preload="none" />
         <div className="mt-2 flex justify-end">
           <a
             href={item.url}
@@ -260,6 +270,14 @@ export default function HistoryPage() {
   const [items, setItems] = useState<HistoryItem[]>([]);
   const [previewHTML, setPreviewHTML] = useState<string | null>(null);
   const [counts, setCounts] = useState<Record<HistoryType, number>>({ video: 0, music: 0, web: 0 });
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const handleMusicPlay = useCallback((audio: HTMLAudioElement) => {
+    if (currentAudioRef.current && currentAudioRef.current !== audio) {
+      currentAudioRef.current.pause();
+    }
+    currentAudioRef.current = audio;
+  }, []);
 
   useEffect(() => {
     setItems(getHistory(activeTab));
@@ -301,13 +319,13 @@ export default function HistoryPage() {
       <section className="bg-gradient-to-b from-[#f8f5ff] to-[#fdf8ff] py-16 max-md:py-10 overflow-hidden">
         <div className="max-w-[1200px] mx-auto px-6 max-md:px-4">
           <div className="text-center max-w-[720px] mx-auto mb-10 max-md:mb-6">
-            <h1 className="text-[56px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-4 max-md:text-[28px]">
+            <h1 className="text-[64px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-4 max-md:text-[28px]">
               Dein{" "}
               <span className={`bg-gradient-to-r ${tabColors[activeTab]} bg-clip-text text-transparent`}>
                 Verlauf
               </span>
             </h1>
-            <p className="text-[18px] leading-relaxed text-gunpowder-500">
+            <p className="text-[20px] leading-relaxed text-gunpowder-500 max-md:text-[13px]">
               Die letzten 10 Generierungen pro Kategorie.
             </p>
           </div>
@@ -362,7 +380,7 @@ export default function HistoryPage() {
               <div className="grid grid-cols-2 gap-6 max-md:grid-cols-1">
                 {items.map((item) => {
                   if (item.type === "video") return <VideoCard key={item.id} item={item} />;
-                  if (item.type === "music") return <MusicCard key={item.id} item={item} />;
+                  if (item.type === "music") return <MusicCard key={item.id} item={item} onPlay={handleMusicPlay} />;
                   return <WebCard key={item.id} item={item} onPreview={setPreviewHTML} />;
                 })}
               </div>

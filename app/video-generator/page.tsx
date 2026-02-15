@@ -56,6 +56,7 @@ export default function VideoGeneratorPage() {
   const [progressPct, setProgressPct] = useState(0);
   const [progressText, setProgressText] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
+  const [previewVideo, setPreviewVideo] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [attachedImage, setAttachedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -238,13 +239,13 @@ export default function VideoGeneratorPage() {
       <section className="bg-gradient-to-b from-[#f8f0ff] to-[#fdf8ff] py-16 max-md:py-10 overflow-x-clip overflow-y-visible">
         <div className="max-w-[1200px] mx-auto px-6 max-md:px-4">
           <div className="text-center max-w-[720px] mx-auto">
-            <h1 className="text-[56px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-6 max-md:text-[28px] max-md:mb-4">
+            <h1 className="text-[64px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-6 max-md:text-[28px] max-md:mb-4">
               Erstelle ein{" "}
               <span className="bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
                 KI-Video
               </span>
             </h1>
-            <p className="text-[18px] leading-relaxed text-gunpowder-500 mb-10 max-md:text-[15px] max-md:mb-6">
+            <p className="text-[20px] leading-relaxed text-gunpowder-500 mb-10 max-md:text-[13px] max-md:mb-6">
               Beschreibe dein Video und Sora generiert es für dich in wenigen Minuten.
             </p>
 
@@ -424,7 +425,7 @@ export default function VideoGeneratorPage() {
         <section ref={resultRef} className="py-16 bg-gunpowder-50 flex-1 max-md:py-10">
           <div className="max-w-[800px] mx-auto px-6 max-md:px-4">
             <div className="flex items-center justify-between mb-8 max-md:mb-5 max-md:flex-col max-md:items-start max-md:gap-3">
-              <h2 className="text-[36px] font-extrabold text-gunpowder-900 max-md:text-[24px]">
+              <h2 className="text-[42px] font-extrabold text-gunpowder-900 max-md:text-[18px]">
                 Dein Video
               </h2>
               <button
@@ -459,6 +460,53 @@ export default function VideoGeneratorPage() {
         </section>
       )}
 
+      {/* Examples of generated videos */}
+      <section className="py-16 bg-gradient-to-b from-white to-[#fdf8ff] max-md:py-10">
+        <div className="max-w-[800px] mx-auto px-6 max-md:px-4">
+          <h3 className="text-[42px] font-extrabold text-gunpowder-900 mb-3 max-md:text-[18px]">
+            Beispiele{" "}
+            <span className="bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
+              generierter Videos
+            </span>
+          </h3>
+          <p className="text-[16px] text-gunpowder-500 mb-8 max-md:text-[13px]">
+            Schau dir an, was Sora bereits erstellt hat.
+          </p>
+          <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
+            {[
+              "/images/videos/efa20efa-3dee-41fc-893d-edc92f366d3b.mp4",
+              "/images/videos/sora-video-1771028858761.mp4",
+              "/images/videos/sora-video-1771029951935.mp4",
+              "/images/videos/sora-video-1771056893067.mp4",
+            ].map((src, i) => (
+              <div
+                key={i}
+                onClick={() => setPreviewVideo(src)}
+                className="bg-white rounded-2xl border border-gunpowder-150 overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+              >
+                <div className="aspect-video bg-gunpowder-100 relative">
+                  <video
+                    src={src}
+                    className="w-full h-full object-cover"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity">
+                    <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Example prompts */}
       {!videoUrl && !isGenerating && (
         <section className="py-16 bg-gradient-to-b from-[#fdf8ff] to-white max-md:py-10">
@@ -484,6 +532,49 @@ export default function VideoGeneratorPage() {
             </div>
           </div>
         </section>
+      )}
+
+      {/* Video preview modal */}
+      {previewVideo && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-[8px]" onClick={() => setPreviewVideo(null)} />
+          <div className="relative w-[85%] max-w-[900px] flex flex-col bg-black overflow-hidden rounded-2xl shadow-2xl max-md:w-full max-md:h-full max-md:rounded-none">
+            <div className="flex items-center justify-between px-5 py-3 bg-gunpowder-900 shrink-0">
+              <button
+                onClick={() => setPreviewVideo(null)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-none bg-white/10 cursor-pointer text-white hover:bg-white/20 transition-all text-[14px] font-semibold"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5" />
+                  <path d="M12 19l-7-7 7-7" />
+                </svg>
+                Zurück
+              </button>
+              <a
+                href={previewVideo}
+                download={`sora-example-${Date.now()}.mp4`}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-none bg-white/10 cursor-pointer text-white hover:bg-white/20 transition-all text-[13px] font-semibold"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Herunterladen
+              </a>
+            </div>
+            <div className="flex-1 min-h-0 flex items-center justify-center p-4 max-md:p-0">
+              <video
+                src={previewVideo}
+                controls
+                autoPlay
+                muted
+                playsInline
+                className="w-full max-h-[75vh] rounded-lg max-md:rounded-none"
+              />
+            </div>
+          </div>
+        </div>
       )}
 
       <PasswordModal
