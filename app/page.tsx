@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+
 const tools = [
   {
     title: "KI Web Creator",
