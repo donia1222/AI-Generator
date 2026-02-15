@@ -549,51 +549,51 @@ export default function MusicGeneratorPage() {
   return (
     <>
       {/* HERO / INPUT */}
-      <section className="bg-gradient-to-b from-[#fff5f0] to-[#fff8f5] py-16 overflow-hidden">
-        <div className="max-w-[1200px] mx-auto px-6">
+      <section className="bg-gradient-to-b from-[#fff5f0] to-[#fff8f5] py-16 max-md:py-10 overflow-hidden">
+        <div className="max-w-[1200px] mx-auto px-6 max-md:px-4">
           <div className="text-center max-w-[720px] mx-auto">
-            <h1 className="text-[56px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-6 max-md:text-[36px]">
+            <h1 className="text-[56px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-6 max-md:text-[28px] max-md:mb-4">
               Erstelle deine{" "}
               <span className="bg-gradient-to-r from-orange-500 to-rose-500 bg-clip-text text-transparent">
                 KI-Musik
               </span>
             </h1>
-            <p className="text-[18px] leading-relaxed text-gunpowder-500 mb-10">
+            <p className="text-[18px] leading-relaxed text-gunpowder-500 mb-10 max-md:text-[15px] max-md:mb-6">
               Beschreibe deinen Song, wähle Genre und Stimmung — oder lade einen Audio-Track hoch.
             </p>
 
             {/* Mode Toggle */}
-            <div className="flex justify-center mb-8">
-              <div className="inline-flex bg-white border-2 border-gunpowder-150 rounded-2xl p-1">
+            <div className="flex justify-center mb-8 max-md:mb-6">
+              <div className="inline-flex bg-white border-2 border-gunpowder-150 rounded-2xl p-1 max-md:w-full">
                 <button
                   onClick={() => setMode("create")}
-                  className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                  className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer max-md:flex-1 max-md:px-3 max-md:text-[13px] ${
                     mode === "create"
                       ? "bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-md"
                       : "text-gunpowder-500 hover:text-gunpowder-700"
                   }`}
                 >
-                  Neu erstellen
+                  Erstellen
                 </button>
                 <button
                   onClick={() => setMode("upload")}
-                  className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                  className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer max-md:flex-1 max-md:px-3 max-md:text-[13px] ${
                     mode === "upload"
                       ? "bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-md"
                       : "text-gunpowder-500 hover:text-gunpowder-700"
                   }`}
                 >
-                  Audio hochladen
+                  Hochladen
                 </button>
                 <button
                   onClick={() => setMode("mix")}
-                  className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                  className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer max-md:flex-1 max-md:px-3 max-md:text-[13px] ${
                     mode === "mix"
                       ? "bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-md"
                       : "text-gunpowder-500 hover:text-gunpowder-700"
                   }`}
                 >
-                  Mezclar
+                  Mischen
                 </button>
               </div>
             </div>
@@ -802,7 +802,7 @@ export default function MusicGeneratorPage() {
                     }
                     rows={mode === "create" ? 6 : 4}
                     maxLength={5000}
-                    className="w-full px-6 py-5 border-2 border-gunpowder-200 rounded-2xl font-jakarta text-base leading-relaxed text-gunpowder-900 bg-white resize-y transition-all duration-200 focus:outline-none focus:border-orange-400 focus:shadow-[0_0_0_4px_rgba(249,115,22,0.1)] placeholder:text-gunpowder-300"
+                    className="w-full px-6 py-5 border-2 border-gunpowder-200 rounded-2xl font-jakarta text-base leading-relaxed text-gunpowder-900 bg-white resize-y transition-all duration-200 focus:outline-none focus:border-orange-400 focus:shadow-[0_0_0_4px_rgba(249,115,22,0.1)] placeholder:text-gunpowder-300 max-md:px-4 max-md:py-4 max-md:rounded-xl"
                   />
                   <div className="text-right text-xs text-gunpowder-300 mt-1">
                     {prompt.length}/5000
@@ -825,7 +825,7 @@ export default function MusicGeneratorPage() {
                     placeholder="z.B. Beginne mit einem ruhigen Klavier-Intro, dann kommt der Beat dazu. Der Refrain soll kraftvoll und episch sein mit Streichern. Tempo: mittel. Am Ende ein langsames Outro..."
                     rows={3}
                     maxLength={1000}
-                    className="w-full px-6 py-5 border-2 border-gunpowder-200 rounded-2xl font-jakarta text-base leading-relaxed text-gunpowder-900 bg-white resize-y transition-all duration-200 focus:outline-none focus:border-orange-400 focus:shadow-[0_0_0_4px_rgba(249,115,22,0.1)] placeholder:text-gunpowder-300"
+                    className="w-full px-6 py-5 border-2 border-gunpowder-200 rounded-2xl font-jakarta text-base leading-relaxed text-gunpowder-900 bg-white resize-y transition-all duration-200 focus:outline-none focus:border-orange-400 focus:shadow-[0_0_0_4px_rgba(249,115,22,0.1)] placeholder:text-gunpowder-300 max-md:px-4 max-md:py-4 max-md:rounded-xl"
                   />
                   <div className="text-right text-xs text-gunpowder-300 mt-1">
                     {instructions.length}/1000
@@ -921,7 +921,7 @@ export default function MusicGeneratorPage() {
                       (mode === "upload" && (!uploadedFile || isUploading)) ||
                       (mode === "mix" && !mixVocalFile)
                     }
-                    className="inline-flex items-center justify-center gap-2 h-[58px] px-8 rounded-full text-[18px] font-semibold bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-[0_6px_30px_rgba(249,115,22,0.35)] hover:shadow-[0_4px_20px_rgba(249,115,22,0.45)] hover:-translate-y-px transition-all cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                    className="inline-flex items-center justify-center gap-2 h-[58px] px-8 rounded-full text-[18px] font-semibold bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-[0_6px_30px_rgba(249,115,22,0.35)] hover:shadow-[0_4px_20px_rgba(249,115,22,0.45)] hover:-translate-y-px transition-all cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 max-md:h-[50px] max-md:px-6 max-md:text-[15px] max-md:w-full"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M9 18V5l12-2v13" />
@@ -947,15 +947,15 @@ export default function MusicGeneratorPage() {
 
       {/* RESULT */}
       {(audioUrl || mixedAudioUrl) && (
-        <section ref={resultRef} className="py-16 bg-gunpowder-50 flex-1">
-          <div className="max-w-[640px] mx-auto px-6">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-[36px] font-extrabold text-gunpowder-900">
+        <section ref={resultRef} className="py-16 bg-gunpowder-50 flex-1 max-md:py-10">
+          <div className="max-w-[640px] mx-auto px-6 max-md:px-4">
+            <div className="flex items-center justify-between mb-8 max-md:mb-5 max-md:flex-col max-md:items-start max-md:gap-3">
+              <h2 className="text-[36px] font-extrabold text-gunpowder-900 max-md:text-[24px]">
                 Dein Song
               </h2>
               <button
                 onClick={handleGenerate}
-                className="inline-flex items-center justify-center h-12 px-6 rounded-full text-base font-semibold bg-transparent text-gunpowder-700 border-2 border-gunpowder-200 hover:border-gunpowder-400 transition-all cursor-pointer"
+                className="inline-flex items-center justify-center h-12 px-6 rounded-full text-base font-semibold bg-transparent text-gunpowder-700 border-2 border-gunpowder-200 hover:border-gunpowder-400 transition-all cursor-pointer max-md:h-10 max-md:px-4 max-md:text-sm"
               >
                 Neu generieren
               </button>
@@ -972,7 +972,7 @@ export default function MusicGeneratorPage() {
                   </div>
                 ) : mixedAudioUrl ? (
                   <div className="bg-white rounded-[24px] shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-black/5 overflow-hidden mb-4">
-                    <div className="bg-gradient-to-r from-orange-500 to-rose-500 px-8 py-6">
+                    <div className="bg-gradient-to-r from-orange-500 to-rose-500 px-8 py-6 max-md:px-5 max-md:py-4">
                       <div className="flex items-center gap-4">
                         <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
                           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -987,16 +987,16 @@ export default function MusicGeneratorPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="px-8 py-6">
+                    <div className="px-8 py-6 max-md:px-5 max-md:py-4">
                       <audio ref={mixedRef} controls className="w-full" src={mixedAudioUrl}>
                         Dein Browser unterstützt kein Audio.
                       </audio>
                     </div>
 
                     {/* Volume Controls + Remix */}
-                    <div className="px-8 pb-6 border-t border-gunpowder-100 pt-4">
+                    <div className="px-8 pb-6 border-t border-gunpowder-100 pt-4 max-md:px-5 max-md:pb-4">
                       <p className="text-sm font-semibold text-gunpowder-600 mb-3">Lautstärke anpassen</p>
-                      <div className="flex gap-6 mb-4">
+                      <div className="flex gap-6 mb-4 max-md:flex-col max-md:gap-3">
                         <div className="flex-1">
                           <label className="text-xs text-gunpowder-500 mb-1 block">
                             Stimme: {Math.round(vocalVol * 100)}%
@@ -1117,14 +1117,14 @@ export default function MusicGeneratorPage() {
                   link.click();
                   document.body.removeChild(link);
                 }}
-                className="inline-flex items-center justify-center gap-2 h-[52px] px-8 rounded-full text-[16px] font-semibold bg-gunpowder-900 text-white shadow-[0_4px_16px_rgba(0,0,0,0.2)] hover:bg-gunpowder-800 hover:-translate-y-px transition-all cursor-pointer border-none"
+                className="inline-flex items-center justify-center gap-2 h-[52px] px-8 rounded-full text-[16px] font-semibold bg-gunpowder-900 text-white shadow-[0_4px_16px_rgba(0,0,0,0.2)] hover:bg-gunpowder-800 hover:-translate-y-px transition-all cursor-pointer border-none max-md:h-[46px] max-md:px-6 max-md:text-[14px] max-md:w-full"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                Als MP3 herunterladen
+                MP3 herunterladen
               </button>
             </div>
           </div>
@@ -1133,8 +1133,8 @@ export default function MusicGeneratorPage() {
 
       {/* Example prompts */}
       {!audioUrl && !mixedAudioUrl && !isGenerating && (
-        <section className="py-16 bg-gradient-to-b from-[#fff8f5] to-white">
-          <div className="max-w-[800px] mx-auto px-6">
+        <section className="py-16 bg-gradient-to-b from-[#fff8f5] to-white max-md:py-10">
+          <div className="max-w-[800px] mx-auto px-6 max-md:px-4">
             <h3 className="text-sm font-bold text-gunpowder-400 uppercase tracking-[0.08em] mb-6">
               Beispiel-Ideen
             </h3>

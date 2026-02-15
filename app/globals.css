@@ -33,6 +33,14 @@ body {
   color: #212529;
   background: #fff;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent iOS zoom on input focus */
+@media (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
 }
 
 /* Hide scrollbar for tab nav on mobile */
@@ -78,4 +86,23 @@ body {
   border: none;
   pointer-events: none;
   transform-origin: top left;
+}
+
+/* Template thumbnail — responsive scale per breakpoint */
+.template-thumb iframe {
+  transform: scale(0.22);
+}
+@media (max-width: 1024px) {
+  /* 3-col grid: cards ~33% of 1200px ≈ 370px → 370/1280 */
+  .template-thumb iframe { transform: scale(0.28); }
+}
+@media (max-width: 768px) {
+  /* 2-col grid: cards ~50% of screen ≈ 350px → 350/1280 */
+  .template-thumb iframe { transform: scale(0.27); }
+  .template-thumb { height: 200px !important; }
+}
+@media (max-width: 640px) {
+  /* 1-col grid: cards full width ~343px → 343/1280 ≈ 0.27 */
+  .template-thumb iframe { transform: scale(0.27); }
+  .template-thumb { height: 220px !important; }
 }

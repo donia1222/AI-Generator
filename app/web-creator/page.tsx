@@ -196,15 +196,15 @@ export default function WebCreatorPage() {
   return (
     <>
       {/* HERO / INPUT */}
-      <section className="bg-gradient-to-b from-[#fffbf2] to-[#fffcf5] py-16 overflow-hidden">
-        <div className="max-w-[1200px] mx-auto px-6">
+      <section className="bg-gradient-to-b from-[#fffbf2] to-[#fffcf5] py-16 max-md:py-10 overflow-hidden">
+        <div className="max-w-[1200px] mx-auto px-6 max-md:px-4">
           <div className="text-center max-w-[720px] mx-auto">
-            <h1 className="text-[56px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-6 max-md:text-[36px]">
+            <h1 className="text-[56px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-6 max-md:text-[28px] max-md:mb-4">
               Beschreibe deine
               <br />
               <span className="text-begonia-400">Traumwebsite</span>
             </h1>
-            <p className="text-[18px] leading-relaxed text-gunpowder-500 mb-10">
+            <p className="text-[18px] leading-relaxed text-gunpowder-500 mb-10 max-md:text-[15px] max-md:mb-6">
               {selectedTemplate >= 0
                 ? "Vorlage ausgewählt — beschreibe hier deine Änderungen und klicke auf Vorschau generieren."
                 : "Schreibe, was für eine Website du dir vorstellst, und unsere KI erstellt dir in Sekunden eine Vorschau."}
@@ -246,7 +246,7 @@ export default function WebCreatorPage() {
                     : "z.B. Eine moderne Landing Page für ein Café in Zürich mit warmem, einladendem Design..."
                 }
                 rows={4}
-                className="w-full px-6 py-5 border-2 border-gunpowder-200 rounded-2xl font-jakarta text-base leading-relaxed text-gunpowder-900 bg-white resize-y transition-all duration-200 focus:outline-none focus:border-begonia-400 focus:shadow-[0_0_0_4px_rgba(254,108,117,0.1)] placeholder:text-gunpowder-300"
+                className="w-full px-6 py-5 border-2 border-gunpowder-200 rounded-2xl font-jakarta text-base leading-relaxed text-gunpowder-900 bg-white resize-y transition-all duration-200 focus:outline-none focus:border-begonia-400 focus:shadow-[0_0_0_4px_rgba(254,108,117,0.1)] placeholder:text-gunpowder-300 max-md:px-4 max-md:py-4 max-md:rounded-xl"
               />
 
               {/* Example chips */}
@@ -272,7 +272,7 @@ export default function WebCreatorPage() {
                 <div className="flex justify-center mt-5">
                   <button
                     onClick={handleGenerate}
-                    className="inline-flex items-center justify-center h-[58px] px-8 rounded-full text-[18px] font-semibold bg-begonia-400 text-white shadow-[0_6px_30px_rgba(254,108,117,0.35)] hover:bg-[#ff8a91] hover:shadow-[0_4px_20px_rgba(254,108,117,0.25)] hover:-translate-y-px transition-all cursor-pointer border-none"
+                    className="inline-flex items-center justify-center h-[58px] px-8 rounded-full text-[18px] font-semibold bg-begonia-400 text-white shadow-[0_6px_30px_rgba(254,108,117,0.35)] hover:bg-[#ff8a91] hover:shadow-[0_4px_20px_rgba(254,108,117,0.25)] hover:-translate-y-px transition-all cursor-pointer border-none max-md:h-[50px] max-md:px-6 max-md:text-[16px] max-md:w-full"
                   >
                     Vorschau generieren
                   </button>
@@ -286,8 +286,8 @@ export default function WebCreatorPage() {
       </section>
 
       {/* TEMPLATES */}
-      <section className="pb-16 -mt-5 bg-gradient-to-b from-[#fffcf5] to-white">
-        <div className="max-w-[1200px] mx-auto px-6">
+      <section className="pb-16 -mt-5 bg-gradient-to-b from-[#fffcf5] to-white max-md:pb-10">
+        <div className="max-w-[1200px] mx-auto px-6 max-md:px-4">
           <div className="flex items-center gap-5 mb-8">
             <span className="text-sm font-bold text-gunpowder-400 uppercase tracking-[0.08em] whitespace-nowrap">
               Oder starte mit einer Vorlage
@@ -334,7 +334,7 @@ export default function WebCreatorPage() {
                   style={{ borderColor: TAB_COLORS[i] + "40" }}
                   onClick={() => openTemplateModal(i)}
                 >
-                  <div className="relative w-full overflow-hidden" style={{ height: "240px" }}>
+                  <div className="template-thumb relative w-full overflow-hidden" style={{ height: "240px" }}>
                     <iframe
                       srcDoc={TEMPLATES[i]}
                       sandbox="allow-same-origin"
@@ -343,7 +343,6 @@ export default function WebCreatorPage() {
                       style={{
                         width: "1280px",
                         height: "960px",
-                        transform: "scale(0.22)",
                         transformOrigin: "top left",
                       }}
                     />
@@ -448,12 +447,12 @@ export default function WebCreatorPage() {
               />
             </div>
             {/* Modal footer */}
-            <div className="px-5 py-4 border-t border-black/5 bg-white flex items-center justify-center gap-4">
+            <div className="px-5 py-4 border-t border-black/5 bg-white flex items-center justify-center gap-4 max-md:px-3 max-md:py-3">
               <a
                 href="https://www.lweb.ch/#contact"
-                className="inline-flex items-center justify-center gap-2 h-[50px] px-8 rounded-full text-[16px] font-semibold bg-begonia-400 text-white shadow-[0_4px_16px_rgba(254,108,117,0.3)] hover:bg-[#ff8a91] hover:-translate-y-px transition-all border-none"
+                className="inline-flex items-center justify-center gap-2 h-[50px] px-8 rounded-full text-[16px] font-semibold bg-begonia-400 text-white shadow-[0_4px_16px_rgba(254,108,117,0.3)] hover:bg-[#ff8a91] hover:-translate-y-px transition-all border-none max-md:h-[44px] max-md:px-5 max-md:text-[14px]"
               >
-                Kontaktiere uns für deine Website
+                Kontaktiere uns
               </a>
             </div>
           </div>

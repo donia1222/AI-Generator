@@ -203,16 +203,16 @@ export default function VideoGeneratorPage() {
   return (
     <>
       {/* HERO / INPUT */}
-      <section className="bg-gradient-to-b from-[#f8f0ff] to-[#fdf8ff] py-16 overflow-hidden">
-        <div className="max-w-[1200px] mx-auto px-6">
+      <section className="bg-gradient-to-b from-[#f8f0ff] to-[#fdf8ff] py-16 max-md:py-10 overflow-hidden">
+        <div className="max-w-[1200px] mx-auto px-6 max-md:px-4">
           <div className="text-center max-w-[720px] mx-auto">
-            <h1 className="text-[56px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-6 max-md:text-[36px]">
+            <h1 className="text-[56px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-6 max-md:text-[28px] max-md:mb-4">
               Erstelle ein{" "}
               <span className="bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
                 KI-Video
               </span>
             </h1>
-            <p className="text-[18px] leading-relaxed text-gunpowder-500 mb-10">
+            <p className="text-[18px] leading-relaxed text-gunpowder-500 mb-10 max-md:text-[15px] max-md:mb-6">
               Beschreibe dein Video und Sora generiert es für dich in wenigen Minuten.
             </p>
 
@@ -228,7 +228,7 @@ export default function VideoGeneratorPage() {
                 }}
                 placeholder="z.B. Ein majestätischer Adler fliegt über verschneite Berge bei Sonnenuntergang..."
                 rows={4}
-                className="w-full px-6 py-5 border-2 border-gunpowder-200 rounded-2xl font-jakarta text-base leading-relaxed text-gunpowder-900 bg-white resize-y transition-all duration-200 focus:outline-none focus:border-purple-400 focus:shadow-[0_0_0_4px_rgba(168,85,247,0.1)] placeholder:text-gunpowder-300"
+                className="w-full px-6 py-5 border-2 border-gunpowder-200 rounded-2xl font-jakarta text-base leading-relaxed text-gunpowder-900 bg-white resize-y transition-all duration-200 focus:outline-none focus:border-purple-400 focus:shadow-[0_0_0_4px_rgba(168,85,247,0.1)] placeholder:text-gunpowder-300 max-md:px-4 max-md:py-4 max-md:rounded-xl"
               />
 
               {/* Image attachment */}
@@ -365,7 +365,7 @@ export default function VideoGeneratorPage() {
                 <div className="flex justify-center mt-6">
                   <button
                     onClick={handleGenerate}
-                    className="inline-flex items-center justify-center gap-2 h-[58px] px-8 rounded-full text-[18px] font-semibold bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-[0_6px_30px_rgba(168,85,247,0.35)] hover:shadow-[0_4px_20px_rgba(168,85,247,0.45)] hover:-translate-y-px transition-all cursor-pointer border-none"
+                    className="inline-flex items-center justify-center gap-2 h-[58px] px-8 rounded-full text-[18px] font-semibold bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-[0_6px_30px_rgba(168,85,247,0.35)] hover:shadow-[0_4px_20px_rgba(168,85,247,0.45)] hover:-translate-y-px transition-all cursor-pointer border-none max-md:h-[50px] max-md:px-6 max-md:text-[16px] max-md:w-full"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polygon points="5 3 19 12 5 21 5 3" />
@@ -389,15 +389,15 @@ export default function VideoGeneratorPage() {
 
       {/* RESULT */}
       {videoUrl && (
-        <section ref={resultRef} className="py-16 bg-gunpowder-50 flex-1">
-          <div className="max-w-[800px] mx-auto px-6">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-[36px] font-extrabold text-gunpowder-900">
+        <section ref={resultRef} className="py-16 bg-gunpowder-50 flex-1 max-md:py-10">
+          <div className="max-w-[800px] mx-auto px-6 max-md:px-4">
+            <div className="flex items-center justify-between mb-8 max-md:mb-5 max-md:flex-col max-md:items-start max-md:gap-3">
+              <h2 className="text-[36px] font-extrabold text-gunpowder-900 max-md:text-[24px]">
                 Dein Video
               </h2>
               <button
                 onClick={handleGenerate}
-                className="inline-flex items-center justify-center h-12 px-6 rounded-full text-base font-semibold bg-transparent text-gunpowder-700 border-2 border-gunpowder-200 hover:border-gunpowder-400 transition-all cursor-pointer"
+                className="inline-flex items-center justify-center h-12 px-6 rounded-full text-base font-semibold bg-transparent text-gunpowder-700 border-2 border-gunpowder-200 hover:border-gunpowder-400 transition-all cursor-pointer max-md:h-10 max-md:px-4 max-md:text-sm"
               >
                 Neu generieren
               </button>
@@ -413,14 +413,14 @@ export default function VideoGeneratorPage() {
                   link.click();
                   document.body.removeChild(link);
                 }}
-                className="inline-flex items-center justify-center gap-2 h-[52px] px-8 rounded-full text-[16px] font-semibold bg-gunpowder-900 text-white shadow-[0_4px_16px_rgba(0,0,0,0.2)] hover:bg-gunpowder-800 hover:-translate-y-px transition-all cursor-pointer border-none"
+                className="inline-flex items-center justify-center gap-2 h-[52px] px-8 rounded-full text-[16px] font-semibold bg-gunpowder-900 text-white shadow-[0_4px_16px_rgba(0,0,0,0.2)] hover:bg-gunpowder-800 hover:-translate-y-px transition-all cursor-pointer border-none max-md:h-[46px] max-md:px-6 max-md:text-[14px] max-md:w-full"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                Als MP4 herunterladen
+                MP4 herunterladen
               </button>
             </div>
           </div>
@@ -429,8 +429,8 @@ export default function VideoGeneratorPage() {
 
       {/* Example prompts */}
       {!videoUrl && !isGenerating && (
-        <section className="py-16 bg-gradient-to-b from-[#fdf8ff] to-white">
-          <div className="max-w-[800px] mx-auto px-6">
+        <section className="py-16 bg-gradient-to-b from-[#fdf8ff] to-white max-md:py-10">
+          <div className="max-w-[800px] mx-auto px-6 max-md:px-4">
             <h3 className="text-sm font-bold text-gunpowder-400 uppercase tracking-[0.08em] mb-6">
               Beispiel-Prompts
             </h3>

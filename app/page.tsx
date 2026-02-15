@@ -57,10 +57,10 @@ const tools = [
 
 export default function Home() {
   return (
-    <section className="bg-gradient-to-b from-[#fffbf2] to-white py-20 min-h-[70vh]">
-      <div className="max-w-[1000px] mx-auto px-6">
-        <div className="text-center mb-14">
-          <h1 className="text-[56px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-4 max-md:text-[36px]">
+    <section className="bg-gradient-to-b from-[#fffbf2] to-white py-20 min-h-[70vh] max-md:py-12">
+      <div className="max-w-[1000px] mx-auto px-6 max-md:px-4">
+        <div className="text-center mb-14 max-md:mb-8">
+          <h1 className="text-[56px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-4 max-md:text-[32px]">
             KI Creator{" "}
             <span className="text-begonia-400">Suite</span>
           </h1>
@@ -69,7 +69,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-6 max-md:grid-cols-1">
+        <div className="grid grid-cols-2 gap-6 max-md:grid-cols-1 max-md:gap-4">
           {tools.map((tool) => (
             <Link
               key={tool.href}

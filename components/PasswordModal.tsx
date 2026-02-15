@@ -65,7 +65,13 @@ export default function PasswordModal({ open, onSuccess, onCancel }: PasswordMod
             </svg>
           </div>
           <h3 className="text-xl font-bold text-gunpowder-900 mb-1">Passwort erforderlich</h3>
-          <p className="text-sm text-gunpowder-400 mb-5">Gib das Passwort ein, um zu generieren.</p>
+          <p className="text-sm text-gunpowder-400 mb-2">Gib das Passwort ein, um zu generieren.</p>
+          <p className="text-[13px] text-gunpowder-400 mb-5">
+            Um diese Funktion freizuschalten, kontaktiere{" "}
+            <a href="https://www.lweb.ch/#contact" target="_blank" rel="noopener noreferrer" className="text-cerulean-500 font-semibold hover:underline">
+              lweb.ch
+            </a>
+          </p>
         </div>
 
         <div className="px-6 pb-6">

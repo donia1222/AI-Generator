@@ -209,10 +209,10 @@ export default function HistoryPage() {
 
   return (
     <>
-      <section className="bg-gradient-to-b from-[#f8f5ff] to-[#fdf8ff] py-16 overflow-hidden">
-        <div className="max-w-[1200px] mx-auto px-6">
-          <div className="text-center max-w-[720px] mx-auto mb-10">
-            <h1 className="text-[56px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-4 max-md:text-[36px]">
+      <section className="bg-gradient-to-b from-[#f8f5ff] to-[#fdf8ff] py-16 max-md:py-10 overflow-hidden">
+        <div className="max-w-[1200px] mx-auto px-6 max-md:px-4">
+          <div className="text-center max-w-[720px] mx-auto mb-10 max-md:mb-6">
+            <h1 className="text-[56px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-4 max-md:text-[28px]">
               Dein{" "}
               <span className={`bg-gradient-to-r ${tabColors[activeTab]} bg-clip-text text-transparent`}>
                 Verlauf
