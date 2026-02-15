@@ -5,6 +5,7 @@ import ProgressBar from "@/components/ProgressBar";
 import VideoPlayer from "@/components/VideoPlayer";
 import { addToHistory } from "@/lib/history";
 import { startGeneration, getGeneration, clearGeneration, subscribe } from "@/lib/generation-store";
+import PasswordModal, { isAuthenticated } from "@/components/PasswordModal";
 
 const PROGRESS_STEPS = [
   { pct: 5, text: "Sende Anfrage an Sora..." },
@@ -37,6 +38,7 @@ export default function VideoGeneratorPage() {
   const [duration, setDuration] = useState("4");
   const [orientation, setOrientation] = useState("landscape");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [progressPct, setProgressPct] = useState(0);
   const [progressText, setProgressText] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
@@ -143,6 +145,15 @@ export default function VideoGeneratorPage() {
     setTimeout(() => setIsGenerating(false), 800);
   }, []);
 
+  const handleGenerate = () => {
+    if (!prompt.trim()) return;
+    if (!isAuthenticated()) {
+      setShowPasswordModal(true);
+      return;
+    }
+    generateVideo();
+  };
+
   const generateVideo = async () => {
     if (!prompt.trim()) return;
     setIsGenerating(true);
@@ -212,7 +223,7 @@ export default function VideoGeneratorPage() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
                     e.preventDefault();
-                    generateVideo();
+                    handleGenerate();
                   }
                 }}
                 placeholder="z.B. Ein majestätischer Adler fliegt über verschneite Berge bei Sonnenuntergang..."
@@ -353,7 +364,7 @@ export default function VideoGeneratorPage() {
               {!isGenerating && (
                 <div className="flex justify-center mt-6">
                   <button
-                    onClick={generateVideo}
+                    onClick={handleGenerate}
                     className="inline-flex items-center justify-center gap-2 h-[58px] px-8 rounded-full text-[18px] font-semibold bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-[0_6px_30px_rgba(168,85,247,0.35)] hover:shadow-[0_4px_20px_rgba(168,85,247,0.45)] hover:-translate-y-px transition-all cursor-pointer border-none"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -385,7 +396,7 @@ export default function VideoGeneratorPage() {
                 Dein Video
               </h2>
               <button
-                onClick={generateVideo}
+                onClick={handleGenerate}
                 className="inline-flex items-center justify-center h-12 px-6 rounded-full text-base font-semibold bg-transparent text-gunpowder-700 border-2 border-gunpowder-200 hover:border-gunpowder-400 transition-all cursor-pointer"
               >
                 Neu generieren
@@ -442,6 +453,12 @@ export default function VideoGeneratorPage() {
           </div>
         </section>
       )}
+
+      <PasswordModal
+        open={showPasswordModal}
+        onSuccess={() => { setShowPasswordModal(false); generateVideo(); }}
+        onCancel={() => setShowPasswordModal(false)}
+      />
     </>
   );
 }

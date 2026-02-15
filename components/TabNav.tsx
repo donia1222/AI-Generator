@@ -36,8 +36,8 @@ export default function TabNav() {
   }, []);
 
   return (
-    <div className="flex justify-center pt-[84px] pb-4 bg-gradient-to-b from-white to-[#fffbf2]">
-      <div className="inline-flex bg-gunpowder-50 rounded-full p-1 border border-gunpowder-150">
+    <div className="flex justify-center pt-[84px] pb-4 bg-gradient-to-b from-white to-[#fffbf2] max-md:px-4">
+      <div className="inline-flex bg-gunpowder-50 rounded-full p-1 border border-gunpowder-150 max-md:overflow-x-auto max-md:max-w-full max-md:scrollbar-hide">
         {tabs.map((tab) => {
           const isActive = pathname === tab.href;
           const isGen = tab.genType ? generating[tab.genType] : false;
@@ -45,7 +45,7 @@ export default function TabNav() {
             <Link
               key={tab.href}
               href={tab.href}
-              className={`relative px-6 py-2.5 rounded-full text-[15px] font-semibold transition-all duration-200 ${
+              className={`relative px-6 py-2.5 rounded-full text-[15px] font-semibold transition-all duration-200 whitespace-nowrap max-md:px-3.5 max-md:py-2 max-md:text-[13px] ${
                 isActive
                   ? "bg-begonia-400 text-white shadow-[0_4px_16px_rgba(254,108,117,0.35)]"
                   : "text-gunpowder-500 hover:text-gunpowder-700"

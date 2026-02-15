@@ -5,6 +5,7 @@ import ProgressBar from "@/components/ProgressBar";
 import { TEMPLATES, TEMPLATE_NAMES } from "@/lib/prompts";
 import { startGeneration, getGeneration, clearGeneration, subscribe } from "@/lib/generation-store";
 import { addToHistory } from "@/lib/history";
+import PasswordModal, { isAuthenticated } from "@/components/PasswordModal";
 
 const TAB_COLORS = [
   "#d4a574", // Restaurant - gold
@@ -61,6 +62,7 @@ export default function WebCreatorPage() {
   const [modalTemplateIdx, setModalTemplateIdx] = useState(-1);
   const [resultModalOpen, setResultModalOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState(-1);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const iframeResultRef = useRef<HTMLIFrameElement>(null);
@@ -136,6 +138,15 @@ export default function WebCreatorPage() {
     setProgressText("Fertig!");
     setTimeout(() => setIsGenerating(false), 800);
   }, []);
+
+  const handleGenerate = () => {
+    if (!prompt.trim()) return;
+    if (!isAuthenticated()) {
+      setShowPasswordModal(true);
+      return;
+    }
+    generatePreview();
+  };
 
   const generatePreview = async () => {
     if (!prompt.trim()) return;
@@ -226,7 +237,7 @@ export default function WebCreatorPage() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
                     e.preventDefault();
-                    generatePreview();
+                    handleGenerate();
                   }
                 }}
                 placeholder={
@@ -260,7 +271,7 @@ export default function WebCreatorPage() {
               {!isGenerating && (
                 <div className="flex justify-center mt-5">
                   <button
-                    onClick={generatePreview}
+                    onClick={handleGenerate}
                     className="inline-flex items-center justify-center h-[58px] px-8 rounded-full text-[18px] font-semibold bg-begonia-400 text-white shadow-[0_6px_30px_rgba(254,108,117,0.35)] hover:bg-[#ff8a91] hover:shadow-[0_4px_20px_rgba(254,108,117,0.25)] hover:-translate-y-px transition-all cursor-pointer border-none"
                   >
                     Vorschau generieren
@@ -492,6 +503,12 @@ export default function WebCreatorPage() {
           </div>
         </div>
       )}
+
+      <PasswordModal
+        open={showPasswordModal}
+        onSuccess={() => { setShowPasswordModal(false); generatePreview(); }}
+        onCancel={() => setShowPasswordModal(false)}
+      />
     </>
   );
 }

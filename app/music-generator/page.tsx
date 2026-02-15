@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import ProgressBar from "@/components/ProgressBar";
 import { addToHistory } from "@/lib/history";
 import { startGeneration, getGeneration, clearGeneration, subscribe } from "@/lib/generation-store";
+import PasswordModal, { isAuthenticated } from "@/components/PasswordModal";
 
 const PROGRESS_STEPS_CREATE = [
   { pct: 5, text: "Sende Anfrage..." },
@@ -57,6 +58,7 @@ export default function MusicGeneratorPage() {
   const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
   const [vocal, setVocal] = useState<"male" | "female" | "none">("male");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [progressPct, setProgressPct] = useState(0);
   const [progressText, setProgressText] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
@@ -267,6 +269,17 @@ export default function MusicGeneratorPage() {
     setUploadedFile(null);
     setUploadedUrl("");
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleGenerate = () => {
+    if (mode === "create" && !prompt.trim() && selectedGenres.length === 0) return;
+    if (mode === "upload" && !uploadedFile) return;
+    if (mode === "mix" && !mixVocalFile) return;
+    if (!isAuthenticated()) {
+      setShowPasswordModal(true);
+      return;
+    }
+    generateMusic();
   };
 
   const generateMusic = async () => {
@@ -779,7 +792,7 @@ export default function MusicGeneratorPage() {
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
                         e.preventDefault();
-                        generateMusic();
+                        handleGenerate();
                       }
                     }}
                     placeholder={
@@ -903,7 +916,7 @@ export default function MusicGeneratorPage() {
               {!isGenerating && (
                 <div className="flex justify-center mt-6">
                   <button
-                    onClick={generateMusic}
+                    onClick={handleGenerate}
                     disabled={
                       (mode === "upload" && (!uploadedFile || isUploading)) ||
                       (mode === "mix" && !mixVocalFile)
@@ -941,7 +954,7 @@ export default function MusicGeneratorPage() {
                 Dein Song
               </h2>
               <button
-                onClick={generateMusic}
+                onClick={handleGenerate}
                 className="inline-flex items-center justify-center h-12 px-6 rounded-full text-base font-semibold bg-transparent text-gunpowder-700 border-2 border-gunpowder-200 hover:border-gunpowder-400 transition-all cursor-pointer"
               >
                 Neu generieren
@@ -1148,6 +1161,12 @@ export default function MusicGeneratorPage() {
           </div>
         </section>
       )}
+
+      <PasswordModal
+        open={showPasswordModal}
+        onSuccess={() => { setShowPasswordModal(false); generateMusic(); }}
+        onCancel={() => setShowPasswordModal(false)}
+      />
     </>
   );
 }
