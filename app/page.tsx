@@ -64,7 +64,7 @@ const tools = [
 
 export default function Home() {
   return (
-    <section className="bg-gradient-to-b from-[#fffbf2] to-white py-20 min-h-[70vh] max-md:py-12">
+    <section className="bg-gradient-to-b from-[#fffbf2] to-white py-20 min-h-[70vh] max-md:py-12 max-md:pt-24">
       <div className="max-w-[1000px] mx-auto px-6 max-md:px-4">
         <div className="text-center mb-14 max-md:mb-8">
           <h1 className="text-[64px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-4 max-md:text-[30px]">

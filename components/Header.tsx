@@ -99,7 +99,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 w-full z-50 bg-white/92 backdrop-blur-[12px] h-[72px] shadow-[0_1px_0_rgba(0,0,0,0.04)]">
+      <header className="fixed top-0 left-0 w-full z-50 backdrop-blur-[12px] h-[72px]" style={{ background: "linear-gradient(to bottom, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.5) 70%, rgba(255,255,255,0) 100%)" }}>
         <div className="flex items-center justify-between h-[72px] max-w-[1200px] mx-auto px-8 max-md:px-5">
           <Link
             href={pathname === "/" ? "https://www.lweb.ch" : "/"}
