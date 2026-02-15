@@ -77,7 +77,19 @@ export default function VideoGeneratorPage() {
 
     if (gen.status === "pending") {
       setIsGenerating(true);
-      startProgress();
+      // Resume progress from elapsed time
+      const elapsed = Date.now() - gen.startedAt;
+      const stepsPassed = Math.min(Math.floor(elapsed / 3000), PROGRESS_STEPS.length - 1);
+      setProgressPct(PROGRESS_STEPS[stepsPassed].pct);
+      setProgressText(PROGRESS_STEPS[stepsPassed].text);
+      let step = stepsPassed + 1;
+      progressRef.current = setInterval(() => {
+        if (step < PROGRESS_STEPS.length) {
+          setProgressPct(PROGRESS_STEPS[step].pct);
+          setProgressText(PROGRESS_STEPS[step].text);
+          step++;
+        }
+      }, 3000);
       gen.promise.then(() => {
         const updated = getGeneration("video");
         if (updated?.status === "done" && updated.result) {

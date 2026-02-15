@@ -98,7 +98,20 @@ export default function WebCreatorPage() {
 
     if (gen.status === "pending") {
       setIsGenerating(true);
-      startProgress();
+      // Resume progress from elapsed time
+      const elapsed = Date.now() - gen.startedAt;
+      const stepsPassed = Math.min(Math.floor(elapsed / 1800), PROGRESS_STEPS.length - 1);
+      setProgressPct(PROGRESS_STEPS[stepsPassed].pct);
+      setProgressText(PROGRESS_STEPS[stepsPassed].text);
+      // Continue progress from current step
+      let step = stepsPassed + 1;
+      progressRef.current = setInterval(() => {
+        if (step < PROGRESS_STEPS.length) {
+          setProgressPct(PROGRESS_STEPS[step].pct);
+          setProgressText(PROGRESS_STEPS[step].text);
+          step++;
+        }
+      }, 1800);
       gen.promise.then(() => {
         const updated = getGeneration("web");
         if (updated?.status === "done" && updated.result) {

@@ -130,7 +130,19 @@ export default function MusicGeneratorPage() {
 
     if (gen.status === "pending") {
       setIsGenerating(true);
-      startProgress();
+      // Resume progress from elapsed time
+      const elapsed = Date.now() - gen.startedAt;
+      const stepsPassed = Math.min(Math.floor(elapsed / 4000), PROGRESS_STEPS_CREATE.length - 1);
+      setProgressPct(PROGRESS_STEPS_CREATE[stepsPassed].pct);
+      setProgressText(PROGRESS_STEPS_CREATE[stepsPassed].text);
+      let step = stepsPassed + 1;
+      progressRef.current = setInterval(() => {
+        if (step < PROGRESS_STEPS_CREATE.length) {
+          setProgressPct(PROGRESS_STEPS_CREATE[step].pct);
+          setProgressText(PROGRESS_STEPS_CREATE[step].text);
+          step++;
+        }
+      }, 4000);
       gen.promise.then(() => {
         const updated = getGeneration("music");
         if (updated?.status === "done" && updated.result) {
