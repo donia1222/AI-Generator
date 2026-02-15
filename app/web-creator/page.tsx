@@ -417,27 +417,25 @@ export default function WebCreatorPage() {
                 Zurück
               </button>
               <span className="text-[15px] font-bold text-gunpowder-700">Deine Vorschau</span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    const blob = new Blob([resultHTML], { type: "text/html" });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = "website.html";
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-none bg-gunpowder-100 cursor-pointer text-gunpowder-600 hover:bg-gunpowder-200 transition-all text-[13px] font-semibold"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                  </svg>
-                  Herunterladen
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  const blob = new Blob([resultHTML], { type: "text/html" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "website.html";
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="flex items-center justify-center w-9 h-9 rounded-xl border-none bg-gunpowder-100 cursor-pointer text-gunpowder-500 hover:bg-gunpowder-200 hover:text-gunpowder-700 transition-all"
+                title="Herunterladen"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+              </button>
             </div>
             {/* Iframe */}
             <div className="flex-1 min-h-0 overflow-hidden">

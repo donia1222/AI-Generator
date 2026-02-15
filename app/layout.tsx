@@ -19,7 +19,7 @@ export default function RootLayout({
       <body className="font-jakarta antialiased min-h-screen flex flex-col">
         <Header />
         <TabNav />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 max-md:pt-[84px]">{children}</main>
         <footer className="bg-gunpowder-900 text-white py-8">
           <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between">
             <p className="text-[13px] text-gunpowder-500">
