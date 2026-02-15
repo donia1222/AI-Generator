@@ -45,11 +45,11 @@ function VideoCard({ item }: { item: HistoryItem }) {
         )}
       </div>
       <div className="p-4">
-        <p className="text-sm text-gunpowder-700 leading-relaxed line-clamp-2 mb-2">
+        <p className="text-sm max-md:text-[14px] text-gunpowder-700 leading-relaxed line-clamp-2 mb-2">
           {item.prompt}
         </p>
         <div className="flex items-center justify-between">
-          <span className="text-xs text-gunpowder-400">{formatDate(item.createdAt)}</span>
+          <span className="text-xs max-md:text-[13px] text-gunpowder-400">{formatDate(item.createdAt)}</span>
           {item.metadata?.styles && (
             <span className="text-xs text-purple-500 font-medium truncate max-w-[120px]">
               {item.metadata.styles}
@@ -116,11 +116,11 @@ function MusicCard({ item, onPlay }: { item: HistoryItem; onPlay: (audio: HTMLAu
         </div>
       </div>
       <div className="p-4">
-        <p className="text-sm text-gunpowder-700 leading-relaxed line-clamp-2 mb-2">
+        <p className="text-sm max-md:text-[14px] text-gunpowder-700 leading-relaxed line-clamp-2 mb-2">
           {item.prompt}
         </p>
         <div className="flex items-center justify-between mb-3">
-          <span className="text-xs text-gunpowder-400">{formatDate(item.createdAt)}</span>
+          <span className="text-xs max-md:text-[13px] text-gunpowder-400">{formatDate(item.createdAt)}</span>
           {item.metadata?.genres && (
             <span className="text-xs text-orange-500 font-medium truncate max-w-[120px]">
               {item.metadata.genres}
@@ -173,12 +173,12 @@ function WebCard({ item, onPreview }: { item: HistoryItem; onPreview: (html: str
         </div>
       )}
       <div className="p-4">
-        <h4 className="font-bold text-sm text-gunpowder-800 truncate mb-1">{item.title || "Web"}</h4>
-        <p className="text-sm text-gunpowder-500 leading-relaxed line-clamp-2 mb-2">
+        <h4 className="font-bold text-sm max-md:text-[14px] text-gunpowder-800 truncate mb-1">{item.title || "Web"}</h4>
+        <p className="text-sm max-md:text-[14px] text-gunpowder-500 leading-relaxed line-clamp-2 mb-2">
           {item.prompt}
         </p>
         <div className="flex items-center justify-between mb-3">
-          <span className="text-xs text-gunpowder-400">{formatDate(item.createdAt)}</span>
+          <span className="text-xs max-md:text-[13px] text-gunpowder-400">{formatDate(item.createdAt)}</span>
         </div>
         {html && (
           <button
@@ -319,13 +319,13 @@ export default function HistoryPage() {
       <section className="bg-gradient-to-b from-[#f8f5ff] to-[#fdf8ff] py-16 max-md:py-10 overflow-hidden">
         <div className="max-w-[1200px] mx-auto px-6 max-md:px-4">
           <div className="text-center max-w-[720px] mx-auto mb-10 max-md:mb-6">
-            <h1 className="text-[64px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-4 max-md:text-[28px]">
+            <h1 className="text-[64px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-4 max-md:text-[30px]">
               Dein{" "}
               <span className={`bg-gradient-to-r ${tabColors[activeTab]} bg-clip-text text-transparent`}>
                 Verlauf
               </span>
             </h1>
-            <p className="text-[20px] leading-relaxed text-gunpowder-500 max-md:text-[13px]">
+            <p className="text-[20px] leading-relaxed text-gunpowder-500 max-md:text-[16px]">
               Die letzten 10 Generierungen pro Kategorie.
             </p>
           </div>
@@ -339,7 +339,7 @@ export default function HistoryPage() {
                   <button
                     key={tab.type}
                     onClick={() => setActiveTab(tab.type)}
-                    className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                    className={`px-6 py-2.5 rounded-xl text-sm max-md:text-[14px] font-semibold transition-all cursor-pointer ${
                       activeTab === tab.type
                         ? `bg-gradient-to-r ${tabColors[tab.type]} text-white shadow-md`
                         : "text-gunpowder-500 hover:text-gunpowder-700"
@@ -368,8 +368,8 @@ export default function HistoryPage() {
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
               </div>
-              <h3 className="text-lg font-bold text-gunpowder-700 mb-2">Noch kein Verlauf</h3>
-              <p className="text-gunpowder-400 text-sm">
+              <h3 className="text-lg max-md:text-[17px] font-bold text-gunpowder-700 mb-2">Noch kein Verlauf</h3>
+              <p className="text-gunpowder-400 text-sm max-md:text-[14px]">
                 {activeTab === "video" && "Generiere dein erstes Video, um es hier zu sehen."}
                 {activeTab === "music" && "Generiere deinen ersten Song, um ihn hier zu sehen."}
                 {activeTab === "web" && "Generiere deine erste Website, um sie hier zu sehen."}
@@ -388,7 +388,7 @@ export default function HistoryPage() {
               <div className="flex justify-center mt-10">
                 <button
                   onClick={handleClear}
-                  className="inline-flex items-center gap-2 h-10 px-5 rounded-full text-sm font-semibold text-red-500 bg-red-50 border border-red-200 hover:bg-red-100 transition-all cursor-pointer"
+                  className="inline-flex items-center gap-2 h-10 px-5 rounded-full text-sm max-md:text-[14px] font-semibold text-red-500 bg-red-50 border border-red-200 hover:bg-red-100 transition-all cursor-pointer"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="3 6 5 6 21 6" />

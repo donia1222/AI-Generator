@@ -31,7 +31,7 @@ export default function RootLayout({
         <TabNav />
         <main className="flex-1 max-md:pt-[84px] overflow-x-clip">{children}</main>
         <MiniPlayer />
-        <footer className="bg-gunpowder-900 text-white py-8 max-md:py-6 sticky bottom-0 z-40">
+        <footer className="bg-gunpowder-900 text-white py-8 max-md:py-6">
           <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between max-md:flex-col max-md:gap-2 max-md:px-4">
             <p className="text-[13px] text-gunpowder-500">
               &copy; 2026{" "}

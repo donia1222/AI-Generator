@@ -119,12 +119,17 @@ body {
   .template-thumb iframe { transform: scale(0.28); }
 }
 @media (max-width: 768px) {
-  /* 2-col grid: cards ~50% of screen ≈ 350px → 350/1280 */
-  .template-thumb iframe { transform: scale(0.27); }
-  .template-thumb { height: 200px !important; }
+  /* 2-col grid: cards ~50% of screen → need full width coverage */
+  .template-thumb iframe { transform: scale(0.29); }
+  .template-thumb { height: 210px !important; }
 }
 @media (max-width: 640px) {
-  /* 1-col grid: cards full width ~343px → 343/1280 ≈ 0.27 */
-  .template-thumb iframe { transform: scale(0.27); }
+  /* 1-col grid: cards full width ≈ 100vw - 32px */
+  .template-thumb iframe { transform: scale(0.3); }
   .template-thumb { height: 220px !important; }
+}
+@media (max-width: 430px) {
+  /* Small phones: ~390px - 32px = 358px → 358/1280 ≈ 0.28 */
+  .template-thumb iframe { transform: scale(0.285); }
+  .template-thumb { height: 210px !important; }
 }

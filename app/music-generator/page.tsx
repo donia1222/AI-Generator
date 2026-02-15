@@ -627,13 +627,13 @@ export default function MusicGeneratorPage() {
       <section className="bg-gradient-to-b from-[#fff5f0] to-[#fff8f5] py-16 max-md:py-10 overflow-x-clip overflow-y-visible">
         <div className="max-w-[1200px] mx-auto px-6 max-md:px-4">
           <div className="text-center max-w-[720px] mx-auto">
-            <h1 className="text-[64px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-6 max-md:text-[28px] max-md:mb-4">
+            <h1 className="text-[64px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-6 max-md:text-[30px] max-md:mb-4">
               Erstelle deine{" "}
               <span className="bg-gradient-to-r from-orange-500 to-rose-500 bg-clip-text text-transparent">
                 KI-Musik
               </span>
             </h1>
-            <p className="text-[20px] leading-relaxed text-gunpowder-500 mb-10 max-md:text-[13px] max-md:mb-6">
+            <p className="text-[20px] leading-relaxed text-gunpowder-500 mb-10 max-md:text-[16px] max-md:mb-6">
               Beschreibe deinen Song, wähle Genre und Stimmung — oder lade einen Audio-Track hoch.
             </p>
 
@@ -642,7 +642,7 @@ export default function MusicGeneratorPage() {
               <div className="inline-flex bg-white border-2 border-gunpowder-150 rounded-2xl p-1 max-md:w-full">
                 <button
                   onClick={() => setMode("create")}
-                  className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer max-md:flex-1 max-md:px-3 max-md:text-[13px] ${
+                  className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer max-md:flex-1 max-md:px-3 max-md:text-[14px] ${
                     mode === "create"
                       ? "bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-md"
                       : "text-gunpowder-500 hover:text-gunpowder-700"
@@ -652,7 +652,7 @@ export default function MusicGeneratorPage() {
                 </button>
                 <button
                   onClick={() => setMode("upload")}
-                  className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer max-md:flex-1 max-md:px-3 max-md:text-[13px] ${
+                  className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer max-md:flex-1 max-md:px-3 max-md:text-[14px] ${
                     mode === "upload"
                       ? "bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-md"
                       : "text-gunpowder-500 hover:text-gunpowder-700"
@@ -662,7 +662,7 @@ export default function MusicGeneratorPage() {
                 </button>
                 <button
                   onClick={() => setMode("mix")}
-                  className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer max-md:flex-1 max-md:px-3 max-md:text-[13px] ${
+                  className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer max-md:flex-1 max-md:px-3 max-md:text-[14px] ${
                     mode === "mix"
                       ? "bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-md"
                       : "text-gunpowder-500 hover:text-gunpowder-700"
@@ -677,10 +677,10 @@ export default function MusicGeneratorPage() {
               {/* Upload Section */}
               {mode === "upload" && (
                 <div className="mb-5">
-                  <label className="block text-sm font-semibold text-gunpowder-600 mb-2">
+                  <label className="block text-sm max-md:text-[14px] font-semibold text-gunpowder-600 mb-2">
                     Referenz-Audio hochladen
                   </label>
-                  <p className="text-xs text-gunpowder-400 mb-3">
+                  <p className="text-xs max-md:text-[13px] text-gunpowder-400 mb-3">
                     Lade ein Audio als Referenz hoch (max. 8 Min). Die KI analysiert den Stil und generiert einen neuen Song im gleichen oder ähnlichen Stil.
                   </p>
 
@@ -694,7 +694,7 @@ export default function MusicGeneratorPage() {
                         <polyline points="17 8 12 3 7 8" />
                         <line x1="12" y1="3" x2="12" y2="15" />
                       </svg>
-                      <span className="text-sm font-semibold text-gunpowder-500">
+                      <span className="text-sm max-md:text-[14px] font-semibold text-gunpowder-500">
                         Klicke hier, um eine Audio-Datei auszuwählen
                       </span>
                       <span className="text-xs text-gunpowder-300">MP3, WAV, M4A, OGG</span>
@@ -753,7 +753,7 @@ export default function MusicGeneratorPage() {
 
                   {/* Vocal file */}
                   <div>
-                    <label className="block text-sm font-semibold text-gunpowder-600 mb-2">
+                    <label className="block text-sm max-md:text-[14px] font-semibold text-gunpowder-600 mb-2">
                       Deine Stimme (ohne Musik)
                     </label>
                     {!mixVocalFile ? (
@@ -767,7 +767,7 @@ export default function MusicGeneratorPage() {
                           <line x1="12" y1="19" x2="12" y2="23" />
                           <line x1="8" y1="23" x2="16" y2="23" />
                         </svg>
-                        <span className="text-sm font-semibold text-gunpowder-500">Stimmdatei auswählen</span>
+                        <span className="text-sm max-md:text-[14px] font-semibold text-gunpowder-500">Stimmdatei auswählen</span>
                         <span className="text-xs text-gunpowder-300">MP3, WAV, M4A</span>
                       </button>
                     ) : (
@@ -786,7 +786,7 @@ export default function MusicGeneratorPage() {
 
                   {/* Instrumental file */}
                   <div>
-                    <label className="block text-sm font-semibold text-gunpowder-600 mb-2">
+                    <label className="block text-sm max-md:text-[14px] font-semibold text-gunpowder-600 mb-2">
                       Instrumental / Beat als Referenz (optional)
                     </label>
                     {!mixInstFile ? (
@@ -799,7 +799,7 @@ export default function MusicGeneratorPage() {
                           <circle cx="6" cy="18" r="3" />
                           <circle cx="18" cy="16" r="3" />
                         </svg>
-                        <span className="text-sm font-semibold text-gunpowder-500">Instrumental-Datei auswählen</span>
+                        <span className="text-sm max-md:text-[14px] font-semibold text-gunpowder-500">Instrumental-Datei auswählen</span>
                         <span className="text-xs text-gunpowder-300">MP3, WAV, M4A</span>
                       </button>
                     ) : (
@@ -819,13 +819,13 @@ export default function MusicGeneratorPage() {
                   {/* Volume sliders */}
                   <div className="flex gap-4">
                     <div className="flex-1">
-                      <label className="text-xs font-semibold text-gunpowder-500 mb-1 block">
+                      <label className="text-xs max-md:text-[13px] font-semibold text-gunpowder-500 mb-1 block">
                         Stimme: {Math.round(vocalVol * 100)}%
                       </label>
                       <input type="range" min="0" max="1.5" step="0.05" value={vocalVol} onChange={(e) => setVocalVol(parseFloat(e.target.value))} className="w-full accent-purple-500" />
                     </div>
                     <div className="flex-1">
-                      <label className="text-xs font-semibold text-gunpowder-500 mb-1 block">
+                      <label className="text-xs max-md:text-[13px] font-semibold text-gunpowder-500 mb-1 block">
                         Instrumental: {Math.round(instVol * 100)}%
                       </label>
                       <input type="range" min="0" max="1.5" step="0.05" value={instVol} onChange={(e) => setInstVol(parseFloat(e.target.value))} className="w-full accent-orange-500" />
@@ -837,7 +837,7 @@ export default function MusicGeneratorPage() {
               {/* Title */}
               {mode !== "mix" && (
               <div className="mb-3">
-                <label className="block text-sm font-semibold text-gunpowder-600 mb-1.5">
+                <label className="block text-sm max-md:text-[14px] font-semibold text-gunpowder-600 mb-1.5">
                   Songtitel (optional)
                 </label>
                 <input
@@ -853,11 +853,11 @@ export default function MusicGeneratorPage() {
               {/* Lyrics / Prompt */}
               {mode !== "mix" && (
                 <div className="mb-3">
-                  <label className="block text-sm font-semibold text-gunpowder-600 mb-1.5">
+                  <label className="block text-sm max-md:text-[14px] font-semibold text-gunpowder-600 mb-1.5">
                     {mode === "upload" ? "Beschreibung / Stil-Anweisungen" : "Lyrics / Songtext"}
                   </label>
                   {mode === "create" && (
-                    <p className="text-xs text-gunpowder-400 mb-2">
+                    <p className="text-xs max-md:text-[13px] text-gunpowder-400 mb-2">
                       Schreibe hier den Text, der gesungen werden soll. Die KI singt genau das, was du schreibst.
                     </p>
                   )}
@@ -888,10 +888,10 @@ export default function MusicGeneratorPage() {
               {/* Anweisungen (nur im Create-Modus) */}
               {mode === "create" && (
                 <div className="mb-3">
-                  <label className="block text-sm font-semibold text-gunpowder-600 mb-1.5">
+                  <label className="block text-sm max-md:text-[14px] font-semibold text-gunpowder-600 mb-1.5">
                     Anweisungen für die KI (optional)
                   </label>
-                  <p className="text-xs text-gunpowder-400 mb-2">
+                  <p className="text-xs max-md:text-[13px] text-gunpowder-400 mb-2">
                     Beschreibe hier, wie der Song klingen soll — z.B. Tempo, Instrumente, Stimmung oder Struktur.
                   </p>
                   <textarea
@@ -911,7 +911,7 @@ export default function MusicGeneratorPage() {
               {/* Vocal gender - solo en modo crear (en upload se conserva tu voz) */}
               {mode === "create" && (
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gunpowder-600 mb-1.5">
+                  <label className="block text-sm max-md:text-[14px] font-semibold text-gunpowder-600 mb-1.5">
                     Stimme
                   </label>
                   <div className="flex gap-2">
@@ -923,7 +923,7 @@ export default function MusicGeneratorPage() {
                       <button
                         key={opt.value}
                         onClick={() => setVocal(opt.value)}
-                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl text-sm max-md:text-[14px] font-semibold transition-all cursor-pointer ${
                           vocal === opt.value
                             ? "border-orange-500 bg-orange-50 text-orange-700"
                             : "border-gunpowder-200 bg-white text-gunpowder-500 hover:border-orange-300"
@@ -939,7 +939,7 @@ export default function MusicGeneratorPage() {
 
               {/* Genre chips */}
               <div className="mb-3">
-                <label className="block text-sm font-semibold text-gunpowder-600 mb-2">
+                <label className="block text-sm max-md:text-[14px] font-semibold text-gunpowder-600 mb-2">
                   Genre (mehrere wählbar)
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -949,7 +949,7 @@ export default function MusicGeneratorPage() {
                       <button
                         key={genre}
                         onClick={() => toggleGenre(genre)}
-                        className={`inline-block px-3.5 py-1.5 rounded-full text-[13px] font-semibold border cursor-pointer transition-all ${
+                        className={`inline-block px-3.5 py-1.5 rounded-full text-[13px] max-md:text-[14px] font-semibold border cursor-pointer transition-all ${
                           isSelected
                             ? "bg-orange-500 text-white border-orange-500 shadow-[0_2px_8px_rgba(249,115,22,0.3)]"
                             : "text-gunpowder-500 bg-white border-gunpowder-150 hover:border-orange-300 hover:text-orange-600 hover:bg-orange-50/30"
@@ -964,7 +964,7 @@ export default function MusicGeneratorPage() {
 
               {/* Mood chips */}
               <div className="mb-4">
-                <label className="block text-sm font-semibold text-gunpowder-600 mb-2">
+                <label className="block text-sm max-md:text-[14px] font-semibold text-gunpowder-600 mb-2">
                   Stimmung (optional)
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -974,7 +974,7 @@ export default function MusicGeneratorPage() {
                       <button
                         key={mood}
                         onClick={() => toggleMood(mood)}
-                        className={`inline-block px-3.5 py-1.5 rounded-full text-[13px] font-semibold border cursor-pointer transition-all ${
+                        className={`inline-block px-3.5 py-1.5 rounded-full text-[13px] max-md:text-[14px] font-semibold border cursor-pointer transition-all ${
                           isSelected
                             ? "bg-rose-500 text-white border-rose-500 shadow-[0_2px_8px_rgba(244,63,94,0.3)]"
                             : "text-gunpowder-500 bg-white border-gunpowder-150 hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50/30"
@@ -1011,7 +1011,7 @@ export default function MusicGeneratorPage() {
               <ProgressBar isActive={isGenerating} percent={progressPct} text={progressText} />
 
               {error && (
-                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 font-medium">
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-sm max-md:text-[14px] text-red-600 font-medium">
                   {error}
                 </div>
               )}
@@ -1025,7 +1025,7 @@ export default function MusicGeneratorPage() {
         <section ref={resultRef} className="py-16 bg-gunpowder-50 flex-1 max-md:py-10">
           <div className="max-w-[640px] mx-auto px-6 max-md:px-4">
             <div className="flex items-center justify-between mb-8 max-md:mb-5 max-md:flex-col max-md:items-start max-md:gap-3">
-              <h2 className="text-[42px] font-extrabold text-gunpowder-900 max-md:text-[18px]">
+              <h2 className="text-[42px] font-extrabold text-gunpowder-900 max-md:text-[20px]">
                 Dein Song
               </h2>
               <button
@@ -1210,7 +1210,7 @@ export default function MusicGeneratorPage() {
       {!audioUrl && !mixedAudioUrl && !isGenerating && (
         <section className="py-16 bg-gradient-to-b from-[#fff8f5] to-white max-md:py-10">
           <div className="max-w-[800px] mx-auto px-6 max-md:px-4">
-            <h3 className="text-sm font-bold text-gunpowder-400 uppercase tracking-[0.08em] mb-6">
+            <h3 className="text-sm max-md:text-[14px] font-bold text-gunpowder-400 uppercase tracking-[0.08em] mb-6">
               Beispiel-Ideen
             </h3>
             <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
@@ -1228,8 +1228,8 @@ export default function MusicGeneratorPage() {
                   }}
                   className="text-left p-4 bg-white rounded-2xl border border-gunpowder-150 hover:border-orange-300 hover:bg-orange-50/30 transition-all cursor-pointer"
                 >
-                  <span className="block text-sm font-bold text-gunpowder-800 mb-1">{example.title}</span>
-                  <span className="block text-[13px] text-gunpowder-500 leading-relaxed">{example.desc}</span>
+                  <span className="block text-sm max-md:text-[14px] font-bold text-gunpowder-800 mb-1">{example.title}</span>
+                  <span className="block text-[13px] max-md:text-[14px] text-gunpowder-500 leading-relaxed">{example.desc}</span>
                 </button>
               ))}
             </div>
@@ -1240,13 +1240,13 @@ export default function MusicGeneratorPage() {
       {/* Examples of generated music */}
       <section className="py-16 bg-gradient-to-b from-white to-[#fff8f5] max-md:py-10">
         <div className="max-w-[800px] mx-auto px-6 max-md:px-4">
-          <h3 className="text-[42px] font-extrabold text-gunpowder-900 mb-3 max-md:text-[18px]">
+          <h3 className="text-[42px] font-extrabold text-gunpowder-900 mb-3 max-md:text-[20px]">
             Beispiele{" "}
             <span className="bg-gradient-to-r from-orange-500 to-rose-500 bg-clip-text text-transparent">
               generierter Musik
             </span>
           </h3>
-          <p className="text-[16px] text-gunpowder-500 mb-8 max-md:text-[13px]">
+          <p className="text-[16px] text-gunpowder-500 mb-8 max-md:text-[14px]">
             Höre dir an, was unsere KI bereits erstellt hat.
           </p>
           <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1" ref={(el) => {

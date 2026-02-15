@@ -267,17 +267,17 @@ export default function WebCreatorPage() {
       <section className="bg-gradient-to-b from-[#fffbf2] to-[#fffcf5] py-16 max-md:py-10 overflow-x-clip overflow-y-visible">
         <div className="max-w-[1200px] mx-auto px-6 max-md:px-4">
           <div className="text-center max-w-[720px] mx-auto">
-            <h1 className="text-[64px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-6 max-md:text-[28px] max-md:mb-4">
+            <h1 className="text-[64px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-6 max-md:text-[30px] max-md:mb-4">
               Beschreibe deine
               <br />
               <span className="text-begonia-400">Traumwebsite</span>
             </h1>
             {selectedTemplate >= 0 ? (
-              <p className="text-[20px] leading-relaxed text-gunpowder-500 mb-4 max-md:text-[13px] max-md:mb-3">
+              <p className="text-[20px] leading-relaxed text-gunpowder-500 mb-4 max-md:text-[16px] max-md:mb-3">
                 Vorlage ausgewählt — beschreibe hier deine Änderungen und klicke auf Vorschau generieren.
               </p>
             ) : (
-              <p className="text-[15px] leading-relaxed text-gunpowder-400 mb-10 max-md:text-[12px] max-md:mb-6 max-w-[560px] mx-auto">
+              <p className="text-[15px] leading-relaxed text-gunpowder-400 mb-10 max-md:text-[16px] max-md:mb-6 max-w-[560px] mx-auto">
                 Du brauchst nur eine einfache Webpräsenz für dein Unternehmen? Generiere eine Website, passe Texte und Bilder direkt an und lass die KI Änderungen für dich vornehmen — alles ohne Programmierkenntnisse.
               </p>
             )}
@@ -285,7 +285,7 @@ export default function WebCreatorPage() {
             <div className="max-w-[640px] mx-auto text-left">
               {/* Attached template badge */}
               {selectedTemplate >= 0 && (
-                <div className="inline-flex items-center gap-2 px-3.5 py-2 bg-[rgba(77,211,91,0.08)] border border-[rgba(77,211,91,0.25)] rounded-xl mb-2.5 text-sm font-semibold text-[#2a8c36]">
+                <div className="inline-flex items-center gap-2 px-3.5 py-2 bg-[rgba(77,211,91,0.08)] border border-[rgba(77,211,91,0.25)] rounded-xl mb-2.5 text-sm max-md:text-[14px] font-semibold text-[#2a8c36]">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <circle cx="12" cy="12" r="12" fill="#4dd35b" />
                     <path d="M7 12.5l3 3 7-7" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -328,10 +328,10 @@ export default function WebCreatorPage() {
                     <button
                       key={ex.label}
                       onClick={() => setPrompt(ex.text)}
-                      className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[13px] font-semibold text-gunpowder-500 bg-gunpowder-50 border border-gunpowder-150 cursor-pointer transition-all hover:text-begonia-500 hover:bg-[rgba(254,108,117,0.06)] hover:border-begonia-400"
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[13px] max-md:text-[14px] font-semibold text-gunpowder-500 bg-gunpowder-50 border border-gunpowder-150 cursor-pointer transition-all hover:text-begonia-500 hover:bg-[rgba(254,108,117,0.06)] hover:border-begonia-400"
                     >
                       {ex.label}
-                      <span className="text-[11px] font-medium text-gunpowder-300">
+                      <span className="text-[11px] max-md:text-[12px] font-medium text-gunpowder-300">
                         {ex.style}
                       </span>
                     </button>
@@ -361,7 +361,7 @@ export default function WebCreatorPage() {
       <section className="pb-16 -mt-5 bg-gradient-to-b from-[#fffcf5] to-white max-md:pb-10 overflow-x-clip">
         <div className="max-w-[1200px] mx-auto px-6 max-md:px-4">
           <div className="flex items-center gap-5 mb-8">
-            <span className="text-sm font-bold text-gunpowder-400 uppercase tracking-[0.08em] whitespace-nowrap">
+            <span className="text-sm max-md:text-[14px] font-bold text-gunpowder-400 uppercase tracking-[0.08em] whitespace-nowrap">
               Oder starte mit einer Vorlage
             </span>
             <div className="flex-1 h-px bg-gunpowder-200" />
@@ -371,7 +371,7 @@ export default function WebCreatorPage() {
           <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide max-sm:gap-1.5">
             <button
               onClick={() => setPreviewTab(-1)}
-              className="shrink-0 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all cursor-pointer border-2 max-sm:px-3 max-sm:py-2 max-sm:text-[12px]"
+              className="shrink-0 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all cursor-pointer border-2 max-sm:px-3 max-sm:py-2 max-sm:text-[13px]"
               style={{
                 borderColor: previewTab === -1 ? "#1a1a2e" : "transparent",
                 background: previewTab === -1 ? "#1a1a2e12" : "#f5f3f0",
@@ -384,7 +384,7 @@ export default function WebCreatorPage() {
               <button
                 key={i}
                 onClick={() => setPreviewTab(i)}
-                className="shrink-0 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all cursor-pointer border-2 max-sm:px-3 max-sm:py-2 max-sm:text-[12px]"
+                className="shrink-0 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all cursor-pointer border-2 max-sm:px-3 max-sm:py-2 max-sm:text-[13px]"
                 style={{
                   borderColor: previewTab === i ? TAB_COLORS[i] : "transparent",
                   background: previewTab === i ? `${TAB_COLORS[i]}12` : "#f5f3f0",
@@ -422,13 +422,13 @@ export default function WebCreatorPage() {
                   <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white via-white/95 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 flex items-center justify-between">
                     <p
-                      className="text-[13px] font-bold truncate"
+                      className="text-[13px] max-md:text-[14px] font-bold truncate"
                       style={{ color: TAB_COLORS[i] }}
                     >
                       {name}
                     </p>
                     <span
-                      className="text-[11px] font-semibold px-2 py-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="text-[11px] max-md:text-[12px] font-semibold px-2 py-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
                       style={{ background: TAB_COLORS[i] + "15", color: TAB_COLORS[i] }}
                     >
                       Ansehen
@@ -560,7 +560,7 @@ export default function WebCreatorPage() {
             <div className="px-5 py-4 border-t border-black/5 bg-white flex items-center justify-center gap-3 max-md:px-3 max-md:py-3 relative">
               <button
                 onClick={() => setShowModifyPanel(!showModifyPanel)}
-                className={`inline-flex items-center justify-center gap-2 h-[50px] px-6 rounded-full text-[15px] font-semibold transition-all cursor-pointer border-2 max-md:h-[44px] max-md:px-4 max-md:text-[13px] ${
+                className={`inline-flex items-center justify-center gap-2 h-[50px] px-6 rounded-full text-[15px] font-semibold transition-all cursor-pointer border-2 max-md:h-[44px] max-md:px-4 max-md:text-[14px] ${
                   showModifyPanel
                     ? "bg-purple-100 border-purple-400 text-purple-700"
                     : "bg-white border-purple-300 text-purple-600 hover:bg-purple-50 hover:border-purple-400"
@@ -574,7 +574,7 @@ export default function WebCreatorPage() {
               </button>
               <a
                 href="https://www.lweb.ch/#contact"
-                className="inline-flex items-center justify-center gap-2 h-[50px] px-8 rounded-full text-[16px] font-semibold bg-begonia-400 text-white shadow-[0_4px_16px_rgba(254,108,117,0.3)] hover:bg-[#ff8a91] hover:-translate-y-px transition-all border-none max-md:h-[44px] max-md:px-5 max-md:text-[14px]"
+                className="inline-flex items-center justify-center gap-2 h-[50px] px-8 rounded-full text-[16px] font-semibold bg-begonia-400 text-white shadow-[0_4px_16px_rgba(254,108,117,0.3)] hover:bg-[#ff8a91] hover:-translate-y-px transition-all border-none max-md:h-[44px] max-md:px-5 max-md:text-[15px]"
               >
                 Kontaktiere uns
               </a>
