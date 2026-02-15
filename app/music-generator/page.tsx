@@ -1259,6 +1259,7 @@ export default function MusicGeneratorPage() {
         </div>
       </section>
 
+
       {/* Example prompts */}
       {!audioUrl && !mixedAudioUrl && !isGenerating && (
         <section className="py-16 bg-gradient-to-b from-[#fff8f5] to-white max-md:py-10">
