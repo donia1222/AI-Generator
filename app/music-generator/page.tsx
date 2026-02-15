@@ -1205,39 +1205,7 @@ export default function MusicGeneratorPage() {
           </div>
         </section>
       )}
-
-      {/* Example prompts */}
-      {!audioUrl && !mixedAudioUrl && !isGenerating && (
-        <section className="py-16 bg-gradient-to-b from-[#fff8f5] to-white max-md:py-10">
-          <div className="max-w-[800px] mx-auto px-6 max-md:px-4">
-            <h3 className="text-sm max-md:text-[14px] font-bold text-gunpowder-400 uppercase tracking-[0.08em] mb-6">
-              Beispiel-Ideen
-            </h3>
-            <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
-              {[
-                { title: "Sommerhit", desc: "Ein fröhlicher Pop-Song über den Sommer am See, mit eingängigem Refrain und guter Laune" },
-                { title: "Chill Lo-Fi", desc: "Entspannte Lo-Fi Beats zum Studieren, mit sanftem Piano und warmen Klängen" },
-                { title: "Rap Track", desc: "Ein energetischer Hip-Hop Beat mit harten Bässen und selbstbewussten Lyrics über Erfolg" },
-                { title: "Ballade", desc: "Eine emotionale Liebesballade mit Klavierbegleitung und gefühlvoller Stimme" },
-              ].map((example, i) => (
-                <button
-                  key={i}
-                  onClick={() => {
-                    setPrompt(example.desc);
-                    setTitle(example.title);
-                  }}
-                  className="text-left p-4 bg-white rounded-2xl border border-gunpowder-150 hover:border-orange-300 hover:bg-orange-50/30 transition-all cursor-pointer"
-                >
-                  <span className="block text-sm max-md:text-[14px] font-bold text-gunpowder-800 mb-1">{example.title}</span>
-                  <span className="block text-[13px] max-md:text-[14px] text-gunpowder-500 leading-relaxed">{example.desc}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Examples of generated music */}
+  {/* Examples of generated music */}
       <section className="py-16 bg-gradient-to-b from-white to-[#fff8f5] max-md:py-10">
         <div className="max-w-[800px] mx-auto px-6 max-md:px-4">
           <h3 className="text-[42px] font-extrabold text-gunpowder-900 mb-3 max-md:text-[20px]">
@@ -1291,6 +1259,38 @@ export default function MusicGeneratorPage() {
         </div>
       </section>
 
+      {/* Example prompts */}
+      {!audioUrl && !mixedAudioUrl && !isGenerating && (
+        <section className="py-16 bg-gradient-to-b from-[#fff8f5] to-white max-md:py-10">
+          <div className="max-w-[800px] mx-auto px-6 max-md:px-4">
+            <h3 className="text-sm max-md:text-[14px] font-bold text-gunpowder-400 uppercase tracking-[0.08em] mb-6">
+              Beispiel-Ideen
+            </h3>
+            <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
+              {[
+                { title: "Sommerhit", desc: "Ein fröhlicher Pop-Song über den Sommer am See, mit eingängigem Refrain und guter Laune" },
+                { title: "Chill Lo-Fi", desc: "Entspannte Lo-Fi Beats zum Studieren, mit sanftem Piano und warmen Klängen" },
+                { title: "Rap Track", desc: "Ein energetischer Hip-Hop Beat mit harten Bässen und selbstbewussten Lyrics über Erfolg" },
+                { title: "Ballade", desc: "Eine emotionale Liebesballade mit Klavierbegleitung und gefühlvoller Stimme" },
+              ].map((example, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    setPrompt(example.desc);
+                    setTitle(example.title);
+                  }}
+                  className="text-left p-4 bg-white rounded-2xl border border-gunpowder-150 hover:border-orange-300 hover:bg-orange-50/30 transition-all cursor-pointer"
+                >
+                  <span className="block text-sm max-md:text-[14px] font-bold text-gunpowder-800 mb-1">{example.title}</span>
+                  <span className="block text-[13px] max-md:text-[14px] text-gunpowder-500 leading-relaxed">{example.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+    
       <PasswordModal
         open={showPasswordModal}
         onSuccess={() => { setShowPasswordModal(false); generateMusic(); }}
