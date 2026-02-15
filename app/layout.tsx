@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import Header from "@/components/Header";
 import TabNav from "@/components/TabNav";
+import MiniPlayer from "@/components/MiniPlayer";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -28,6 +29,7 @@ export default function RootLayout({
         <Header />
         <TabNav />
         <main className="flex-1 max-md:pt-[84px] overflow-x-clip">{children}</main>
+        <MiniPlayer />
         <footer className="bg-gunpowder-900 text-white py-8 max-md:py-6">
           <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between max-md:flex-col max-md:gap-2 max-md:px-4">
             <p className="text-[13px] text-gunpowder-500">
@@ -38,7 +40,11 @@ export default function RootLayout({
               — KI Creator Suite
             </p>
             <p className="text-[13px] text-gunpowder-500">
-              Powered by Gemini & OpenAI Sora
+              Bilder von{" "}
+              <a href="https://unsplash.com" target="_blank" rel="noopener noreferrer" className="text-gunpowder-400 hover:text-white transition-colors">
+                Unsplash
+              </a>{" "}
+              · Powered by Gemini & OpenAI Sora
             </p>
           </div>
         </footer>

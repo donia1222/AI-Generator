@@ -4,17 +4,26 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import ProgressBar from "@/components/ProgressBar";
 import { addToHistory } from "@/lib/history";
 import { startGeneration, getGeneration, clearGeneration, subscribe } from "@/lib/generation-store";
+import { playAudio, stopAudio as stopGlobalAudio } from "@/lib/audio-store";
 import PasswordModal, { isAuthenticated } from "@/components/PasswordModal";
 
 const PROGRESS_STEPS_CREATE = [
   { pct: 5, text: "Sende Anfrage..." },
-  { pct: 15, text: "Analysiere Beschreibung..." },
-  { pct: 30, text: "Komponiere Melodie..." },
-  { pct: 45, text: "Arrangiere Instrumente..." },
-  { pct: 60, text: "Generiere Vocals..." },
-  { pct: 75, text: "Mische den Track..." },
-  { pct: 88, text: "Mastering..." },
-  { pct: 93, text: "Fast fertig..." },
+  { pct: 12, text: "Analysiere Beschreibung..." },
+  { pct: 22, text: "Komponiere Melodie..." },
+  { pct: 32, text: "Arrangiere Instrumente..." },
+  { pct: 42, text: "Generiere Vocals..." },
+  { pct: 52, text: "Mische den Track..." },
+  { pct: 60, text: "Feintuning..." },
+  { pct: 67, text: "Optimiere Klang..." },
+  { pct: 73, text: "Mastering..." },
+  { pct: 78, text: "Fast fertig..." },
+  { pct: 82, text: "Letzte Anpassungen..." },
+  { pct: 85, text: "Qualitätskontrolle..." },
+  { pct: 88, text: "Bereite Audio vor..." },
+  { pct: 90, text: "Noch einen Moment..." },
+  { pct: 92, text: "Gleich geschafft..." },
+  { pct: 93, text: "Dauert etwas länger..." },
 ];
 
 const GENRE_CHIPS = [
@@ -50,38 +59,13 @@ const MOOD_CHIPS = [
 type Mode = "create" | "upload" | "mix";
 
 export default function MusicGeneratorPage() {
-  const [mode, setMode] = useState<Mode>(() => {
-    if (typeof window !== "undefined") return (sessionStorage.getItem("music_mode") as Mode) || "create";
-    return "create";
-  });
-  const [prompt, setPrompt] = useState(() => {
-    if (typeof window !== "undefined") return sessionStorage.getItem("music_prompt") || "";
-    return "";
-  });
-  const [instructions, setInstructions] = useState(() => {
-    if (typeof window !== "undefined") return sessionStorage.getItem("music_instructions") || "";
-    return "";
-  });
-  const [title, setTitle] = useState(() => {
-    if (typeof window !== "undefined") return sessionStorage.getItem("music_title") || "";
-    return "";
-  });
-  const [selectedGenres, setSelectedGenres] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      try { return JSON.parse(sessionStorage.getItem("music_genres") || "[]"); } catch { return []; }
-    }
-    return [];
-  });
-  const [selectedMoods, setSelectedMoods] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      try { return JSON.parse(sessionStorage.getItem("music_moods") || "[]"); } catch { return []; }
-    }
-    return [];
-  });
-  const [vocal, setVocal] = useState<"male" | "female" | "none">(() => {
-    if (typeof window !== "undefined") return (sessionStorage.getItem("music_vocal") as "male" | "female" | "none") || "male";
-    return "male";
-  });
+  const [mode, setMode] = useState<Mode>("create");
+  const [prompt, setPrompt] = useState("");
+  const [instructions, setInstructions] = useState("");
+  const [title, setTitle] = useState("");
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
+  const [vocal, setVocal] = useState<"male" | "female" | "none">("male");
   const [isGenerating, setIsGenerating] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [progressPct, setProgressPct] = useState(0);
@@ -114,64 +98,102 @@ export default function MusicGeneratorPage() {
   const originalRef = useRef<HTMLAudioElement>(null);
   const mixedRef = useRef<HTMLAudioElement>(null);
 
-  // Persist form fields to sessionStorage
-  useEffect(() => { sessionStorage.setItem("music_mode", mode); }, [mode]);
-  useEffect(() => { sessionStorage.setItem("music_prompt", prompt); }, [prompt]);
-  useEffect(() => { sessionStorage.setItem("music_instructions", instructions); }, [instructions]);
-  useEffect(() => { sessionStorage.setItem("music_title", title); }, [title]);
-  useEffect(() => { sessionStorage.setItem("music_genres", JSON.stringify(selectedGenres)); }, [selectedGenres]);
-  useEffect(() => { sessionStorage.setItem("music_moods", JSON.stringify(selectedMoods)); }, [selectedMoods]);
-  useEffect(() => { sessionStorage.setItem("music_vocal", vocal); }, [vocal]);
-
-  // Restore state from global store on mount
+  // Restore form fields from sessionStorage on mount (avoids hydration mismatch)
+  const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
-    const gen = getGeneration("music");
-    if (!gen) return;
+    const savedMode = sessionStorage.getItem("music_mode") as Mode;
+    if (savedMode) setMode(savedMode);
+    setPrompt(sessionStorage.getItem("music_prompt") || "");
+    setInstructions(sessionStorage.getItem("music_instructions") || "");
+    setTitle(sessionStorage.getItem("music_title") || "");
+    try { setSelectedGenres(JSON.parse(sessionStorage.getItem("music_genres") || "[]")); } catch { /* ignore */ }
+    try { setSelectedMoods(JSON.parse(sessionStorage.getItem("music_moods") || "[]")); } catch { /* ignore */ }
+    const savedVocal = sessionStorage.getItem("music_vocal") as "male" | "female" | "none";
+    if (savedVocal) setVocal(savedVocal);
+    setHydrated(true);
+  }, []);
 
-    if (gen.status === "pending") {
-      setIsGenerating(true);
-      // Resume progress from elapsed time
-      const elapsed = Date.now() - gen.startedAt;
-      const stepsPassed = Math.min(Math.floor(elapsed / 4000), PROGRESS_STEPS_CREATE.length - 1);
-      setProgressPct(PROGRESS_STEPS_CREATE[stepsPassed].pct);
-      setProgressText(PROGRESS_STEPS_CREATE[stepsPassed].text);
-      let step = stepsPassed + 1;
-      progressRef.current = setInterval(() => {
-        if (step < PROGRESS_STEPS_CREATE.length) {
-          setProgressPct(PROGRESS_STEPS_CREATE[step].pct);
-          setProgressText(PROGRESS_STEPS_CREATE[step].text);
-          step++;
-        }
-      }, 4000);
-      gen.promise.then(() => {
-        const updated = getGeneration("music");
-        if (updated?.status === "done" && updated.result) {
-          const r = updated.result as Record<string, string>;
-          if (r.audioUrl) {
-            setAudioUrl(r.audioUrl);
-            setAudioTitle(r.title || "KI-Song");
+  // Persist form fields to sessionStorage (only after hydration to avoid overwriting with defaults)
+  useEffect(() => { if (hydrated) sessionStorage.setItem("music_mode", mode); }, [mode, hydrated]);
+  useEffect(() => { if (hydrated) sessionStorage.setItem("music_prompt", prompt); }, [prompt, hydrated]);
+  useEffect(() => { if (hydrated) sessionStorage.setItem("music_instructions", instructions); }, [instructions, hydrated]);
+  useEffect(() => { if (hydrated) sessionStorage.setItem("music_title", title); }, [title, hydrated]);
+  useEffect(() => { if (hydrated) sessionStorage.setItem("music_genres", JSON.stringify(selectedGenres)); }, [selectedGenres, hydrated]);
+  useEffect(() => { if (hydrated) sessionStorage.setItem("music_moods", JSON.stringify(selectedMoods)); }, [selectedMoods, hydrated]);
+  useEffect(() => { if (hydrated) sessionStorage.setItem("music_vocal", vocal); }, [vocal, hydrated]);
+
+  // Restore state from global store on mount + subscribe for updates
+  useEffect(() => {
+    const restoreFromStore = () => {
+      const gen = getGeneration("music");
+      if (!gen) return;
+
+      if (gen.status === "pending") {
+        setIsGenerating(true);
+        // Resume progress from elapsed time
+        const elapsed = Date.now() - gen.startedAt;
+        const stepsPassed = Math.min(Math.floor(elapsed / 8000), PROGRESS_STEPS_CREATE.length - 1);
+        setProgressPct(PROGRESS_STEPS_CREATE[stepsPassed].pct);
+        setProgressText(PROGRESS_STEPS_CREATE[stepsPassed].text);
+        let step = stepsPassed + 1;
+        progressRef.current = setInterval(() => {
+          if (step < PROGRESS_STEPS_CREATE.length) {
+            setProgressPct(PROGRESS_STEPS_CREATE[step].pct);
+            setProgressText(PROGRESS_STEPS_CREATE[step].text);
+            step++;
+          } else {
+            setProgressPct((prev) => Math.min(prev + 0.3, 98));
           }
-          if (r.mixedAudioUrl) setMixedAudioUrl(r.mixedAudioUrl);
+        }, 8000);
+        gen.promise.then(() => {
+          const updated = getGeneration("music");
+          if (updated?.status === "done" && updated.result) {
+            const r = updated.result as Record<string, string>;
+            if (r.audioUrl) {
+              setAudioUrl(r.audioUrl);
+              setAudioTitle(r.title || "KI-Song");
+            }
+            if (r.mixedAudioUrl) setMixedAudioUrl(r.mixedAudioUrl);
+          } else if (updated?.status === "error") {
+            setError(updated.error || "Ein Fehler ist aufgetreten.");
+          }
           finishProgress();
-        } else if (updated?.status === "error") {
+        }).catch(() => {
           finishProgress();
-          setError(updated.error || "Ein Fehler ist aufgetreten.");
+        });
+      } else if (gen.status === "done" && gen.result) {
+        const r = gen.result as Record<string, string>;
+        if (r.audioUrl) {
+          setAudioUrl(r.audioUrl);
+          setAudioTitle(r.title || "KI-Song");
         }
-      });
-    } else if (gen.status === "done" && gen.result) {
-      const r = gen.result as Record<string, string>;
-      if (r.audioUrl) {
-        setAudioUrl(r.audioUrl);
-        setAudioTitle(r.title || "KI-Song");
+        if (r.mixedAudioUrl) setMixedAudioUrl(r.mixedAudioUrl);
+        // Feed the mini player if no audio is already playing
+        const bestUrl = r.mixedAudioUrl || r.audioUrl;
+        if (bestUrl) playAudio(bestUrl, r.title || "KI-Song");
+      } else if (gen.status === "error") {
+        setError(gen.error || "Ein Fehler ist aufgetreten.");
       }
-      if (r.mixedAudioUrl) setMixedAudioUrl(r.mixedAudioUrl);
-    } else if (gen.status === "error") {
-      setError(gen.error || "Ein Fehler ist aufgetreten.");
-    }
+    };
 
+    restoreFromStore();
+
+    // Subscribe to generation store changes - catches completion even if component remounted
     return subscribe("music", () => {
       const g = getGeneration("music");
-      if (g?.status !== "pending") setIsGenerating(false);
+      if (!g) return;
+      if (g.status === "done" && g.result) {
+        const r = g.result as Record<string, string>;
+        if (r.audioUrl) {
+          setAudioUrl(r.audioUrl);
+          setAudioTitle(r.title || "KI-Song");
+        }
+        if (r.mixedAudioUrl) setMixedAudioUrl(r.mixedAudioUrl);
+        finishProgress();
+      } else if (g.status === "error") {
+        setError(g.error || "Ein Fehler ist aufgetreten.");
+        finishProgress();
+      }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -267,8 +289,11 @@ export default function MusicGeneratorPage() {
         setProgressPct(steps[step].pct);
         setProgressText(steps[step].text);
         step++;
+      } else {
+        // Keep creeping up slowly to 98% while waiting for the API
+        setProgressPct((prev) => Math.min(prev + 0.3, 98));
       }
-    }, 4000);
+    }, 8000);
   }, []);
 
   const finishProgress = useCallback(() => {
@@ -432,6 +457,7 @@ export default function MusicGeneratorPage() {
         const mixBlob = await mixRes.blob();
         const mixUrl = URL.createObjectURL(mixBlob);
         setMixedAudioUrl(mixUrl);
+        playAudio(mixUrl, genData.title || "AI Mix");
         addToHistory({
           type: "music",
           prompt: "Mix: " + (mixVocalFile?.name || "Stimme") + " + KI-Instrumental",
@@ -517,6 +543,7 @@ export default function MusicGeneratorPage() {
       if (data.status === "success" && data.audioUrl) {
         setAudioUrl(data.audioUrl);
         setAudioTitle(data.title || title || "KI-Song");
+        playAudio(data.audioUrl, data.title || title || "KI-Song");
         addToHistory({
           type: "music",
           prompt: prompt.trim(),
@@ -564,7 +591,9 @@ export default function MusicGeneratorPage() {
 
             if (mixRes.ok) {
               const mixBlob = await mixRes.blob();
-              setMixedAudioUrl(URL.createObjectURL(mixBlob));
+              const mixObjUrl = URL.createObjectURL(mixBlob);
+              setMixedAudioUrl(mixObjUrl);
+              playAudio(mixObjUrl, data.title || title || "KI-Song");
             } else {
               console.error("Mix failed, showing tracks separately");
             }

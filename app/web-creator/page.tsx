@@ -272,11 +272,15 @@ export default function WebCreatorPage() {
               <br />
               <span className="text-begonia-400">Traumwebsite</span>
             </h1>
-            <p className="text-[18px] leading-relaxed text-gunpowder-500 mb-10 max-md:text-[15px] max-md:mb-6">
-              {selectedTemplate >= 0
-                ? "Vorlage ausgewählt — beschreibe hier deine Änderungen und klicke auf Vorschau generieren."
-                : "Schreibe, was für eine Website du dir vorstellst, und unsere KI erstellt dir in Sekunden eine Vorschau."}
-            </p>
+            {selectedTemplate >= 0 ? (
+              <p className="text-[18px] leading-relaxed text-gunpowder-500 mb-4 max-md:text-[15px] max-md:mb-3">
+                Vorlage ausgewählt — beschreibe hier deine Änderungen und klicke auf Vorschau generieren.
+              </p>
+            ) : (
+              <p className="text-[14px] leading-relaxed text-gunpowder-400 mb-10 max-md:text-[13px] max-md:mb-6 max-w-[560px] mx-auto">
+                Du brauchst nur eine einfache Webpräsenz für dein Unternehmen? Generiere eine Website, passe Texte und Bilder direkt an und lass die KI Änderungen für dich vornehmen — alles ohne Programmierkenntnisse.
+              </p>
+            )}
 
             <div className="max-w-[640px] mx-auto text-left">
               {/* Attached template badge */}
