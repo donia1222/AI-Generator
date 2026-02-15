@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 const KIE_GENERATE_URL = "https://api.kie.ai/api/v1/generate";
 const KIE_COVER_URL = "https://api.kie.ai/api/v1/generate/upload-cover";
@@ -12,7 +12,7 @@ async function pollForResult(taskId: string, apiKey: string): Promise<{
   title: string;
   duration: number;
 } | null> {
-  const maxAttempts = 60;
+  const maxAttempts = 90;
   const interval = 3000;
 
   for (let i = 0; i < maxAttempts; i++) {
@@ -53,7 +53,7 @@ async function pollForResult(taskId: string, apiKey: string): Promise<{
 }
 
 export async function POST(req: NextRequest) {
-  const { prompt, style, title, instrumental, lyrics, vocal } = await req.json();
+  const { prompt, style, title, instrumental, instructions, lyrics, vocal, uploadUrl, useAddInstrumental } = await req.json();
 
   const apiKey = process.env.KIE_API_KEY;
   if (!apiKey) {
@@ -63,69 +63,84 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // If lyrics are provided (from Whisper transcription), generate instrumental
-  // that matches those lyrics structure
-  const hasTranscribedLyrics = !!lyrics;
-  const apiUrl = KIE_GENERATE_URL;
-  let body: Record<string, unknown>;
-
   // Extract clean style tags (without "male vocals" / "female vocals")
   const cleanStyle = (style || "pop")
     .split(", ")
     .filter((t: string) => t && t !== "male vocals" && t !== "female vocals")
     .join(", ");
 
-  if (hasTranscribedLyrics) {
-    // Upload mode WITH lyrics: use transcribed lyrics to generate ONLY instrumental
-    // customMode=true so Suno follows the lyrics structure for timing
-    // instrumental=true so NO voice is generated, only music
+  let apiUrl: string;
+  let body: Record<string, unknown>;
+
+  if (useAddInstrumental && uploadUrl) {
+    // UPLOAD-COVER + INSTRUMENTAL MODE:
+    // Suno analyzes the uploaded audio (melody, rhythm, timing, structure)
+    // and generates ONLY the instrumental that follows the exact same timing.
+    // instrumental=true = no AI voice, only music/beat
+    // customMode=true = Suno follows the audio structure precisely
+    apiUrl = KIE_COVER_URL;
+
     body = {
+      uploadUrl,
       model: "V5",
       customMode: true,
       instrumental: true,
       callBackUrl: "https://example.com/callback",
-      prompt: lyrics,
-      style: cleanStyle,
+      style: cleanStyle || "pop",
       title: title || "Untitled",
+      prompt: prompt
+        ? `Instrumental ${cleanStyle} version. ${prompt}`.substring(0, 500)
+        : `Instrumental ${cleanStyle} version that perfectly follows the melody, rhythm and timing of the uploaded audio`,
     };
 
-    console.log("Upload mode - generating instrumental from transcribed lyrics:", lyrics.substring(0, 100));
-  } else if (instrumental && !prompt?.trim()) {
-    // Upload mode WITHOUT lyrics (Whisper failed): generate instrumental from style only
-    body = {
-      model: "V5",
-      customMode: false,
-      instrumental: true,
-      callBackUrl: "https://example.com/callback",
-      prompt: `A ${cleanStyle} instrumental backing track with great melody and full arrangement`,
-    };
-
-    console.log("Upload mode - generating instrumental from style only:", cleanStyle);
+    console.log("Upload-cover instrumental mode - uploadUrl:", uploadUrl, "style:", cleanStyle);
   } else {
     // Normal generation from text
-    const hasLongPrompt = (prompt || "").length > 100;
+    apiUrl = KIE_GENERATE_URL;
+    const hasLyrics = (prompt || "").length > 0;
+    const hasInstructions = (instructions || "").length > 0;
 
-    if (hasLongPrompt) {
-      // Long text = custom mode (prompt as lyrics, up to 5000 chars)
+    if (hasLyrics) {
+      // Custom mode: lyrics in prompt, style tags in style field
+      // Suno's style field supports descriptive text, not just tags
+      // Combine genre tags + instructions in style for best results
+      let fullStyle = cleanStyle;
+      if (hasInstructions) {
+        fullStyle = `${cleanStyle}, ${instructions}`.substring(0, 200);
+      }
+
+      // Also add instructions as stage directions in the lyrics
+      let fullPrompt = prompt;
+      if (hasInstructions) {
+        fullPrompt = `[Instrumental Intro: ${instructions}]\n\n${prompt}\n\n[Outro: ${instructions}]`;
+      }
+
       body = {
         model: "V5",
         customMode: true,
         instrumental: !!instrumental,
         callBackUrl: "https://example.com/callback",
-        prompt: prompt,
-        style: cleanStyle,
+        prompt: fullPrompt,
+        style: fullStyle,
         title: title || "Untitled",
       };
-    } else {
-      // Short text = non-custom mode (prompt as description, Suno generates full lyrics)
+    } else if (hasInstructions) {
+      // No lyrics but has instructions: use instructions as the description
       body = {
         model: "V5",
         customMode: false,
         instrumental: !!instrumental,
         callBackUrl: "https://example.com/callback",
-        prompt: prompt
-          ? `${cleanStyle}. ${prompt}`.substring(0, 500)
-          : `A catchy ${cleanStyle} song with great melody and full arrangement`,
+        prompt: `${cleanStyle}. ${instructions}`.substring(0, 500),
+      };
+    } else {
+      // No lyrics, no instructions: generate from style only
+      body = {
+        model: "V5",
+        customMode: false,
+        instrumental: !!instrumental,
+        callBackUrl: "https://example.com/callback",
+        prompt: `A catchy ${cleanStyle} song with great melody and full arrangement`,
       };
     }
 
@@ -149,17 +164,18 @@ export async function POST(req: NextRequest) {
     const createData = await createRes.json();
 
     if (createData.code !== 200 || !createData.data?.taskId) {
+      console.error("Kie.ai create error:", JSON.stringify(createData));
       return NextResponse.json(
         {
           status: "error",
-          message: createData.msg || "Failed to create music generation task",
+          message: createData.msg || createData.message || JSON.stringify(createData),
         },
-        { status: createRes.status || 500 }
+        { status: 500 }
       );
     }
 
     const taskId = createData.data.taskId;
-    console.log(`Kie.ai ${hasTranscribedLyrics ? "instrumental-from-lyrics" : "generate"} task created:`, taskId);
+    console.log(`Kie.ai ${useAddInstrumental ? "add-instrumental" : "generate"} task created:`, taskId);
 
     const result = await pollForResult(taskId, apiKey);
 

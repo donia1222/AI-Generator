@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import sharp from "sharp";
 
 export const maxDuration = 300;
 
@@ -34,9 +35,16 @@ export async function POST(req: NextRequest) {
   formData.append("size", size || "1280x720");
   formData.append("seconds", String(duration || 4));
 
-  // Attach reference image if provided (e.g. logo, banner)
+  // Attach reference image resized to match video dimensions
   if (image && image.size > 0) {
-    formData.append("image", image, image.name);
+    const [width, height] = (size || "1280x720").split("x").map(Number);
+    const arrayBuffer = await image.arrayBuffer();
+    const resizedBuffer = await sharp(Buffer.from(arrayBuffer))
+      .resize(width, height, { fit: "cover" })
+      .jpeg()
+      .toBuffer();
+    const blob = new Blob([new Uint8Array(resizedBuffer)], { type: "image/jpeg" });
+    formData.append("input_reference", blob, "reference.jpg");
   }
 
   try {

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import ProgressBar from "@/components/ProgressBar";
 import VideoPlayer from "@/components/VideoPlayer";
+import { addToHistory } from "@/lib/history";
+import { startGeneration, getGeneration, clearGeneration, subscribe } from "@/lib/generation-store";
 
 const PROGRESS_STEPS = [
   { pct: 5, text: "Sende Anfrage an Sora..." },
@@ -46,6 +48,59 @@ export default function VideoGeneratorPage() {
   const resultRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Restore state from global store on mount
+  useEffect(() => {
+    const gen = getGeneration("video");
+    if (!gen) return;
+
+    if (gen.status === "pending") {
+      setIsGenerating(true);
+      startProgress();
+      gen.promise.then(() => {
+        const updated = getGeneration("video");
+        if (updated?.status === "done" && updated.result) {
+          handleResult(updated.result as Record<string, string>);
+        } else if (updated?.status === "error") {
+          finishProgress();
+          setError(updated.error || "Ein Fehler ist aufgetreten.");
+        }
+      });
+    } else if (gen.status === "done" && gen.result) {
+      const r = gen.result as Record<string, string>;
+      if (r.videoUrl) setVideoUrl(r.videoUrl);
+    } else if (gen.status === "error") {
+      setError(gen.error || "Ein Fehler ist aufgetreten.");
+    }
+
+    return subscribe("video", () => {
+      const g = getGeneration("video");
+      if (g?.status !== "pending") setIsGenerating(false);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleResult = (data: Record<string, string>) => {
+    finishProgress();
+    if (data.status === "success" && data.videoUrl) {
+      setVideoUrl(data.videoUrl);
+      addToHistory({
+        type: "video",
+        prompt: data._prompt || prompt,
+        url: data.videoUrl,
+        metadata: {
+          duration: data._duration || duration,
+          orientation: data._orientation || orientation,
+          styles: data._styles || selectedStyles.join(", "),
+        },
+      });
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 200);
+    } else {
+      setError(data.message || "Ein Fehler ist aufgetreten. Bitte versuche es erneut.");
+    }
+  };
+
   const handleImageAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -68,6 +123,7 @@ export default function VideoGeneratorPage() {
   };
 
   const startProgress = useCallback(() => {
+    if (progressRef.current) clearInterval(progressRef.current);
     let step = 0;
     setProgressPct(0);
     setProgressText("Starte Videogenerierung...");
@@ -92,38 +148,40 @@ export default function VideoGeneratorPage() {
     setIsGenerating(true);
     setError("");
     setVideoUrl("");
+    clearGeneration("video");
     startProgress();
 
-    // Build full prompt with selected styles
     let fullPrompt = prompt.trim();
     if (selectedStyles.length > 0) {
       fullPrompt += `. Style: ${selectedStyles.join(", ")}`;
     }
 
+    const formData = new FormData();
+    formData.append("prompt", fullPrompt);
+    formData.append("duration", String(parseInt(duration)));
+    formData.append("size", orientation === "portrait" ? "720x1280" : "1280x720");
+    if (attachedImage) {
+      formData.append("image", attachedImage);
+    }
+
+    // Store metadata in the result for history
+    const meta = {
+      _prompt: fullPrompt,
+      _duration: duration,
+      _orientation: orientation,
+      _styles: selectedStyles.join(", "),
+    };
+
     try {
-      const formData = new FormData();
-      formData.append("prompt", fullPrompt);
-      formData.append("duration", String(parseInt(duration)));
-      formData.append("size", orientation === "portrait" ? "720x1280" : "1280x720");
-      if (attachedImage) {
-        formData.append("image", attachedImage);
-      }
-
-      const res = await fetch("/api/generate-video", {
-        method: "POST",
-        body: formData,
+      const data = await startGeneration("video", async () => {
+        const res = await fetch("/api/generate-video", {
+          method: "POST",
+          body: formData,
+        });
+        const json = await res.json();
+        return { ...json, ...meta };
       });
-      const data = await res.json();
-      finishProgress();
-
-      if (data.status === "success" && data.videoUrl) {
-        setVideoUrl(data.videoUrl);
-        setTimeout(() => {
-          resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 200);
-      } else {
-        setError(data.message || "Ein Fehler ist aufgetreten. Bitte versuche es erneut.");
-      }
+      handleResult(data as Record<string, string>);
     } catch (err) {
       console.error("Error generating video:", err);
       finishProgress();

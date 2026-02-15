@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import ProgressBar from "@/components/ProgressBar";
+import { addToHistory } from "@/lib/history";
+import { startGeneration, getGeneration, clearGeneration, subscribe } from "@/lib/generation-store";
 
 const PROGRESS_STEPS_CREATE = [
   { pct: 5, text: "Sende Anfrage..." },
@@ -44,11 +46,12 @@ const MOOD_CHIPS = [
   "Motivierend",
 ];
 
-type Mode = "create" | "upload";
+type Mode = "create" | "upload" | "mix";
 
 export default function MusicGeneratorPage() {
   const [mode, setMode] = useState<Mode>("create");
   const [prompt, setPrompt] = useState("");
+  const [instructions, setInstructions] = useState("");
   const [title, setTitle] = useState("");
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
@@ -62,6 +65,7 @@ export default function MusicGeneratorPage() {
   const [originalAudioUrl, setOriginalAudioUrl] = useState("");
   const [mixedAudioUrl, setMixedAudioUrl] = useState("");
   const [isMixing, setIsMixing] = useState(false);
+  const [instrumentalFile, setInstrumentalFile] = useState<File | null>(null);
   const [vocalVol, setVocalVol] = useState(1.0);
   const [instVol, setInstVol] = useState(0.45);
 
@@ -71,12 +75,59 @@ export default function MusicGeneratorPage() {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Mix mode state (2 separate files)
+  const [mixVocalFile, setMixVocalFile] = useState<File | null>(null);
+  const [mixInstFile, setMixInstFile] = useState<File | null>(null);
+  const mixVocalRef = useRef<HTMLInputElement>(null);
+  const mixInstRef = useRef<HTMLInputElement>(null);
+
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const instrumentalRef = useRef<HTMLAudioElement>(null);
   const originalRef = useRef<HTMLAudioElement>(null);
   const [playingBoth, setPlayingBoth] = useState(false);
   const mixedRef = useRef<HTMLAudioElement>(null);
+
+  // Restore state from global store on mount
+  useEffect(() => {
+    const gen = getGeneration("music");
+    if (!gen) return;
+
+    if (gen.status === "pending") {
+      setIsGenerating(true);
+      startProgress();
+      gen.promise.then(() => {
+        const updated = getGeneration("music");
+        if (updated?.status === "done" && updated.result) {
+          const r = updated.result as Record<string, string>;
+          if (r.audioUrl) {
+            setAudioUrl(r.audioUrl);
+            setAudioTitle(r.title || "KI-Song");
+          }
+          if (r.mixedAudioUrl) setMixedAudioUrl(r.mixedAudioUrl);
+          finishProgress();
+        } else if (updated?.status === "error") {
+          finishProgress();
+          setError(updated.error || "Ein Fehler ist aufgetreten.");
+        }
+      });
+    } else if (gen.status === "done" && gen.result) {
+      const r = gen.result as Record<string, string>;
+      if (r.audioUrl) {
+        setAudioUrl(r.audioUrl);
+        setAudioTitle(r.title || "KI-Song");
+      }
+      if (r.mixedAudioUrl) setMixedAudioUrl(r.mixedAudioUrl);
+    } else if (gen.status === "error") {
+      setError(gen.error || "Ein Fehler ist aufgetreten.");
+    }
+
+    return subscribe("music", () => {
+      const g = getGeneration("music");
+      if (g?.status !== "pending") setIsGenerating(false);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -119,9 +170,63 @@ export default function MusicGeneratorPage() {
   };
 
   const remixAudio = async () => {
-    if (!audioUrl || !uploadedFile) return;
     if (mixedAudioUrl) URL.revokeObjectURL(mixedAudioUrl);
-    await mixAudio(audioUrl, uploadedFile, vocalVol, instVol);
+
+    if (mode === "mix" && mixVocalFile && instrumentalFile) {
+      // Re-mix using voice + AI-generated instrumental
+      setIsMixing(true);
+      try {
+        const vocalBase64 = await fileToBase64(mixVocalFile);
+        const instBase64 = await fileToBase64(instrumentalFile);
+        const res = await fetch("/api/mix-audio", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            vocalBase64,
+            instrumentalBase64: instBase64,
+            vocalVolume: vocalVol,
+            instrumentalVolume: instVol,
+          }),
+        });
+        if (!res.ok) throw new Error("Remix failed");
+        const blob = await res.blob();
+        setMixedAudioUrl(URL.createObjectURL(blob));
+      } catch (err) {
+        console.error("Remix error:", err);
+        setError("Fehler beim Neu-Mixen.");
+      } finally {
+        setIsMixing(false);
+      }
+      return;
+    }
+
+    // Upload mode: remix using saved local files
+    if (mode === "upload" && uploadedFile && instrumentalFile) {
+      setIsMixing(true);
+      try {
+        const vocalB64 = await fileToBase64(uploadedFile);
+        const instB64 = await fileToBase64(instrumentalFile);
+        const res = await fetch("/api/mix-audio", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            vocalBase64: vocalB64,
+            instrumentalBase64: instB64,
+            vocalVolume: vocalVol,
+            instrumentalVolume: instVol,
+          }),
+        });
+        if (!res.ok) throw new Error("Remix failed");
+        const blob = await res.blob();
+        setMixedAudioUrl(URL.createObjectURL(blob));
+      } catch (err) {
+        console.error("Remix error:", err);
+        setError("Fehler beim Neu-Mixen.");
+      } finally {
+        setIsMixing(false);
+      }
+      return;
+    }
   };
 
   const playBoth = () => {
@@ -217,6 +322,8 @@ export default function MusicGeneratorPage() {
   const generateMusic = async () => {
     if (mode === "create" && !prompt.trim() && selectedGenres.length === 0) return;
     if (mode === "upload" && !uploadedFile) return;
+    clearGeneration("music");
+    if (mode === "mix" && !mixVocalFile) return;
 
     setIsGenerating(true);
     setError("");
@@ -233,82 +340,242 @@ export default function MusicGeneratorPage() {
     const instrumental = vocal === "none";
 
     try {
-      let lyrics: string | undefined;
-
-      // Step 1: If upload mode, try to transcribe audio with Whisper (optional)
-      if (mode === "upload" && uploadedFile) {
-        setProgressText("Transkribiere dein Audio mit Whisper...");
+      await startGeneration("music", async () => {
+      // MIX MODE: Upload voice to Suno, AI generates instrumental, then FFmpeg mixes
+      if (mode === "mix" && mixVocalFile) {
+        // Step 1: Upload voice to Kie.ai
+        setProgressText("Lade deine Stimme zu Suno hoch...");
         setProgressPct(5);
 
-        try {
-          const transcribeForm = new FormData();
-          transcribeForm.append("file", uploadedFile);
-
-          const transcribeRes = await fetch("/api/transcribe-audio", {
-            method: "POST",
-            body: transcribeForm,
-          });
-          const transcribeData = await transcribeRes.json();
-
-          if (transcribeData.status === "success" && transcribeData.text) {
-            lyrics = transcribeData.text;
-            console.log("Transcribed lyrics:", lyrics);
-            setProgressText("Lyrics erkannt! Generiere Instrumental...");
-            setProgressPct(15);
-          } else {
-            console.warn("Transcription failed, continuing without lyrics");
-            setProgressText("Generiere Instrumental basierend auf Stil...");
-            setProgressPct(15);
-          }
-        } catch (transcribeErr) {
-          console.warn("Whisper transcription failed, continuing without lyrics:", transcribeErr);
-          setProgressText("Generiere Instrumental basierend auf Stil...");
-          setProgressPct(15);
+        const uploadForm = new FormData();
+        uploadForm.append("file", mixVocalFile);
+        const uploadRes = await fetch("/api/upload-audio", {
+          method: "POST",
+          body: uploadForm,
+        });
+        const uploadData = await uploadRes.json();
+        if (uploadData.status !== "success" || !uploadData.url) {
+          throw new Error(uploadData.message || "Upload fehlgeschlagen");
         }
+
+        // Step 2: Suno analyzes your voice and generates matching instrumental
+        setProgressText("Suno analysiert deine Stimme und generiert Instrumental...");
+        setProgressPct(15);
+
+        const cleanStyle = [...selectedGenres, ...selectedMoods].join(", ") || "pop";
+
+        const genRes = await fetch("/api/generate-music", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            uploadUrl: uploadData.url,
+            style: cleanStyle,
+            title: "AI Mix",
+            prompt: "",
+            instrumental: true,
+            vocal: "none",
+            useAddInstrumental: true,
+          }),
+        });
+        const genData = await genRes.json();
+
+        if (genData.status !== "success" || !genData.audioUrl) {
+          throw new Error(genData.message || "AI-Generierung fehlgeschlagen");
+        }
+
+        // Step 3: Download AI instrumental as local file
+        setProgressText("Lade AI-Instrumental herunter...");
+        setProgressPct(80);
+
+        const aiInstRes = await fetch(genData.audioUrl);
+        const aiInstBlob = await aiInstRes.blob();
+        const aiInstFile = new File([aiInstBlob], "ai-instrumental.mp3", { type: "audio/mpeg" });
+        setInstrumentalFile(aiInstFile);
+
+        // Save URLs for individual track players
+        const aiInstUrl = URL.createObjectURL(aiInstBlob);
+        setAudioUrl(aiInstUrl);
+        setOriginalAudioUrl(URL.createObjectURL(mixVocalFile));
+        setAudioTitle(genData.title || "AI Mix");
+
+        // Step 4: Mix voice + AI instrumental with FFmpeg
+        setProgressText("Mische Stimme + AI-Instrumental mit FFmpeg...");
+        setProgressPct(90);
+
+        const vocalB64 = await fileToBase64(mixVocalFile);
+        const aiInstB64 = await fileToBase64(aiInstFile);
+
+        const mixRes = await fetch("/api/mix-audio", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            vocalBase64: vocalB64,
+            instrumentalBase64: aiInstB64,
+            vocalVolume: vocalVol,
+            instrumentalVolume: instVol,
+          }),
+        });
+
+        if (!mixRes.ok) {
+          throw new Error("Mix fehlgeschlagen");
+        }
+
+        const mixBlob = await mixRes.blob();
+        const mixUrl = URL.createObjectURL(mixBlob);
+        setMixedAudioUrl(mixUrl);
+        addToHistory({
+          type: "music",
+          prompt: "Mix: " + (mixVocalFile?.name || "Stimme") + " + KI-Instrumental",
+          url: mixUrl,
+          title: "AI Mix",
+          metadata: {
+            mode: "mix",
+            genres: selectedGenres.join(", "),
+            moods: selectedMoods.join(", "),
+          },
+        });
+        finishProgress();
+        setTimeout(() => {
+          resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 200);
+        return { audioUrl: aiInstUrl, mixedAudioUrl: mixUrl, title: genData.title || "AI Mix" };
       }
 
-      // Step 2: Generate music
-      // In upload mode, always generate instrumental (no AI voice)
-      const isUploadMode = mode === "upload";
-      const body: Record<string, unknown> = {
-        prompt: prompt.trim(),
-        style,
-        title: title.trim() || "Untitled",
-        instrumental: isUploadMode ? true : instrumental,
-        vocal: isUploadMode ? "none" : vocal,
-      };
+      let data: { status: string; audioUrl?: string; title?: string; message?: string };
 
-      if (lyrics) {
-        body.lyrics = lyrics;
+      if (mode === "upload" && uploadedFile) {
+        // UPLOAD MODE: Use add-instrumental endpoint
+        // This sends YOUR actual audio to Suno so it generates instrumental
+        // that matches your timing, rhythm and melody
+
+        // Step 1: Upload audio to Kie.ai to get a URL
+        setProgressText("Lade Audio hoch...");
+        setProgressPct(5);
+
+        let audioUploadUrl = uploadedUrl;
+        if (!audioUploadUrl) {
+          const uploadForm = new FormData();
+          uploadForm.append("file", uploadedFile);
+          const uploadRes = await fetch("/api/upload-audio", {
+            method: "POST",
+            body: uploadForm,
+          });
+          const uploadData = await uploadRes.json();
+          if (uploadData.status !== "success" || !uploadData.url) {
+            throw new Error(uploadData.message || "Audio-Upload fehlgeschlagen");
+          }
+          audioUploadUrl = uploadData.url;
+          setUploadedUrl(audioUploadUrl);
+        }
+
+        // Step 2: Call add-instrumental with the uploaded audio URL
+        setProgressText("Suno analysiert dein Audio und generiert Instrumental...");
+        setProgressPct(15);
+
+        const cleanStyle = [...selectedGenres, ...selectedMoods].join(", ") || "pop";
+
+        const res = await fetch("/api/generate-music", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            uploadUrl: audioUploadUrl,
+            style: cleanStyle,
+            title: title.trim() || "Untitled",
+            prompt: prompt.trim(),
+            instrumental: true,
+            vocal: "none",
+            useAddInstrumental: true,
+          }),
+        });
+        data = await res.json();
+      } else {
+        // CREATE MODE: Normal generation
+        const res = await fetch("/api/generate-music", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: prompt.trim(),
+            style,
+            instructions: instructions.trim(),
+            title: title.trim() || "Untitled",
+            instrumental,
+            vocal,
+          }),
+        });
+        data = await res.json();
       }
-
-      const res = await fetch("/api/generate-music", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
 
       if (data.status === "success" && data.audioUrl) {
         setAudioUrl(data.audioUrl);
         setAudioTitle(data.title || title || "KI-Song");
+        addToHistory({
+          type: "music",
+          prompt: prompt.trim(),
+          url: data.audioUrl,
+          title: data.title || title || "KI-Song",
+          metadata: {
+            mode,
+            genres: selectedGenres.join(", "),
+            moods: selectedMoods.join(", "),
+            vocal,
+            ...(instructions.trim() ? { instructions: instructions.trim() } : {}),
+          },
+        });
 
-        // Step 3: If upload mode, auto-mix voice + instrumental with FFmpeg
-        if (mode === "upload" && uploadedFile) {
+        // Step 3: If upload mode, download instrumental and mix with FFmpeg
+        if (mode === "upload" && uploadedFile && data.audioUrl) {
           setOriginalAudioUrl(URL.createObjectURL(uploadedFile));
-          setProgressText("Mische Stimme + Instrumental mit FFmpeg...");
-          setProgressPct(90);
-          await mixAudio(data.audioUrl, uploadedFile, vocalVol, instVol);
+          setProgressText("Lade Instrumental herunter...");
+          setProgressPct(85);
+
+          // Download Suno instrumental as local file for reliable mixing
+          try {
+            const instRes = await fetch(data.audioUrl);
+            const instBlob = await instRes.blob();
+            const instFile = new File([instBlob], "instrumental.mp3", { type: "audio/mpeg" });
+            setInstrumentalFile(instFile);
+
+            setProgressText("Mische Stimme + Instrumental mit FFmpeg...");
+            setProgressPct(90);
+
+            // Mix using base64 of both local files
+            const vocalB64 = await fileToBase64(uploadedFile);
+            const instB64 = await fileToBase64(instFile);
+
+            const mixRes = await fetch("/api/mix-audio", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                vocalBase64: vocalB64,
+                instrumentalBase64: instB64,
+                vocalVolume: vocalVol,
+                instrumentalVolume: instVol,
+              }),
+            });
+
+            if (mixRes.ok) {
+              const mixBlob = await mixRes.blob();
+              setMixedAudioUrl(URL.createObjectURL(mixBlob));
+            } else {
+              console.error("Mix failed, showing tracks separately");
+            }
+          } catch (mixErr) {
+            console.error("Download/mix error:", mixErr);
+            setError("Mix fehlgeschlagen. Du kannst die Tracks einzeln abspielen.");
+          }
         }
 
         finishProgress();
         setTimeout(() => {
           resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
         }, 200);
+        return { audioUrl: data.audioUrl, title: data.title || title || "KI-Song" };
       } else {
         finishProgress();
         setError(data.message || "Ein Fehler ist aufgetreten. Bitte versuche es erneut.");
+        return { error: data.message };
       }
+      }); // end startGeneration
     } catch (err) {
       console.error("Error generating music:", err);
       finishProgress();
@@ -354,6 +621,16 @@ export default function MusicGeneratorPage() {
                   }`}
                 >
                   Audio hochladen
+                </button>
+                <button
+                  onClick={() => setMode("mix")}
+                  className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                    mode === "mix"
+                      ? "bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-md"
+                      : "text-gunpowder-500 hover:text-gunpowder-700"
+                  }`}
+                >
+                  Mezclar
                 </button>
               </div>
             </div>
@@ -429,7 +706,98 @@ export default function MusicGeneratorPage() {
                 </div>
               )}
 
+              {/* Mix Section - 2 separate files */}
+              {mode === "mix" && (
+                <div className="mb-5 space-y-4">
+                  <p className="text-xs text-gunpowder-400">
+                    Sube tu voz y Suno genera un instrumental que encaje con tu ritmo y tiempos. Opcionalmente puedes subir un instrumental de referencia. Elige el género abajo.
+                  </p>
+
+                  {/* Vocal file */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gunpowder-600 mb-2">
+                      Tu voz (sin música)
+                    </label>
+                    {!mixVocalFile ? (
+                      <button
+                        onClick={() => mixVocalRef.current?.click()}
+                        className="w-full border-2 border-dashed border-purple-200 rounded-2xl p-6 flex flex-col items-center gap-2 hover:border-purple-400 hover:bg-purple-50/30 transition-all cursor-pointer bg-white"
+                      >
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-purple-300">
+                          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                          <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                          <line x1="12" y1="19" x2="12" y2="23" />
+                          <line x1="8" y1="23" x2="16" y2="23" />
+                        </svg>
+                        <span className="text-sm font-semibold text-gunpowder-500">Archivo de voz</span>
+                        <span className="text-xs text-gunpowder-300">MP3, WAV, M4A</span>
+                      </button>
+                    ) : (
+                      <div className="w-full border-2 border-purple-200 rounded-xl p-3 bg-white flex items-center gap-3">
+                        <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-500"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /></svg>
+                        </div>
+                        <p className="flex-1 text-sm font-semibold text-gunpowder-800 truncate">{mixVocalFile.name}</p>
+                        <button onClick={() => { setMixVocalFile(null); if (mixVocalRef.current) mixVocalRef.current.value = ""; }} className="text-gunpowder-400 hover:text-red-500 transition-colors cursor-pointer p-1">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                        </button>
+                      </div>
+                    )}
+                    <input ref={mixVocalRef} type="file" accept="audio/*" onChange={(e) => { if (e.target.files?.[0]) setMixVocalFile(e.target.files[0]); }} className="hidden" />
+                  </div>
+
+                  {/* Instrumental file */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gunpowder-600 mb-2">
+                      Instrumental / Beat de referencia (opcional)
+                    </label>
+                    {!mixInstFile ? (
+                      <button
+                        onClick={() => mixInstRef.current?.click()}
+                        className="w-full border-2 border-dashed border-orange-200 rounded-2xl p-6 flex flex-col items-center gap-2 hover:border-orange-400 hover:bg-orange-50/30 transition-all cursor-pointer bg-white"
+                      >
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-orange-300">
+                          <path d="M9 18V5l12-2v13" />
+                          <circle cx="6" cy="18" r="3" />
+                          <circle cx="18" cy="16" r="3" />
+                        </svg>
+                        <span className="text-sm font-semibold text-gunpowder-500">Archivo instrumental</span>
+                        <span className="text-xs text-gunpowder-300">MP3, WAV, M4A</span>
+                      </button>
+                    ) : (
+                      <div className="w-full border-2 border-orange-200 rounded-xl p-3 bg-white flex items-center gap-3">
+                        <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-500"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg>
+                        </div>
+                        <p className="flex-1 text-sm font-semibold text-gunpowder-800 truncate">{mixInstFile.name}</p>
+                        <button onClick={() => { setMixInstFile(null); if (mixInstRef.current) mixInstRef.current.value = ""; }} className="text-gunpowder-400 hover:text-red-500 transition-colors cursor-pointer p-1">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                        </button>
+                      </div>
+                    )}
+                    <input ref={mixInstRef} type="file" accept="audio/*" onChange={(e) => { if (e.target.files?.[0]) setMixInstFile(e.target.files[0]); }} className="hidden" />
+                  </div>
+
+                  {/* Volume sliders */}
+                  <div className="flex gap-4">
+                    <div className="flex-1">
+                      <label className="text-xs font-semibold text-gunpowder-500 mb-1 block">
+                        Volumen voz: {Math.round(vocalVol * 100)}%
+                      </label>
+                      <input type="range" min="0" max="1.5" step="0.05" value={vocalVol} onChange={(e) => setVocalVol(parseFloat(e.target.value))} className="w-full accent-purple-500" />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs font-semibold text-gunpowder-500 mb-1 block">
+                        Volumen instrumental: {Math.round(instVol * 100)}%
+                      </label>
+                      <input type="range" min="0" max="1.5" step="0.05" value={instVol} onChange={(e) => setInstVol(parseFloat(e.target.value))} className="w-full accent-orange-500" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Title */}
+              {mode !== "mix" && (
               <div className="mb-3">
                 <label className="block text-sm font-semibold text-gunpowder-600 mb-1.5">
                   Songtitel (optional)
@@ -442,34 +810,65 @@ export default function MusicGeneratorPage() {
                   className="w-full px-5 py-3.5 border-2 border-gunpowder-200 rounded-xl font-jakarta text-base text-gunpowder-900 bg-white transition-all duration-200 focus:outline-none focus:border-orange-400 focus:shadow-[0_0_0_4px_rgba(249,115,22,0.1)] placeholder:text-gunpowder-300"
                 />
               </div>
+              )}
 
-              {/* Prompt */}
-              <div className="mb-3">
-                <label className="block text-sm font-semibold text-gunpowder-600 mb-1.5">
-                  {mode === "upload" ? "Beschreibung / Anweisungen" : "Beschreibung / Lyrics"}
-                </label>
-                <textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                      e.preventDefault();
-                      generateMusic();
+              {/* Lyrics / Prompt */}
+              {mode !== "mix" && (
+                <div className="mb-3">
+                  <label className="block text-sm font-semibold text-gunpowder-600 mb-1.5">
+                    {mode === "upload" ? "Beschreibung / Anweisungen" : "Lyrics / Songtext"}
+                  </label>
+                  {mode === "create" && (
+                    <p className="text-xs text-gunpowder-400 mb-2">
+                      Schreibe hier den Text, der gesungen werden soll. Die KI singt genau das, was du schreibst.
+                    </p>
+                  )}
+                  <textarea
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        generateMusic();
+                      }
+                    }}
+                    placeholder={
+                      mode === "upload"
+                        ? "z.B. Generiere einen Hip-Hop-Beat mit kräftigen Bässen zu meiner Stimme..."
+                        : "z.B. Vers 1:\nDie Sonne scheint auf mein Gesicht\nIch spüre den Wind, er flüstert leis...\n\nRefrain:\nDas ist unser Sommer..."
                     }
-                  }}
-                  placeholder={
-                    mode === "upload"
-                      ? "z.B. Genera un beat de hip-hop con bajos potentes para acompañar mi voz..."
-                      : "z.B. Ein fröhlicher Sommersong über das Leben am Strand, mit eingängigem Refrain..."
-                  }
-                  rows={4}
-                  maxLength={5000}
-                  className="w-full px-6 py-5 border-2 border-gunpowder-200 rounded-2xl font-jakarta text-base leading-relaxed text-gunpowder-900 bg-white resize-y transition-all duration-200 focus:outline-none focus:border-orange-400 focus:shadow-[0_0_0_4px_rgba(249,115,22,0.1)] placeholder:text-gunpowder-300"
-                />
-                <div className="text-right text-xs text-gunpowder-300 mt-1">
-                  {prompt.length}/5000
+                    rows={mode === "create" ? 6 : 4}
+                    maxLength={5000}
+                    className="w-full px-6 py-5 border-2 border-gunpowder-200 rounded-2xl font-jakarta text-base leading-relaxed text-gunpowder-900 bg-white resize-y transition-all duration-200 focus:outline-none focus:border-orange-400 focus:shadow-[0_0_0_4px_rgba(249,115,22,0.1)] placeholder:text-gunpowder-300"
+                  />
+                  <div className="text-right text-xs text-gunpowder-300 mt-1">
+                    {prompt.length}/5000
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Anweisungen (nur im Create-Modus) */}
+              {mode === "create" && (
+                <div className="mb-3">
+                  <label className="block text-sm font-semibold text-gunpowder-600 mb-1.5">
+                    Anweisungen für die KI (optional)
+                  </label>
+                  <p className="text-xs text-gunpowder-400 mb-2">
+                    Beschreibe hier, wie der Song klingen soll — z.B. Tempo, Instrumente, Stimmung oder Struktur.
+                  </p>
+                  <textarea
+                    value={instructions}
+                    onChange={(e) => setInstructions(e.target.value)}
+                    placeholder="z.B. Beginne mit einem ruhigen Klavier-Intro, dann kommt der Beat dazu. Der Refrain soll kraftvoll und episch sein mit Streichern. Tempo: mittel. Am Ende ein langsames Outro..."
+                    rows={3}
+                    maxLength={1000}
+                    className="w-full px-6 py-5 border-2 border-gunpowder-200 rounded-2xl font-jakarta text-base leading-relaxed text-gunpowder-900 bg-white resize-y transition-all duration-200 focus:outline-none focus:border-orange-400 focus:shadow-[0_0_0_4px_rgba(249,115,22,0.1)] placeholder:text-gunpowder-300"
+                  />
+                  <div className="text-right text-xs text-gunpowder-300 mt-1">
+                    {instructions.length}/1000
+                  </div>
+                </div>
+              )}
 
               {/* Vocal gender - solo en modo crear (en upload se conserva tu voz) */}
               {mode === "create" && (
@@ -555,7 +954,10 @@ export default function MusicGeneratorPage() {
                 <div className="flex justify-center mt-6">
                   <button
                     onClick={generateMusic}
-                    disabled={mode === "upload" && (!uploadedFile || isUploading)}
+                    disabled={
+                      (mode === "upload" && (!uploadedFile || isUploading)) ||
+                      (mode === "mix" && !mixVocalFile)
+                    }
                     className="inline-flex items-center justify-center gap-2 h-[58px] px-8 rounded-full text-[18px] font-semibold bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-[0_6px_30px_rgba(249,115,22,0.35)] hover:shadow-[0_4px_20px_rgba(249,115,22,0.45)] hover:-translate-y-px transition-all cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -563,7 +965,7 @@ export default function MusicGeneratorPage() {
                       <circle cx="6" cy="18" r="3" />
                       <circle cx="18" cy="16" r="3" />
                     </svg>
-                    {mode === "upload" ? "Musik aus Audio generieren" : "Musik generieren"}
+                    {mode === "mix" ? "Audios mischen" : mode === "upload" ? "Musik aus Audio generieren" : "Musik generieren"}
                   </button>
                 </div>
               )}
@@ -581,7 +983,7 @@ export default function MusicGeneratorPage() {
       </section>
 
       {/* RESULT */}
-      {audioUrl && (
+      {(audioUrl || mixedAudioUrl) && (
         <section ref={resultRef} className="py-16 bg-gunpowder-50 flex-1">
           <div className="max-w-[640px] mx-auto px-6">
             <div className="flex items-center justify-between mb-8">
@@ -596,8 +998,8 @@ export default function MusicGeneratorPage() {
               </button>
             </div>
 
-            {/* Mixed Audio - Primary Player (upload mode) */}
-            {originalAudioUrl && (
+            {/* Mixed Audio - Primary Player (upload or mix mode) */}
+            {(originalAudioUrl || mixedAudioUrl || isMixing) && (
               <>
                 {isMixing ? (
                   <div className="bg-white rounded-[24px] shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-black/5 overflow-hidden mb-4 p-8 text-center">
@@ -674,8 +1076,8 @@ export default function MusicGeneratorPage() {
               </>
             )}
 
-            {/* Audio Player Card - Instrumental (standalone in create mode, or collapsible in upload mode) */}
-            {(!originalAudioUrl || !mixedAudioUrl) && (
+            {/* Audio Player Card - only in create mode (no mix result) */}
+            {audioUrl && !mixedAudioUrl && (
               <div className="bg-white rounded-[24px] shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-black/5 overflow-hidden mb-4">
                 <div className="bg-gradient-to-r from-orange-500 to-rose-500 px-8 py-6">
                   <div className="flex items-center gap-4">
@@ -700,37 +1102,45 @@ export default function MusicGeneratorPage() {
               </div>
             )}
 
-            {/* Individual tracks (collapsed) in upload mode when mixed exists */}
-            {originalAudioUrl && mixedAudioUrl && (
-              <details className="mb-4">
-                <summary className="text-sm font-semibold text-gunpowder-500 cursor-pointer hover:text-gunpowder-700 mb-2">
-                  Einzelne Tracks anzeigen
-                </summary>
-                <div className="space-y-3">
-                  <div className="bg-white rounded-xl border border-gunpowder-150 p-4">
-                    <p className="text-xs font-semibold text-gunpowder-500 mb-2">Instrumental</p>
+            {/* Individual tracks - always visible when mix exists */}
+            {mixedAudioUrl && (audioUrl || originalAudioUrl) && (
+              <div className="mb-4 space-y-3">
+                <p className="text-sm font-bold text-gunpowder-600">Einzelne Tracks:</p>
+
+                {audioUrl && (
+                  <div className="bg-white rounded-xl border-2 border-orange-200 p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-bold text-orange-600">Instrumental generado por IA (Suno)</p>
+                      <button
+                        onClick={() => {
+                          const link = document.createElement("a");
+                          link.href = audioUrl;
+                          link.download = `instrumental-${Date.now()}.mp3`;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-orange-100 text-orange-600 hover:bg-orange-200 transition-all cursor-pointer border-none"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="7 10 12 15 17 10" />
+                          <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        Descargar
+                      </button>
+                    </div>
                     <audio ref={instrumentalRef} controls className="w-full" src={audioUrl} />
                   </div>
-                  <div className="bg-white rounded-xl border border-gunpowder-150 p-4">
-                    <p className="text-xs font-semibold text-gunpowder-500 mb-2">Deine Stimme (Original)</p>
+                )}
+
+                {originalAudioUrl && (
+                  <div className="bg-white rounded-xl border-2 border-purple-200 p-4">
+                    <p className="text-xs font-bold text-purple-600 mb-2">Tu voz (Original)</p>
                     <audio ref={originalRef} controls className="w-full" src={originalAudioUrl} />
                   </div>
-                </div>
-
-                {/* Play Both Button */}
-                <div className="flex justify-center mt-3">
-                  <button
-                    onClick={playBoth}
-                    className={`inline-flex items-center justify-center gap-2 h-10 px-6 rounded-full text-sm font-semibold shadow-sm transition-all cursor-pointer border-none ${
-                      playingBoth
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : "bg-gradient-to-r from-orange-500 to-purple-500 text-white hover:shadow-md"
-                    }`}
-                  >
-                    {playingBoth ? "Stoppen" : "Beide einzeln abspielen"}
-                  </button>
-                </div>
-              </details>
+                )}
+              </div>
             )}
 
             {/* Download button */}
@@ -759,7 +1169,7 @@ export default function MusicGeneratorPage() {
       )}
 
       {/* Example prompts */}
-      {!audioUrl && !isGenerating && (
+      {!audioUrl && !mixedAudioUrl && !isGenerating && (
         <section className="py-16 bg-gradient-to-b from-[#fff8f5] to-white">
           <div className="max-w-[800px] mx-auto px-6">
             <h3 className="text-sm font-bold text-gunpowder-400 uppercase tracking-[0.08em] mb-6">

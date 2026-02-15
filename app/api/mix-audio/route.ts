@@ -10,12 +10,12 @@ const exec = promisify(execFile);
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
-  const { instrumentalUrl, vocalBase64, vocalVolume = 1.0, instrumentalVolume = 0.45 } =
+  const { instrumentalUrl, instrumentalBase64, vocalBase64, vocalVolume = 1.0, instrumentalVolume = 0.45 } =
     await req.json();
 
-  if (!instrumentalUrl || !vocalBase64) {
+  if ((!instrumentalUrl && !instrumentalBase64) || !vocalBase64) {
     return NextResponse.json(
-      { status: "error", message: "Missing instrumentalUrl or vocalBase64" },
+      { status: "error", message: "Missing audio data" },
       { status: 400 }
     );
   }
@@ -30,11 +30,24 @@ export async function POST(req: NextRequest) {
     const base64Data = vocalBase64.replace(/^data:audio\/[^;]+;base64,/, "");
     await writeFile(vocalPath, Buffer.from(base64Data, "base64"));
 
-    // Download instrumental
-    const instRes = await fetch(instrumentalUrl);
-    if (!instRes.ok) throw new Error("Failed to download instrumental");
-    const instBuffer = Buffer.from(await instRes.arrayBuffer());
-    await writeFile(instrumentalPath, instBuffer);
+    // Get instrumental: from base64 or from URL
+    if (instrumentalBase64) {
+      const instB64 = instrumentalBase64.replace(/^data:audio\/[^;]+;base64,/, "");
+      await writeFile(instrumentalPath, Buffer.from(instB64, "base64"));
+    } else {
+      console.log("Downloading instrumental from:", instrumentalUrl);
+      const instRes = await fetch(instrumentalUrl, { redirect: "follow" });
+      if (!instRes.ok) {
+        console.error("Instrumental download failed:", instRes.status, instRes.statusText);
+        throw new Error(`Failed to download instrumental: ${instRes.status}`);
+      }
+      const instBuffer = Buffer.from(await instRes.arrayBuffer());
+      console.log("Instrumental downloaded:", instBuffer.length, "bytes");
+      if (instBuffer.length < 1000) {
+        throw new Error("Downloaded instrumental is too small, likely invalid");
+      }
+      await writeFile(instrumentalPath, instBuffer);
+    }
 
     // Mix with FFmpeg:
     // - vocal at vocalVolume

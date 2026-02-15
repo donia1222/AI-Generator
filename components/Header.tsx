@@ -23,7 +23,17 @@ export default function Header() {
           >
             <path d="M15 18l-6-6 6-6" />
           </svg>
-          Lweb
+          <span className="flex flex-col leading-none">
+            <span className="text-[22px] font-extrabold">Lweb</span>
+            <span className="flex items-center gap-1 mt-0.5">
+              <svg width="16" height="16" viewBox="0 0 16 16" className="flex-shrink-0">
+                <rect width="16" height="16" rx="3" fill="#EE0000" />
+                <rect x="7" y="3" width="2" height="10" fill="#fff" />
+                <rect x="3" y="7" width="10" height="2" fill="#fff" />
+              </svg>
+              <span className="text-[12px] font-semibold text-gunpowder-400">Schweiz</span>
+            </span>
+          </span>
         </Link>
         <div className="inline-flex items-center gap-1.5 bg-cerulean-25 border border-cerulean-100 rounded-full px-3.5 py-1.5 text-[13px] font-semibold text-cerulean-500">
           <span className="w-2 h-2 bg-[#4dd35b] rounded-full animate-pulse" />

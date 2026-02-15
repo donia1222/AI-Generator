@@ -5,9 +5,13 @@ import { TEMPLATE_NAMES } from "@/lib/prompts";
 
 const TEMPLATE_COLORS = [
   ["#1a1a2e", "#d4a574", "#f5f0eb", "#8b6914"],
-  ["#0f0f0f", "#ff4d4d", "#00d4aa", "#ffffff"],
+  ["#0f0f0f", "#ff4d4d", "#ff8c42", "#ffffff"],
   ["#ffffff", "#1d1d1f", "#0071e3", "#f5f5f7"],
   ["#f0faf7", "#2a9d8f", "#264653", "#e9c46a"],
+  ["#0b0b1a", "#7c3aed", "#3b82f6", "#a855f7"],
+  ["#faf6f1", "#8B5E3C", "#D4813B", "#f0e6da"],
+  ["#0f1923", "#c9a84c", "#e8d48b", "#f5f0e8"],
+  ["#f8f0ed", "#b76e79", "#d4919b", "#ffffff"],
 ];
 
 const TEMPLATE_DESCRIPTIONS = [
@@ -15,6 +19,10 @@ const TEMPLATE_DESCRIPTIONS = [
   "Energetisches Design mit kräftigen Farben",
   "Minimalistisch mit viel Weissraum und Typografie",
   "Vertrauenswürdig mit beruhigenden sanften Tönen",
+  "Futuristisches Dark-Theme mit Lila-Blau-Gradienten",
+  "Warmes, handgemachtes Design mit Erdtönen",
+  "Luxuriöses dunkles Design mit Goldakzenten",
+  "Modern-feminines Design mit Rosé-Akzenten",
 ];
 
 interface TemplateCardProps {
