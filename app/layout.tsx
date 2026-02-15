@@ -1,7 +1,14 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Header from "@/components/Header";
 import TabNav from "@/components/TabNav";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 
 export const metadata: Metadata = {
   title: "KI Creator Suite | Lweb",
@@ -19,7 +26,7 @@ export default function RootLayout({
       <body className="font-jakarta antialiased min-h-screen flex flex-col">
         <Header />
         <TabNav />
-        <main className="flex-1 max-md:pt-[84px]">{children}</main>
+        <main className="flex-1 max-md:pt-[84px] overflow-x-clip">{children}</main>
         <footer className="bg-gunpowder-900 text-white py-8 max-md:py-6">
           <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between max-md:flex-col max-md:gap-2 max-md:px-4">
             <p className="text-[13px] text-gunpowder-500">

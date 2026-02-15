@@ -62,6 +62,7 @@ export default function WebCreatorPage() {
   const [modalTemplateIdx, setModalTemplateIdx] = useState(-1);
   const [resultModalOpen, setResultModalOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState(-1);
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -196,7 +197,7 @@ export default function WebCreatorPage() {
   return (
     <>
       {/* HERO / INPUT */}
-      <section className="bg-gradient-to-b from-[#fffbf2] to-[#fffcf5] py-16 max-md:py-10 overflow-hidden">
+      <section className="bg-gradient-to-b from-[#fffbf2] to-[#fffcf5] py-16 max-md:py-10 overflow-x-clip overflow-y-visible">
         <div className="max-w-[1200px] mx-auto px-6 max-md:px-4">
           <div className="text-center max-w-[720px] mx-auto">
             <h1 className="text-[56px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-6 max-md:text-[28px] max-md:mb-4">
@@ -286,7 +287,7 @@ export default function WebCreatorPage() {
       </section>
 
       {/* TEMPLATES */}
-      <section className="pb-16 -mt-5 bg-gradient-to-b from-[#fffcf5] to-white max-md:pb-10">
+      <section className="pb-16 -mt-5 bg-gradient-to-b from-[#fffcf5] to-white max-md:pb-10 overflow-x-clip">
         <div className="max-w-[1200px] mx-auto px-6 max-md:px-4">
           <div className="flex items-center gap-5 mb-8">
             <span className="text-sm font-bold text-gunpowder-400 uppercase tracking-[0.08em] whitespace-nowrap">
@@ -415,7 +416,40 @@ export default function WebCreatorPage() {
                 </svg>
                 Zurück
               </button>
-              <span className="text-[15px] font-bold text-gunpowder-700">Deine Vorschau</span>
+
+              {/* Device toggle */}
+              <div className="inline-flex bg-gunpowder-50 rounded-xl p-1 border border-gunpowder-150">
+                <button
+                  onClick={() => setPreviewDevice("desktop")}
+                  className={`flex items-center justify-center w-9 h-8 rounded-lg transition-all ${
+                    previewDevice === "desktop"
+                      ? "bg-white text-gunpowder-800 shadow-sm"
+                      : "text-gunpowder-400 hover:text-gunpowder-600"
+                  }`}
+                  title="Desktop"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                    <line x1="8" y1="21" x2="16" y2="21" />
+                    <line x1="12" y1="17" x2="12" y2="21" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setPreviewDevice("mobile")}
+                  className={`flex items-center justify-center w-9 h-8 rounded-lg transition-all ${
+                    previewDevice === "mobile"
+                      ? "bg-white text-gunpowder-800 shadow-sm"
+                      : "text-gunpowder-400 hover:text-gunpowder-600"
+                  }`}
+                  title="Mobile"
+                >
+                  <svg width="16" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                    <line x1="12" y1="18" x2="12.01" y2="18" />
+                  </svg>
+                </button>
+              </div>
+
               <button
                 onClick={() => {
                   const blob = new Blob([resultHTML], { type: "text/html" });
@@ -437,13 +471,17 @@ export default function WebCreatorPage() {
               </button>
             </div>
             {/* Iframe */}
-            <div className="flex-1 min-h-0 overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-hidden flex items-start justify-center bg-gunpowder-50/50">
               <iframe
                 ref={iframeResultRef}
                 srcDoc={resultHTML}
                 sandbox="allow-same-origin allow-scripts"
                 title="Website Vorschau"
-                className="w-full h-full border-none block"
+                className={`h-full border-none block bg-white transition-all duration-300 ${
+                  previewDevice === "mobile"
+                    ? "w-[390px] shadow-[0_0_40px_rgba(0,0,0,0.12)] rounded-xl my-2"
+                    : "w-full"
+                }`}
               />
             </div>
             {/* Modal footer */}

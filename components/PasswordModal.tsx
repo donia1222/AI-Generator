@@ -54,9 +54,9 @@ export default function PasswordModal({ open, onSuccess, onCancel }: PasswordMod
   };
 
   return (
-    <div className="fixed inset-0 z-[3000] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-[6px]" onClick={onCancel} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-[400px] max-w-[90vw] overflow-hidden">
+    <div className="fixed inset-0 z-[3000] flex items-start justify-center pt-[20vh] max-md:pt-[8vh] overflow-y-auto overscroll-none">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-[6px]" onClick={onCancel} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-[400px] max-w-[92vw] overflow-hidden mb-[40vh] max-md:mb-[60vh]">
         <div className="px-6 pt-6 pb-2 text-center">
           <div className="w-14 h-14 bg-begonia-400/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-begonia-400">

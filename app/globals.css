@@ -28,18 +28,40 @@
   --accent-orange: #ffb421;
 }
 
+html {
+  overflow-x: clip;
+  width: 100%;
+  height: 100%;
+  overscroll-behavior-x: none;
+}
+
 body {
   font-family: 'Plus Jakarta Sans', Arial, sans-serif;
   color: #212529;
   background: #fff;
-  overflow-x: hidden;
+  overflow-x: clip;
+  width: 100%;
+  min-height: 100%;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overscroll-behavior: none;
+  touch-action: manipulation;
   -webkit-overflow-scrolling: touch;
 }
 
-/* Prevent iOS zoom on input focus */
+/* Prevent iOS zoom on input focus + fix viewport shift */
 @media (max-width: 768px) {
   input, textarea, select {
     font-size: 16px !important;
+    -webkit-appearance: none;
+    touch-action: manipulation;
+  }
+  textarea {
+    border-radius: 12px !important;
+  }
+  input[type="text"], input[type="password"] {
+    border-radius: 12px !important;
   }
 }
 
