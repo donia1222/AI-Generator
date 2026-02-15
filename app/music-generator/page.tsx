@@ -85,7 +85,6 @@ export default function MusicGeneratorPage() {
   const resultRef = useRef<HTMLDivElement>(null);
   const instrumentalRef = useRef<HTMLAudioElement>(null);
   const originalRef = useRef<HTMLAudioElement>(null);
-  const [playingBoth, setPlayingBoth] = useState(false);
   const mixedRef = useRef<HTMLAudioElement>(null);
 
   // Restore state from global store on mount
@@ -136,37 +135,6 @@ export default function MusicGeneratorPage() {
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
-  };
-
-  const mixAudio = async (instrumentalUrl: string, vocalFile: File, vVol: number, iVol: number) => {
-    setIsMixing(true);
-    try {
-      const vocalBase64 = await fileToBase64(vocalFile);
-      const res = await fetch("/api/mix-audio", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          instrumentalUrl: instrumentalUrl,
-          vocalBase64,
-          vocalVolume: vVol,
-          instrumentalVolume: iVol,
-        }),
-      });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => null);
-        throw new Error(errData?.message || "Mix failed");
-      }
-
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      setMixedAudioUrl(url);
-    } catch (err) {
-      console.error("Mix error:", err);
-      setError("Fehler beim Mixen. Du kannst die Tracks trotzdem einzeln abspielen.");
-    } finally {
-      setIsMixing(false);
-    }
   };
 
   const remixAudio = async () => {
@@ -226,24 +194,6 @@ export default function MusicGeneratorPage() {
         setIsMixing(false);
       }
       return;
-    }
-  };
-
-  const playBoth = () => {
-    const inst = instrumentalRef.current;
-    const orig = originalRef.current;
-    if (!inst || !orig) return;
-
-    if (playingBoth) {
-      inst.pause();
-      orig.pause();
-      setPlayingBoth(false);
-    } else {
-      inst.currentTime = 0;
-      orig.currentTime = 0;
-      inst.play();
-      orig.play();
-      setPlayingBoth(true);
     }
   };
 

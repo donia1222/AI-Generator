@@ -87,7 +87,7 @@ export default function WebCreatorPage() {
         const html = extractHTML(r.botReply);
         setCurrentHTML(html);
         setResultHTML(html);
-        setShowResult(true);
+        setResultModalOpen(true);
       }
     }
 
@@ -104,7 +104,6 @@ export default function WebCreatorPage() {
       const html = extractHTML(data.botReply);
       setCurrentHTML(html);
       setResultHTML(html);
-      setShowResult(true);
       setResultModalOpen(true);
 
       // Save to history
@@ -141,7 +140,7 @@ export default function WebCreatorPage() {
   const generatePreview = async () => {
     if (!prompt.trim()) return;
     setIsGenerating(true);
-    setShowResult(false);
+    setResultModalOpen(false);
     clearGeneration("web");
     startProgress();
 
