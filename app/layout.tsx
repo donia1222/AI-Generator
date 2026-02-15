@@ -12,6 +12,7 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
+
 export const metadata: Metadata = {
   title: "KI Creator Suite | Lweb",
   description:
