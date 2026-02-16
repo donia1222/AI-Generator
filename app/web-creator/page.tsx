@@ -285,7 +285,7 @@ export default function WebCreatorPage() {
       const res = await fetch("/api/generate-website", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userMessage, isModify: true }),
+        body: JSON.stringify({ userMessage, isModify: true, currentHTML: resultHTML }),
       });
       const data = await res.json();
 
@@ -304,6 +304,15 @@ export default function WebCreatorPage() {
         // Update sessionStorage
         sessionStorage.setItem("web_completed_html", html);
         sessionStorage.setItem("web_completed_timestamp", Date.now().toString());
+
+        // Log the strategy used (optional)
+        if (data.metadata?.strategy === 'incremental') {
+          console.log(`✅ Incremental edit: ${data.metadata.sectionsModified.join(', ')}`);
+        } else if (data.metadata?.strategy === 'cross-section') {
+          console.log('✅ Cross-section edit applied');
+        } else {
+          console.log('✅ Full regeneration');
+        }
 
         setModifyPrompt("");
         setShowModifyPanel(false);
@@ -572,7 +581,7 @@ export default function WebCreatorPage() {
           {/* My Websites grid */}
           {previewTab === 999 && myWebsites.length > 0 && (
             <div className="grid grid-cols-4 gap-5 max-lg:grid-cols-3 max-md:grid-cols-2 max-sm:grid-cols-1">
-              {myWebsites.map((website, idx) => (
+              {myWebsites.map((website) => (
                 <div
                   key={website.id}
                   className="relative rounded-2xl overflow-hidden bg-white shadow-[0_4px_16px_rgba(0,0,0,0.06)] border-2 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group"
@@ -812,7 +821,7 @@ export default function WebCreatorPage() {
         <div className="fixed inset-0 z-[2000] flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-[8px]" onClick={() => setModalOpen(false)} />
           <div className="relative w-[80%] h-[85%] flex flex-col bg-white overflow-hidden rounded-2xl shadow-2xl max-md:w-full max-md:h-full max-md:rounded-none">
-            <div className="flex items-center px-5 py-3 border-b border-black/5 bg-white shrink-0">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-black/5 bg-white shrink-0">
               <button
                 onClick={() => setModalOpen(false)}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-none bg-[#e8f0fe] cursor-pointer text-[#1a3a5c] hover:bg-[#d4e4fc] transition-all text-[14px] font-semibold"
@@ -822,6 +831,16 @@ export default function WebCreatorPage() {
                   <path d="M12 19l-7-7 7-7" />
                 </svg>
                 Zurück
+              </button>
+
+              <button
+                onClick={selectTemplate}
+                className="inline-flex items-center justify-center gap-2 h-[44px] px-6 rounded-full text-[15px] font-semibold bg-[#4dd35b] text-white shadow-[0_4px_16px_rgba(77,211,91,0.3)] hover:bg-[#3ec04e] hover:-translate-y-px hover:shadow-[0_6px_24px_rgba(77,211,91,0.4)] transition-all cursor-pointer border-none"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+                Vorlage auswählen
               </button>
             </div>
             <div className="flex-1 min-h-0 overflow-hidden">
@@ -833,17 +852,6 @@ export default function WebCreatorPage() {
                   className="w-full h-full border-none block"
                 />
               )}
-            </div>
-            <div className="px-5 py-4 border-t border-black/5 bg-white flex justify-center">
-              <button
-                onClick={selectTemplate}
-                className="inline-flex items-center justify-center gap-2 h-[50px] px-8 rounded-full text-[16px] font-semibold bg-[#4dd35b] text-white shadow-[0_4px_16px_rgba(77,211,91,0.3)] hover:bg-[#3ec04e] hover:-translate-y-px hover:shadow-[0_6px_24px_rgba(77,211,91,0.4)] transition-all cursor-pointer border-none"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
-                Vorlage auswählen
-              </button>
             </div>
           </div>
         </div>
