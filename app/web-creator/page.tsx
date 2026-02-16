@@ -76,6 +76,7 @@ export default function WebCreatorPage() {
   const [previewTab, setPreviewTab] = useState(-1);
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"generate" | "modify" | null>(null);
   const [lastAIHTML, setLastAIHTML] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showModifyPanel, setShowModifyPanel] = useState(false);
@@ -90,21 +91,79 @@ export default function WebCreatorPage() {
   const [editingSectionName, setEditingSectionName] = useState("");
   const [hasEdits, setHasEdits] = useState(false);
   const [editingSectionStyles, setEditingSectionStyles] = useState<Record<string, string>>({});
+  const [pageTitle, setPageTitle] = useState("");
+
+  // Extract page title from HTML whenever resultHTML changes
+  useEffect(() => {
+    if (!resultHTML) { setPageTitle(""); return; }
+    const m = resultHTML.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    setPageTitle(m ? m[1].trim() : "");
+  }, [resultHTML]);
+
+  const updatePageTitle = useCallback((newTitle: string) => {
+    setPageTitle(newTitle);
+    setResultHTML(prev => {
+      let updated: string;
+      if (prev.match(/<title[^>]*>[\s\S]*?<\/title>/i)) {
+        updated = prev.replace(/<title[^>]*>[\s\S]*?<\/title>/i, `<title>${newTitle}</title>`);
+      } else if (prev.includes('</head>')) {
+        updated = prev.replace('</head>', `<title>${newTitle}</title>\n</head>`);
+      } else {
+        updated = prev;
+      }
+      setCurrentHTML(updated);
+      setHasEdits(true);
+      sessionStorage.setItem("web_completed_html", updated);
+      sessionStorage.setItem("web_completed_timestamp", Date.now().toString());
+      if (currentHistoryId) {
+        updateHistoryById(currentHistoryId, { html: updated });
+      }
+      return updated;
+    });
+  }, [currentHistoryId]);
 
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const iframeResultRef = useRef<HTMLIFrameElement>(null);
   const resultHTMLRef = useRef(resultHTML);
   resultHTMLRef.current = resultHTML;
 
+  // Extract clean HTML directly from the iframe DOM (bypasses postMessage)
+  const getIframeHTML = useCallback(() => {
+    try {
+      const iframe = iframeResultRef.current;
+      if (iframe?.contentWindow && (iframe.contentWindow as any).__soraGetCleanHTML) {
+        const html = (iframe.contentWindow as any).__soraGetCleanHTML();
+        console.log('📋 Extracted HTML from iframe, length:', html?.length);
+        return html;
+      }
+    } catch (e) {
+      console.warn('Could not extract HTML from iframe:', e);
+    }
+    return null;
+  }, []);
+
   // Close result modal and sync lastAIHTML with the latest edited HTML
-  // so that if the modal is reopened, the iframe displays the latest version.
   const closeResultModal = useCallback(() => {
-    if (resultHTML && resultHTML !== lastAIHTML) {
-      setLastAIHTML(resultHTML);
+    // Extract latest HTML directly from iframe DOM
+    const freshHTML = getIframeHTML();
+    const htmlToSave = freshHTML || resultHTML;
+
+    if (htmlToSave && htmlToSave !== lastAIHTML) {
+      setLastAIHTML(htmlToSave);
+      setResultHTML(htmlToSave);
+      setCurrentHTML(htmlToSave);
+      // Persist to storage
+      sessionStorage.setItem("web_completed_html", htmlToSave);
+      sessionStorage.setItem("web_completed_timestamp", Date.now().toString());
+      if (currentHistoryId) {
+        updateHistoryById(currentHistoryId, { html: htmlToSave });
+        console.log(`💾 Saved edited HTML to history: ${currentHistoryId}`);
+      }
     }
     setResultModalOpen(false);
     setHasEdits(false);
-  }, [resultHTML, lastAIHTML]);
+    setPreviewTab(999);
+  }, [resultHTML, lastAIHTML, getIframeHTML, currentHistoryId]);
 
   // Load user's generated websites from history
   useEffect(() => {
@@ -126,21 +185,26 @@ export default function WebCreatorPage() {
     }
 
     console.log('🎨 [displayURL] Creating blob URL with editing capabilities');
-    const htmlWithEditing = injectEditingCapabilities(lastAIHTML);
+    // Convert relative image/asset paths to absolute so they work inside blob URL
+    const origin = window.location.origin;
+    const htmlWithAbsolutePaths = lastAIHTML
+      .replace(/(src=["'])\/(?!\/)/g, `$1${origin}/`)
+      .replace(/(url\(["']?)\/(?!\/)/g, `$1${origin}/`);
+
+    const htmlWithEditing = injectEditingCapabilities(htmlWithAbsolutePaths);
     const blob = new Blob([htmlWithEditing], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
-    console.log('🎨 [displayURL] Blob URL created:', url);
     setDisplayURL(url);
 
-    // Cleanup old URL
-    return () => {
-      if (url) URL.revokeObjectURL(url);
-    };
+    return () => { URL.revokeObjectURL(url); };
   }, [lastAIHTML]);
 
   // Listen for inline edits and section edit requests from iframe
   useEffect(() => {
     const handler = (event: MessageEvent) => {
+      if (event.data?.type) {
+        console.log('📩 Message from iframe:', event.data.type, event.data.html?.length || 0);
+      }
       // Handle inline edits (text/image changes)
       if (event.data?.type === "sora-edit" && event.data.html) {
         setResultHTML(event.data.html);
@@ -338,6 +402,7 @@ export default function WebCreatorPage() {
   const handleGenerate = () => {
     if (!prompt.trim()) return;
     if (!isAuthenticated()) {
+      setPendingAction("generate");
       setShowPasswordModal(true);
       return;
     }
@@ -387,6 +452,11 @@ export default function WebCreatorPage() {
 
   const handleAIModify = async () => {
     if (!modifyPrompt.trim() || isModifying) return;
+    if (!isAuthenticated()) {
+      setPendingAction("modify");
+      setShowPasswordModal(true);
+      return;
+    }
     setIsModifying(true);
     setError("");
 
@@ -462,6 +532,32 @@ export default function WebCreatorPage() {
   const openTemplateModal = (idx: number) => {
     setModalTemplateIdx(idx);
     setModalOpen(true);
+  };
+
+  const openTemplateInEditor = (idx: number) => {
+    const html = TEMPLATES[idx];
+    setCurrentHTML(html);
+    setResultHTML(html);
+    setLastAIHTML(html);
+    setResultModalOpen(true);
+    setHasEdits(false);
+
+    // Save to history
+    const templateName = TEMPLATE_NAMES[idx];
+    const newHistoryId = addToHistory({
+      type: "web",
+      prompt: `Vorlage: ${templateName}`,
+      url: "",
+      title: templateName,
+      metadata: { html },
+    });
+    if (newHistoryId) {
+      setCurrentHistoryId(newHistoryId);
+      sessionStorage.setItem("web_current_history_id", newHistoryId);
+    }
+    sessionStorage.setItem("web_completed_html", html);
+    sessionStorage.setItem("web_completed_prompt", `Vorlage: ${templateName}`);
+    sessionStorage.setItem("web_completed_timestamp", Date.now().toString());
   };
 
   const selectTemplate = () => {
@@ -748,7 +844,7 @@ export default function WebCreatorPage() {
                   key={i}
                   className="relative rounded-2xl overflow-hidden bg-white shadow-[0_4px_16px_rgba(0,0,0,0.06)] border-2 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group"
                   style={{ borderColor: TAB_COLORS[i] + "40" }}
-                  onClick={() => openTemplateModal(i)}
+                  onClick={() => openTemplateInEditor(i)}
                 >
                   <div className="template-thumb relative w-full overflow-hidden" style={{ height: "240px" }}>
                     <iframe
@@ -847,16 +943,14 @@ export default function WebCreatorPage() {
             />
             <div className="absolute bottom-0 left-0 right-0 h-[160px] bg-gradient-to-b from-transparent via-white/80 to-white flex items-end justify-center pb-6">
               <button
-                onClick={() => openTemplateModal(previewTab)}
+                onClick={() => openTemplateInEditor(previewTab)}
                 className="inline-flex items-center justify-center gap-2 h-[46px] px-7 rounded-full text-[15px] font-semibold text-white shadow-[0_4px_16px_rgba(0,0,0,0.15)] hover:-translate-y-px transition-all cursor-pointer border-none"
                 style={{ background: TAB_COLORS[previewTab] }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M15 3h6v6" />
-                  <path d="M10 14L21 3" />
-                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                  <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
                 </svg>
-                Vorlage ansehen
+                Vorlage bearbeiten
               </button>
             </div>
           </div>
@@ -891,8 +985,29 @@ export default function WebCreatorPage() {
                     <path d="M12 19l-7-7 7-7" />
                   </svg>
                 )}
-                {hasEdits ? "Guardar y volver" : "Zurück"}
+                {hasEdits ? "Speichern & zuruck" : "Zurück"}
               </button>
+
+              {/* Page title */}
+              <div className="flex items-center gap-2 flex-1 mx-4 min-w-0 max-md:mx-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+                <input
+                  type="text"
+                  value={pageTitle}
+                  onChange={(e) => setPageTitle(e.target.value)}
+                  onBlur={(e) => updatePageTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      (e.target as HTMLInputElement).blur();
+                    }
+                  }}
+                  placeholder="Seitentitel..."
+                  className="flex-1 min-w-0 h-8 px-2.5 text-[13px] font-medium text-gunpowder-700 bg-gunpowder-50 border border-transparent rounded-lg focus:outline-none focus:border-gunpowder-200 focus:bg-white transition-all placeholder:text-gunpowder-300 truncate"
+                />
+              </div>
 
               {/* Device toggle */}
               <div className="inline-flex bg-gunpowder-50 rounded-xl p-1 border border-gunpowder-150">
@@ -929,7 +1044,8 @@ export default function WebCreatorPage() {
 
               <button
                 onClick={() => {
-                  const blob = new Blob([resultHTML], { type: "text/html" });
+                  const freshHTML = getIframeHTML() || resultHTML;
+                  const blob = new Blob([freshHTML], { type: "text/html" });
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement("a");
                   a.href = url;
@@ -955,7 +1071,6 @@ export default function WebCreatorPage() {
                   key={displayURL}
                   ref={iframeResultRef}
                   src={displayURL}
-                  sandbox="allow-same-origin allow-scripts"
                   title="Website Vorschau"
                   className={`h-full border-none block bg-white transition-all duration-300 ${
                     previewDevice === "mobile"
@@ -994,11 +1109,11 @@ export default function WebCreatorPage() {
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12a10 10 0 005.28 8.82"/>
                       </svg>
-                      <span className="text-xs font-bold text-gunpowder-600 uppercase tracking-wider">Colores</span>
+                      <span className="text-xs font-bold text-gunpowder-600 uppercase tracking-wider">Farben</span>
                     </div>
 
                     {/* Background color */}
-                    <label className="text-[11px] font-semibold text-gunpowder-400 uppercase tracking-wider mb-1.5 block">Fondo</label>
+                    <label className="text-[11px] font-semibold text-gunpowder-400 uppercase tracking-wider mb-1.5 block">Hintergrund</label>
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {COLOR_PRESETS.map((c) => (
                         <button
@@ -1012,7 +1127,7 @@ export default function WebCreatorPage() {
                     </div>
                     <input
                       type="text"
-                      placeholder="#hex o rgb(...)"
+                      placeholder="#hex oder rgb(...)"
                       className="w-full h-8 px-2.5 text-xs border border-gunpowder-150 rounded-lg focus:outline-none focus:border-purple-400 font-mono"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
@@ -1022,7 +1137,7 @@ export default function WebCreatorPage() {
                     />
 
                     {/* Text color */}
-                    <label className="text-[11px] font-semibold text-gunpowder-400 uppercase tracking-wider mb-1.5 block mt-3">Texto</label>
+                    <label className="text-[11px] font-semibold text-gunpowder-400 uppercase tracking-wider mb-1.5 block mt-3">Textfarbe</label>
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {['#ffffff','#f8f9fa','#dee2e6','#adb5bd','#6c757d','#495057','#343a40','#212529','#000000','#1e88e5','#e53935','#43a047','#8e24aa','#fb8c00'].map((c) => (
                         <button
@@ -1036,7 +1151,7 @@ export default function WebCreatorPage() {
                     </div>
                     <input
                       type="text"
-                      placeholder="#hex o rgb(...)"
+                      placeholder="#hex oder rgb(...)"
                       className="w-full h-8 px-2.5 text-xs border border-gunpowder-150 rounded-lg focus:outline-none focus:border-purple-400 font-mono"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
@@ -1050,11 +1165,11 @@ export default function WebCreatorPage() {
                   <div className="px-4 py-4 border-b border-gunpowder-50">
                     <div className="flex items-center gap-2 mb-3">
                       <span className="text-sm font-bold text-purple-600">Aa</span>
-                      <span className="text-xs font-bold text-gunpowder-600 uppercase tracking-wider">Tipografia</span>
+                      <span className="text-xs font-bold text-gunpowder-600 uppercase tracking-wider">Schrift</span>
                     </div>
 
                     {/* Font family */}
-                    <label className="text-[11px] font-semibold text-gunpowder-400 uppercase tracking-wider mb-1.5 block">Fuente</label>
+                    <label className="text-[11px] font-semibold text-gunpowder-400 uppercase tracking-wider mb-1.5 block">Schriftart</label>
                     <div className="space-y-1 mb-3 max-h-[200px] overflow-y-auto rounded-lg border border-gunpowder-100 p-1">
                       {FONT_OPTIONS.map((font) => (
                         <button
@@ -1073,7 +1188,7 @@ export default function WebCreatorPage() {
                     </div>
 
                     {/* Font size */}
-                    <label className="text-[11px] font-semibold text-gunpowder-400 uppercase tracking-wider mb-1.5 block">Tamano</label>
+                    <label className="text-[11px] font-semibold text-gunpowder-400 uppercase tracking-wider mb-1.5 block">Grosse</label>
                     <div className="flex gap-1.5 mb-3">
                       {[
                         { label: 'S', value: '14px' },
@@ -1092,7 +1207,7 @@ export default function WebCreatorPage() {
                     </div>
 
                     {/* Font weight */}
-                    <label className="text-[11px] font-semibold text-gunpowder-400 uppercase tracking-wider mb-1.5 block">Peso</label>
+                    <label className="text-[11px] font-semibold text-gunpowder-400 uppercase tracking-wider mb-1.5 block">Schriftstärke</label>
                     <div className="flex gap-1.5">
                       {[
                         { label: 'Light', value: '300' },
@@ -1117,7 +1232,7 @@ export default function WebCreatorPage() {
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21 3H3"/><path d="M21 21H3"/><path d="M12 7v10"/><path d="M8 7l4-4 4 4"/><path d="M8 17l4 4 4-4"/>
                       </svg>
-                      <span className="text-xs font-bold text-gunpowder-600 uppercase tracking-wider">Espaciado</span>
+                      <span className="text-xs font-bold text-gunpowder-600 uppercase tracking-wider">Abstand</span>
                     </div>
 
                     <label className="text-[11px] font-semibold text-gunpowder-400 uppercase tracking-wider mb-1.5 block">Padding</label>
@@ -1133,7 +1248,7 @@ export default function WebCreatorPage() {
                       ))}
                     </div>
 
-                    <label className="text-[11px] font-semibold text-gunpowder-400 uppercase tracking-wider mb-1.5 block">Bordes redondeados</label>
+                    <label className="text-[11px] font-semibold text-gunpowder-400 uppercase tracking-wider mb-1.5 block">Ecken abrunden</label>
                     <div className="flex gap-1.5">
                       {RADIUS_OPTIONS.map((r) => (
                         <button
@@ -1153,17 +1268,17 @@ export default function WebCreatorPage() {
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
                       </svg>
-                      <span className="text-xs font-bold text-gunpowder-600 uppercase tracking-wider">Fondo</span>
+                      <span className="text-xs font-bold text-gunpowder-600 uppercase tracking-wider">Hintergrund</span>
                     </div>
 
                     {/* Background image upload */}
-                    <label className="text-[11px] font-semibold text-gunpowder-400 uppercase tracking-wider mb-1.5 block">Imagen de fondo</label>
+                    <label className="text-[11px] font-semibold text-gunpowder-400 uppercase tracking-wider mb-1.5 block">Hintergrundbild</label>
                     <div className="mb-3">
                       <label className="flex items-center justify-center gap-2 h-9 rounded-lg border border-dashed border-gunpowder-200 text-xs font-semibold text-gunpowder-500 bg-gunpowder-25 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-600 transition-all cursor-pointer">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>
                         </svg>
-                        Subir imagen
+                        Bild hochladen
                         <input
                           type="file"
                           accept="image/*"
@@ -1187,17 +1302,17 @@ export default function WebCreatorPage() {
                     </div>
 
                     {/* Overlay color */}
-                    <label className="text-[11px] font-semibold text-gunpowder-400 uppercase tracking-wider mb-1.5 block">Overlay sobre imagen</label>
+                    <label className="text-[11px] font-semibold text-gunpowder-400 uppercase tracking-wider mb-1.5 block">Bild-Overlay</label>
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {[
-                        { color: 'rgba(0,0,0,0.3)', label: 'Negro 30%' },
-                        { color: 'rgba(0,0,0,0.5)', label: 'Negro 50%' },
-                        { color: 'rgba(0,0,0,0.7)', label: 'Negro 70%' },
-                        { color: 'rgba(0,0,50,0.5)', label: 'Azul oscuro' },
-                        { color: 'rgba(100,0,0,0.4)', label: 'Rojo oscuro' },
-                        { color: 'rgba(0,50,0,0.4)', label: 'Verde oscuro' },
-                        { color: 'rgba(50,0,80,0.5)', label: 'Purpura' },
-                        { color: 'rgba(0,0,0,0)', label: 'Sin overlay' },
+                        { color: 'rgba(0,0,0,0.3)', label: 'Schwarz 30%' },
+                        { color: 'rgba(0,0,0,0.5)', label: 'Schwarz 50%' },
+                        { color: 'rgba(0,0,0,0.7)', label: 'Schwarz 70%' },
+                        { color: 'rgba(0,0,50,0.5)', label: 'Dunkelblau' },
+                        { color: 'rgba(100,0,0,0.4)', label: 'Dunkelrot' },
+                        { color: 'rgba(0,50,0,0.4)', label: 'Dunkelgrun' },
+                        { color: 'rgba(50,0,80,0.5)', label: 'Lila' },
+                        { color: 'rgba(0,0,0,0)', label: 'Kein Overlay' },
                       ].map((o) => (
                         <button
                           key={o.color}
@@ -1219,7 +1334,7 @@ export default function WebCreatorPage() {
                     </div>
 
                     {/* Gradient presets */}
-                    <label className="text-[11px] font-semibold text-gunpowder-400 uppercase tracking-wider mb-1.5 block">Degradados</label>
+                    <label className="text-[11px] font-semibold text-gunpowder-400 uppercase tracking-wider mb-1.5 block">Farbverlaufe</label>
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {[
                         'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -1238,7 +1353,7 @@ export default function WebCreatorPage() {
                           onClick={() => sendStyleToIframe({ background: g })}
                           className="w-[52px] h-8 rounded-lg border border-gunpowder-100 cursor-pointer hover:scale-105 transition-transform hover:shadow-md"
                           style={{ background: g }}
-                          title="Aplicar degradado"
+                          title="Farbverlauf anwenden"
                         />
                       ))}
                     </div>
@@ -1263,12 +1378,12 @@ export default function WebCreatorPage() {
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8L19 13"/><path d="M15 9h0"/><path d="M17.8 6.2L19 5"/><path d="M3 21l9-9"/><path d="M12.2 6.2L11 5"/>
                       </svg>
-                      <span className="text-xs font-bold text-gunpowder-600 uppercase tracking-wider">Editar con IA</span>
+                      <span className="text-xs font-bold text-gunpowder-600 uppercase tracking-wider">Mit KI bearbeiten</span>
                     </div>
                     <textarea
                       value={modifyPrompt}
                       onChange={(e) => setModifyPrompt(e.target.value)}
-                      placeholder="Ej: Cambia el titulo, agrega un boton rojo, haz el fondo mas oscuro..."
+                      placeholder="z.B. Titel andern, roten Button hinzufugen, Hintergrund dunkler machen..."
                       rows={3}
                       className="w-full px-3 py-2.5 border border-gunpowder-200 rounded-xl text-sm leading-relaxed resize-none focus:outline-none focus:border-purple-400 focus:shadow-[0_0_0_3px_rgba(124,58,237,0.08)] placeholder:text-gunpowder-300"
                       onKeyDown={(e) => {
@@ -1283,7 +1398,7 @@ export default function WebCreatorPage() {
                       disabled={isModifying || !modifyPrompt.trim()}
                       className="mt-2 w-full h-9 rounded-xl text-sm font-semibold transition-all cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed bg-purple-600 text-white hover:bg-purple-700 shadow-[0_2px_8px_rgba(124,58,237,0.25)]"
                     >
-                      {isModifying ? "Aplicando..." : "Aplicar con IA"}
+                      {isModifying ? "Wird angewendet..." : "Mit KI anwenden"}
                     </button>
                     {error && (
                       <div className="mt-2 p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600">
@@ -1303,7 +1418,7 @@ export default function WebCreatorPage() {
                     closeSidebar();
                   } else {
                     setEditSidebarOpen(true);
-                    setEditingSectionName("Pagina completa");
+                    setEditingSectionName("Ganze Seite");
                     setEditingSectionIndex(null);
                   }
                 }}
@@ -1316,7 +1431,7 @@ export default function WebCreatorPage() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
                 </svg>
-                {editSidebarOpen ? "Cerrar editor" : "Editar"}
+                {editSidebarOpen ? "Editor schliessen" : "Bearbeiten"}
               </button>
               <a
                 href="https://www.lweb.ch/#contact"
@@ -1346,15 +1461,26 @@ export default function WebCreatorPage() {
                 Zurück
               </button>
 
-              <button
-                onClick={selectTemplate}
-                className="inline-flex items-center justify-center gap-2 h-[44px] px-6 rounded-full text-[15px] font-semibold bg-[#4dd35b] text-white shadow-[0_4px_16px_rgba(77,211,91,0.3)] hover:bg-[#3ec04e] hover:-translate-y-px hover:shadow-[0_6px_24px_rgba(77,211,91,0.4)] transition-all cursor-pointer border-none"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
-                Vorlage auswählen
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => { setModalOpen(false); openTemplateInEditor(modalTemplateIdx); }}
+                  className="inline-flex items-center justify-center gap-2 h-[44px] px-6 rounded-full text-[15px] font-semibold bg-purple-600 text-white shadow-[0_4px_16px_rgba(124,58,237,0.3)] hover:bg-purple-700 hover:-translate-y-px hover:shadow-[0_6px_24px_rgba(124,58,237,0.4)] transition-all cursor-pointer border-none"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                  </svg>
+                  Direkt bearbeiten
+                </button>
+                <button
+                  onClick={selectTemplate}
+                  className="inline-flex items-center justify-center gap-2 h-[44px] px-6 rounded-full text-[15px] font-semibold bg-[#4dd35b] text-white shadow-[0_4px_16px_rgba(77,211,91,0.3)] hover:bg-[#3ec04e] hover:-translate-y-px hover:shadow-[0_6px_24px_rgba(77,211,91,0.4)] transition-all cursor-pointer border-none"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                  Mit KI anpassen
+                </button>
+              </div>
             </div>
             <div className="flex-1 min-h-0 overflow-hidden">
               {modalTemplateIdx >= 0 && (
@@ -1372,8 +1498,16 @@ export default function WebCreatorPage() {
 
       <PasswordModal
         open={showPasswordModal}
-        onSuccess={() => { setShowPasswordModal(false); generatePreview(); }}
-        onCancel={() => setShowPasswordModal(false)}
+        onSuccess={() => {
+          setShowPasswordModal(false);
+          if (pendingAction === "modify") {
+            handleAIModify();
+          } else {
+            generatePreview();
+          }
+          setPendingAction(null);
+        }}
+        onCancel={() => { setShowPasswordModal(false); setPendingAction(null); }}
       />
     </>
   );

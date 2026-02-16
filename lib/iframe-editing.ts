@@ -13,6 +13,10 @@ export function injectEditingCapabilities(html: string): string {
     cleanedHTML = cleanedHTML.substring(0, startIdx) + cleanedHTML.substring(endIdx + '<!-- SORA_EDIT_END -->'.length);
   }
 
+  // Remove leftover editing style/script blocks by ID
+  cleanedHTML = cleanedHTML.replace(/<style[^>]*id="__sora-editing-style"[^>]*>[\s\S]*?<\/style>/gi, '');
+  cleanedHTML = cleanedHTML.replace(/<script[^>]*id="__sora-editing-script"[^>]*>[\s\S]*?<\/script>/gi, '');
+
   // Also clean any leftover __sora DOM artifacts from bad saves
   // Remove __sora-img-wrap divs (unwrap images)
   cleanedHTML = cleanedHTML.replace(/<div[^>]*class="[^"]*__sora-img-wrap[^"]*"[^>]*>([\s\S]*?)<div[^>]*class="[^"]*__sora-img-overlay[^"]*"[\s\S]*?<\/div>\s*<\/div>/gi, function(_match, inner) {
@@ -21,6 +25,11 @@ export function injectEditingCapabilities(html: string): string {
   // Remove any remaining __sora overlay/pencil/button elements
   cleanedHTML = cleanedHTML.replace(/<div[^>]*class="[^"]*__sora-(?:img-overlay|bg-overlay|text-pencil)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
   cleanedHTML = cleanedHTML.replace(/<button[^>]*class="[^"]*__sora-section-edit-btn[^"]*"[^>]*>[\s\S]*?<\/button>/gi, '');
+  cleanedHTML = cleanedHTML.replace(/<button[^>]*class="[^"]*__sora-section-delete-btn[^"]*"[^>]*>[\s\S]*?<\/button>/gi, '');
+  cleanedHTML = cleanedHTML.replace(/<button[^>]*class="[^"]*__sora-element-delete-btn[^"]*"[^>]*>[\s\S]*?<\/button>/gi, '');
+  cleanedHTML = cleanedHTML.replace(/<div[^>]*class="[^"]*__sora-link-edit-btn[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
+  cleanedHTML = cleanedHTML.replace(/<div[^>]*class="[^"]*__sora-link-popup[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
+  cleanedHTML = cleanedHTML.replace(/<div[^>]*class="[^"]*__sora-link-popup-backdrop[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
   cleanedHTML = cleanedHTML.replace(/<input[^>]*class="[^"]*__sora-file-input[^"]*"[^>]*\/?>/gi, '');
   cleanedHTML = cleanedHTML.replace(/<div[^>]*id="__sora-editing-active"[^>]*><\/div>/gi, '');
   // Remove __sora classes from class attributes
@@ -40,7 +49,7 @@ export function injectEditingCapabilities(html: string): string {
 
   const editingBlock = `
 <!-- SORA_EDIT_START -->
-<style>
+<style id="__sora-editing-style">
 .__sora-img-overlay {
   position: absolute !important;
   top: 0 !important; left: 0 !important;
@@ -142,14 +151,172 @@ export function injectEditingCapabilities(html: string): string {
   box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4) !important;
   background: rgba(124, 58, 237, 1) !important;
 }
+.__sora-section-delete-btn {
+  position: absolute !important;
+  top: 12px !important;
+  right: 160px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 8px 12px !important;
+  background: rgba(220, 38, 38, 0.9) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 12px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  opacity: 0 !important;
+  transition: opacity 0.2s, transform 0.2s !important;
+  z-index: 999998 !important;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25) !important;
+  pointer-events: auto !important;
+}
+.__sora-section-delete-btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4) !important;
+  background: rgba(220, 38, 38, 1) !important;
+}
 .__sora-section-wrapper {
   position: relative !important;
 }
-.__sora-section-wrapper:hover > .__sora-section-edit-btn {
+.__sora-section-wrapper:hover > .__sora-section-edit-btn,
+.__sora-section-wrapper:hover > .__sora-section-delete-btn {
+  opacity: 1 !important;
+}
+.__sora-link-wrap {
+  position: relative !important;
+}
+.__sora-link-edit-btn {
+  position: absolute !important;
+  bottom: -28px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 4px 10px !important;
+  background: rgba(14, 116, 144, 0.95) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  opacity: 0 !important;
+  transition: opacity 0.15s !important;
+  z-index: 999999 !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
+  pointer-events: auto !important;
+  white-space: nowrap !important;
+}
+.__sora-link-wrap:hover > .__sora-link-edit-btn {
+  opacity: 1 !important;
+}
+.__sora-link-popup {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  background: white !important;
+  border-radius: 16px !important;
+  padding: 20px !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3) !important;
+  z-index: 9999999 !important;
+  width: 340px !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+}
+.__sora-link-popup-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(0,0,0,0.4) !important;
+  z-index: 9999998 !important;
+}
+.__sora-link-popup label {
+  display: block !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #6b7280 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  margin-bottom: 4px !important;
+  margin-top: 12px !important;
+}
+.__sora-link-popup label:first-child {
+  margin-top: 0 !important;
+}
+.__sora-link-popup input {
+  width: 100% !important;
+  height: 36px !important;
+  padding: 0 10px !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+}
+.__sora-link-popup input:focus {
+  border-color: #0e7490 !important;
+  box-shadow: 0 0 0 3px rgba(14,116,144,0.1) !important;
+}
+.__sora-link-popup-colors {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  margin-top: 6px !important;
+}
+.__sora-link-popup-colors button {
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 6px !important;
+  border: 1px solid #e5e7eb !important;
+  cursor: pointer !important;
+  transition: transform 0.1s !important;
+}
+.__sora-link-popup-colors button:hover {
+  transform: scale(1.15) !important;
+}
+.__sora-link-popup-actions {
+  display: flex !important;
+  gap: 8px !important;
+  margin-top: 16px !important;
+}
+.__sora-link-popup-actions button {
+  flex: 1 !important;
+  height: 36px !important;
+  border: none !important;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+}
+.__sora-element-delete-btn {
+  position: absolute !important;
+  top: -4px !important;
+  left: -4px !important;
+  width: 22px !important;
+  height: 22px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(220, 38, 38, 0.9) !important;
+  border-radius: 6px !important;
+  opacity: 0 !important;
+  transition: opacity 0.15s !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  z-index: 999999 !important;
+  border: none !important;
+  box-shadow: 0 2px 6px rgba(220,38,38,0.3) !important;
+}
+.__sora-text-wrap:hover > .__sora-element-delete-btn {
+  opacity: 1 !important;
+}
+.__sora-img-wrap:hover > .__sora-element-delete-btn {
   opacity: 1 !important;
 }
 </style>
-<script>
+<script id="__sora-editing-script">
 (function() {
   if (document.getElementById('__sora-editing-active')) return;
   var sentinel = document.createElement('div');
@@ -206,6 +373,12 @@ export function injectEditingCapabilities(html: string): string {
     var fileInputClone = docClone.querySelector('.__sora-file-input');
     if (fileInputClone) fileInputClone.parentNode.removeChild(fileInputClone);
 
+    // 2b. Remove the injected editing style and script by ID
+    var editStyle = docClone.querySelector('#__sora-editing-style');
+    if (editStyle) editStyle.parentNode.removeChild(editStyle);
+    var editScript = docClone.querySelector('#__sora-editing-script');
+    if (editScript) editScript.parentNode.removeChild(editScript);
+
     // 3. Unwrap __sora-img-wrap divs (move img back to parent, remove wrapper)
     var imgWraps = docClone.querySelectorAll('.__sora-img-wrap');
     for (var i = 0; i < imgWraps.length; i++) {
@@ -217,8 +390,8 @@ export function injectEditingCapabilities(html: string): string {
       }
     }
 
-    // 4. Remove all __sora overlay elements (bg-overlay, img-overlay, text-pencil, section-edit-btn)
-    var soraOverlays = docClone.querySelectorAll('.__sora-bg-overlay, .__sora-img-overlay, .__sora-text-pencil, .__sora-section-edit-btn');
+    // 4. Remove all __sora overlay elements (bg-overlay, img-overlay, text-pencil, section-edit-btn, delete btns, link btns, popups)
+    var soraOverlays = docClone.querySelectorAll('.__sora-bg-overlay, .__sora-img-overlay, .__sora-text-pencil, .__sora-section-edit-btn, .__sora-section-delete-btn, .__sora-element-delete-btn, .__sora-link-edit-btn, .__sora-link-popup, .__sora-link-popup-backdrop');
     for (var j = 0; j < soraOverlays.length; j++) {
       if (soraOverlays[j].parentNode) {
         soraOverlays[j].parentNode.removeChild(soraOverlays[j]);
@@ -251,8 +424,12 @@ export function injectEditingCapabilities(html: string): string {
       }
     }
 
-    // 7. Remove the SORA_EDIT_START ... SORA_EDIT_END block from the serialized HTML
+    // 7. Remove SORA_EDIT comment markers and any leftover editing artifacts from serialized HTML
     var html = docClone.outerHTML;
+    // Remove the marker comments
+    html = html.replace(/<!--\\s*SORA_EDIT_START\\s*-->/g, '');
+    html = html.replace(/<!--\\s*SORA_EDIT_END\\s*-->/g, '');
+    // Fallback: remove entire block if markers + content still present
     var startMarker = '<!-- SORA_EDIT_START -->';
     var endMarker = '<!-- SORA_EDIT_END -->';
     var sIdx = html.indexOf(startMarker);
@@ -262,6 +439,9 @@ export function injectEditingCapabilities(html: string): string {
         html = html.substring(0, sIdx) + html.substring(eIdx + endMarker.length);
       }
     }
+    // Fallback: remove style/script by ID if DOM removal failed (e.g. serialization quirks)
+    html = html.replace(/<style[^>]*id="__sora-editing-style"[^>]*>[\\s\\S]*?<\\/style>/gi, '');
+    html = html.replace(/<script[^>]*id="__sora-editing-script"[^>]*>[\\s\\S]*?<\\/script>/gi, '');
 
     // 8. Remove empty class="" attributes left over
     html = html.replace(/\\s*class="\\s*"/g, '');
@@ -271,8 +451,12 @@ export function injectEditingCapabilities(html: string): string {
     return result;
   }
 
+  // Expose getCleanHTML globally so parent can call it directly
+  window.__soraGetCleanHTML = getCleanHTML;
+
   function sendUpdate() {
-    window.parent.postMessage({ type: 'sora-edit', html: getCleanHTML() }, '*');
+    var html = getCleanHTML();
+    window.parent.postMessage({ type: 'sora-edit', html: html }, '*');
   }
 
   // Clean up any pre-existing img wrappers (from previous injection)
@@ -292,18 +476,25 @@ export function injectEditingCapabilities(html: string): string {
 
     // Preserve the image display mode
     var parent = img.parentNode;
-    var computedDisplay = window.getComputedStyle(img).display;
-    var computedWidth = window.getComputedStyle(img).width;
+    var cs = window.getComputedStyle(img);
+    var computedDisplay = cs.display;
+    var computedWidth = cs.width;
+    var computedHeight = cs.height;
 
     var wrap = document.createElement('div');
     wrap.className = '__sora-img-wrap';
 
-    // Match the image layout
+    // Match the image layout - copy dimensions to prevent collapse
     if (computedDisplay === 'block' || parseInt(computedWidth) > 200) {
       wrap.style.display = 'block';
       wrap.style.width = '100%';
     } else {
       wrap.style.display = 'inline-block';
+    }
+    // Preserve height so object-fit images don't collapse
+    if (computedHeight && parseInt(computedHeight) > 0) {
+      wrap.style.height = computedHeight;
+      wrap.style.overflow = 'hidden';
     }
 
     parent.insertBefore(wrap, img);
@@ -456,7 +647,7 @@ export function injectEditingCapabilities(html: string): string {
 
     var editBtn = document.createElement('button');
     editBtn.className = '__sora-section-edit-btn';
-    editBtn.innerHTML = wandSVG + '<span>Editar ' + sectionName + '</span>';
+    editBtn.innerHTML = wandSVG + '<span>Bearbeiten: ' + sectionName + '</span>';
     section.appendChild(editBtn);
 
     editBtn.addEventListener('click', function(e) {
@@ -483,6 +674,29 @@ export function injectEditingCapabilities(html: string): string {
         sectionIndex: idx,
         currentStyles: currentStyles
       }, '*');
+    });
+
+    // Delete button for section
+    var trashSVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>';
+    var deleteBtn = document.createElement('button');
+    deleteBtn.className = '__sora-section-delete-btn';
+    deleteBtn.innerHTML = trashSVG + '<span>Loschen</span>';
+    section.appendChild(deleteBtn);
+
+    deleteBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      // Animate out
+      section.style.transition = 'opacity 0.3s, transform 0.3s';
+      section.style.opacity = '0';
+      section.style.transform = 'scale(0.95)';
+      setTimeout(function() {
+        if (section.parentNode) {
+          section.parentNode.removeChild(section);
+          delete sectionMap[idx];
+          sendUpdate();
+        }
+      }, 300);
     });
   });
 
@@ -632,6 +846,265 @@ export function injectEditingCapabilities(html: string): string {
         e.preventDefault();
         el.blur();
       }
+    });
+
+    // Delete button for text elements (except links/buttons - handled separately)
+    if (el.tagName !== 'A' && el.tagName !== 'BUTTON') {
+      var delBtn = document.createElement('button');
+      delBtn.className = '__sora-element-delete-btn';
+      delBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>';
+      el.appendChild(delBtn);
+
+      delBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        el.style.transition = 'opacity 0.2s, transform 0.2s';
+        el.style.opacity = '0';
+        el.style.transform = 'scale(0.95)';
+        setTimeout(function() {
+          if (el.parentNode) {
+            el.parentNode.removeChild(el);
+            sendUpdate();
+          }
+        }, 200);
+      });
+    }
+  });
+
+  // ===== LINK EDITING =====
+  var linkSVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>';
+
+  var linkColorPresets = ['#0e7490','#1e88e5','#7c3aed','#e53935','#43a047','#fb8c00','#000000','#ffffff','#6c757d','#d4a574'];
+
+  // Clean old link buttons
+  var oldLinkBtns = document.querySelectorAll('.__sora-link-edit-btn');
+  oldLinkBtns.forEach(function(btn) { if (btn.parentNode) btn.parentNode.removeChild(btn); });
+
+  var allLinks = document.querySelectorAll('a, button');
+  allLinks.forEach(function(link) {
+    if (isSoraEl(link)) return;
+    if (link.closest && link.closest('.__sora-section-edit-btn,.__sora-section-delete-btn,.__sora-element-delete-btn,.__sora-link-edit-btn')) return;
+    // Skip if no text content
+    if (!link.textContent || !link.textContent.trim()) return;
+
+    var origPos = window.getComputedStyle(link).position;
+    if (origPos === 'static') {
+      link.style.position = 'relative';
+    }
+    // Ensure overflow visible so buttons show
+    link.style.overflow = 'visible';
+    link.classList.add('__sora-link-wrap');
+
+    var linkBtn = document.createElement('div');
+    linkBtn.className = '__sora-link-edit-btn';
+    linkBtn.innerHTML = linkSVG + ' <span>Link</span>';
+    link.appendChild(linkBtn);
+
+    // Delete button for links
+    var linkDelBtn = document.createElement('button');
+    linkDelBtn.className = '__sora-element-delete-btn';
+    linkDelBtn.style.top = '-4px';
+    linkDelBtn.style.left = '-4px';
+    linkDelBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>';
+    link.appendChild(linkDelBtn);
+
+    linkDelBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      link.style.transition = 'opacity 0.2s';
+      link.style.opacity = '0';
+      setTimeout(function() {
+        if (link.parentNode) {
+          link.parentNode.removeChild(link);
+          sendUpdate();
+        }
+      }, 200);
+    });
+
+    linkBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Remove any existing popup
+      var old = document.querySelector('.__sora-link-popup');
+      var oldBd = document.querySelector('.__sora-link-popup-backdrop');
+      if (old) old.parentNode.removeChild(old);
+      if (oldBd) oldBd.parentNode.removeChild(oldBd);
+
+      // Create backdrop
+      var backdrop = document.createElement('div');
+      backdrop.className = '__sora-link-popup-backdrop';
+      document.body.appendChild(backdrop);
+
+      // Create popup
+      var popup = document.createElement('div');
+      popup.className = '__sora-link-popup';
+
+      var isLink = link.tagName === 'A';
+      var currentHref = isLink ? (link.getAttribute('href') || '') : '';
+      var currentText = link.textContent || '';
+      var cs = window.getComputedStyle(link);
+
+      popup.innerHTML = '<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:12px">' + (isLink ? 'Link bearbeiten' : 'Button bearbeiten') + '</div>'
+        + '<label>URL / Link</label>'
+        + '<input type="text" class="__sora-link-url" value="' + currentHref.replace(/"/g, '&quot;') + '" placeholder="https://...">'
+        + '<label>Text</label>'
+        + '<input type="text" class="__sora-link-text" value="' + currentText.replace(/"/g, '&quot;') + '" placeholder="Button-Text">'
+        + '<label>Textfarbe</label>'
+        + '<div class="__sora-link-popup-colors"></div>'
+        + '<label>Hintergrundfarbe</label>'
+        + '<div class="__sora-link-popup-bg-colors" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div>'
+        + '<label>Schriftgrosse</label>'
+        + '<div style="display:flex;gap:4px;margin-top:6px">'
+        + '  <button class="__sora-link-size-btn" data-size="12px" style="flex:1;height:28px;border:1px solid #d1d5db;border-radius:6px;background:white;cursor:pointer;font-size:10px;font-weight:600;color:#374151">XS</button>'
+        + '  <button class="__sora-link-size-btn" data-size="14px" style="flex:1;height:28px;border:1px solid #d1d5db;border-radius:6px;background:white;cursor:pointer;font-size:10px;font-weight:600;color:#374151">S</button>'
+        + '  <button class="__sora-link-size-btn" data-size="16px" style="flex:1;height:28px;border:1px solid #d1d5db;border-radius:6px;background:white;cursor:pointer;font-size:10px;font-weight:600;color:#374151">M</button>'
+        + '  <button class="__sora-link-size-btn" data-size="18px" style="flex:1;height:28px;border:1px solid #d1d5db;border-radius:6px;background:white;cursor:pointer;font-size:10px;font-weight:600;color:#374151">L</button>'
+        + '  <button class="__sora-link-size-btn" data-size="22px" style="flex:1;height:28px;border:1px solid #d1d5db;border-radius:6px;background:white;cursor:pointer;font-size:10px;font-weight:600;color:#374151">XL</button>'
+        + '</div>'
+        + '<label>Ecken</label>'
+        + '<div style="display:flex;gap:4px;margin-top:6px">'
+        + '  <button class="__sora-link-radius-btn" data-radius="0px" style="flex:1;height:28px;border:1px solid #d1d5db;border-radius:6px;background:white;cursor:pointer;font-size:10px;font-weight:600;color:#374151">Eckig</button>'
+        + '  <button class="__sora-link-radius-btn" data-radius="8px" style="flex:1;height:28px;border:1px solid #d1d5db;border-radius:6px;background:white;cursor:pointer;font-size:10px;font-weight:600;color:#374151">Rund S</button>'
+        + '  <button class="__sora-link-radius-btn" data-radius="16px" style="flex:1;height:28px;border:1px solid #d1d5db;border-radius:6px;background:white;cursor:pointer;font-size:10px;font-weight:600;color:#374151">Rund M</button>'
+        + '  <button class="__sora-link-radius-btn" data-radius="50px" style="flex:1;height:28px;border:1px solid #d1d5db;border-radius:6px;background:white;cursor:pointer;font-size:10px;font-weight:600;color:#374151">Pill</button>'
+        + '</div>'
+        + '<label>Stil</label>'
+        + '<div style="display:flex;gap:6px;margin-top:6px">'
+        + '  <button class="__sora-link-style-btn" data-style="underline" style="flex:1;height:30px;border:1px solid #d1d5db;border-radius:8px;background:white;cursor:pointer;font-size:11px;font-weight:600;color:#374151">Unterstrichen</button>'
+        + '  <button class="__sora-link-style-btn" data-style="none" style="flex:1;height:30px;border:1px solid #d1d5db;border-radius:8px;background:white;cursor:pointer;font-size:11px;font-weight:600;color:#374151">Kein Unterstrich</button>'
+        + '  <button class="__sora-link-style-btn" data-style="button" style="flex:1;height:30px;border:1px solid #d1d5db;border-radius:8px;background:white;cursor:pointer;font-size:11px;font-weight:600;color:#374151">Button</button>'
+        + '</div>'
+        + '<div class="__sora-link-popup-actions">'
+        + '  <button class="__sora-link-cancel" style="background:#f3f4f6;color:#374151">Abbrechen</button>'
+        + '  <button class="__sora-link-save" style="background:#0e7490;color:white">Speichern</button>'
+        + '</div>';
+
+      document.body.appendChild(popup);
+
+      // Populate color buttons
+      var colorsDiv = popup.querySelector('.__sora-link-popup-colors');
+      var bgColorsDiv = popup.querySelector('.__sora-link-popup-bg-colors');
+      linkColorPresets.forEach(function(c) {
+        var btn = document.createElement('button');
+        btn.style.backgroundColor = c;
+        btn.addEventListener('click', function() {
+          link.style.color = c;
+        });
+        colorsDiv.appendChild(btn);
+
+        var bgBtn = document.createElement('button');
+        bgBtn.style.backgroundColor = c;
+        bgBtn.addEventListener('click', function() {
+          link.style.backgroundColor = c;
+          link.style.padding = link.style.padding || '4px 8px';
+          link.style.borderRadius = link.style.borderRadius || '6px';
+        });
+        bgColorsDiv.appendChild(bgBtn);
+      });
+      // Transparent bg option
+      var clearBgBtn = document.createElement('button');
+      clearBgBtn.style.background = 'linear-gradient(45deg, #fff 45%, #ef4444 50%, #fff 55%)';
+      clearBgBtn.title = 'Sin fondo';
+      clearBgBtn.addEventListener('click', function() {
+        link.style.backgroundColor = '';
+        link.style.padding = '';
+        link.style.borderRadius = '';
+      });
+      bgColorsDiv.appendChild(clearBgBtn);
+
+      // Font size buttons
+      var sizeBtns = popup.querySelectorAll('.__sora-link-size-btn');
+      sizeBtns.forEach(function(sb) {
+        sb.addEventListener('click', function() {
+          link.style.fontSize = sb.getAttribute('data-size');
+        });
+      });
+
+      // Border radius buttons
+      var radiusBtns = popup.querySelectorAll('.__sora-link-radius-btn');
+      radiusBtns.forEach(function(rb) {
+        rb.addEventListener('click', function() {
+          link.style.borderRadius = rb.getAttribute('data-radius');
+        });
+      });
+
+      // Style buttons
+      var styleBtns = popup.querySelectorAll('.__sora-link-style-btn');
+      styleBtns.forEach(function(sb) {
+        sb.addEventListener('click', function() {
+          var style = sb.getAttribute('data-style');
+          if (style === 'underline') {
+            link.style.textDecoration = 'underline';
+          } else if (style === 'none') {
+            link.style.textDecoration = 'none';
+          } else if (style === 'button') {
+            link.style.textDecoration = 'none';
+            link.style.padding = link.style.padding || '10px 24px';
+            link.style.borderRadius = link.style.borderRadius || '8px';
+            link.style.display = 'inline-block';
+            if (!link.style.backgroundColor || link.style.backgroundColor === '') {
+              link.style.backgroundColor = '#0e7490';
+              link.style.color = '#ffffff';
+            }
+          }
+        });
+      });
+
+      function closePopup() {
+        if (popup.parentNode) popup.parentNode.removeChild(popup);
+        if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+      }
+
+      backdrop.addEventListener('click', closePopup);
+      popup.querySelector('.__sora-link-cancel').addEventListener('click', closePopup);
+      popup.querySelector('.__sora-link-save').addEventListener('click', function() {
+        var urlInput = popup.querySelector('.__sora-link-url');
+        var newUrl = urlInput ? urlInput.value.trim() : '';
+        var newText = popup.querySelector('.__sora-link-text').value;
+
+        // If it's a <button> and user entered a URL, convert to <a>
+        if (!isLink && newUrl) {
+          var newA = document.createElement('a');
+          newA.href = newUrl;
+          newA.textContent = newText || link.textContent;
+          // Copy styles from button
+          newA.style.cssText = link.style.cssText;
+          // Copy classes (except sora ones)
+          var origClasses = (link.getAttribute('class') || '').split(/\s+/).filter(function(c) { return c.indexOf('__sora') === -1; });
+          if (origClasses.length) newA.className = origClasses.join(' ');
+          newA.style.position = 'relative';
+          newA.style.overflow = 'visible';
+          if (link.parentNode) {
+            link.parentNode.insertBefore(newA, link);
+            link.parentNode.removeChild(link);
+          }
+          closePopup();
+          sendUpdate();
+          return;
+        }
+
+        if (newUrl && isLink) link.setAttribute('href', newUrl);
+        if (newText) {
+          // Preserve child elements (like icons), only update text nodes
+          var textNodes = [];
+          for (var i = 0; i < link.childNodes.length; i++) {
+            if (link.childNodes[i].nodeType === 3 && link.childNodes[i].textContent.trim()) {
+              textNodes.push(link.childNodes[i]);
+            }
+          }
+          if (textNodes.length > 0) {
+            textNodes[0].textContent = newText;
+          } else {
+            link.textContent = newText;
+            // Re-add the link edit button and delete button since textContent wipes children
+            link.appendChild(linkBtn);
+            link.appendChild(linkDelBtn);
+          }
+        }
+        closePopup();
+        sendUpdate();
+      });
     });
   });
 })();
