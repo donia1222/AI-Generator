@@ -1,7 +1,7 @@
 // Global generation store - persists across page navigations
 // Module-level state survives Next.js client-side route changes
 
-export type GenType = "video" | "music" | "web";
+export type GenType = "video" | "music" | "web" | "image";
 
 export type GenEntry = {
   status: "pending" | "done" | "error";

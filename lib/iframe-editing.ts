@@ -30,6 +30,7 @@ export function injectEditingCapabilities(html: string): string {
   cleanedHTML = cleanedHTML.replace(/<div[^>]*class="[^"]*__sora-link-edit-btn[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
   cleanedHTML = cleanedHTML.replace(/<div[^>]*class="[^"]*__sora-link-popup[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
   cleanedHTML = cleanedHTML.replace(/<div[^>]*class="[^"]*__sora-link-popup-backdrop[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
+  cleanedHTML = cleanedHTML.replace(/<div[^>]*class="[^"]*__sora-text-toolbar[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
   cleanedHTML = cleanedHTML.replace(/<input[^>]*class="[^"]*__sora-file-input[^"]*"[^>]*\/?>/gi, '');
   cleanedHTML = cleanedHTML.replace(/<div[^>]*id="__sora-editing-active"[^>]*><\/div>/gi, '');
   // Remove __sora classes from class attributes
@@ -117,6 +118,107 @@ export function injectEditingCapabilities(html: string): string {
   outline-offset: 2px !important;
   pointer-events: auto !important;
   cursor: text !important;
+}
+.__sora-text-toolbar {
+  position: absolute !important;
+  bottom: 100% !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  background: white !important;
+  border-radius: 12px !important;
+  padding: 8px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08) !important;
+  z-index: 99999999 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  margin-bottom: 8px !important;
+  min-width: 280px !important;
+  pointer-events: auto !important;
+  animation: __sora-toolbar-in 0.15s ease-out !important;
+}
+@keyframes __sora-toolbar-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.__sora-text-toolbar-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+}
+.__sora-text-toolbar-label {
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  color: #9ca3af !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  min-width: 32px !important;
+  padding-right: 4px !important;
+}
+.__sora-text-toolbar-sep {
+  width: 1px !important;
+  height: 20px !important;
+  background: #e5e7eb !important;
+  margin: 0 4px !important;
+}
+.__sora-tt-color {
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 50% !important;
+  border: 2px solid transparent !important;
+  cursor: pointer !important;
+  transition: transform 0.1s, border-color 0.1s !important;
+  padding: 0 !important;
+  outline: none !important;
+}
+.__sora-tt-color:hover {
+  transform: scale(1.2) !important;
+}
+.__sora-tt-color.active {
+  border-color: #4d9fff !important;
+  box-shadow: 0 0 0 2px rgba(77,159,255,0.3) !important;
+}
+.__sora-tt-btn {
+  height: 26px !important;
+  padding: 0 8px !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 6px !important;
+  background: white !important;
+  cursor: pointer !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #374151 !important;
+  transition: all 0.1s !important;
+  white-space: nowrap !important;
+}
+.__sora-tt-btn:hover {
+  background: #f3f4f6 !important;
+  border-color: #d1d5db !important;
+}
+.__sora-tt-btn.active {
+  background: #4d9fff !important;
+  color: white !important;
+  border-color: #4d9fff !important;
+}
+.__sora-tt-done {
+  height: 28px !important;
+  padding: 0 14px !important;
+  border: none !important;
+  border-radius: 8px !important;
+  background: #22c55e !important;
+  color: white !important;
+  cursor: pointer !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  transition: background 0.1s !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  margin-left: auto !important;
+}
+.__sora-tt-done:hover {
+  background: #16a34a !important;
 }
 .__sora-file-input {
   position: fixed !important;
@@ -391,7 +493,7 @@ export function injectEditingCapabilities(html: string): string {
     }
 
     // 4. Remove all __sora overlay elements (bg-overlay, img-overlay, text-pencil, section-edit-btn, delete btns, link btns, popups)
-    var soraOverlays = docClone.querySelectorAll('.__sora-bg-overlay, .__sora-img-overlay, .__sora-text-pencil, .__sora-section-edit-btn, .__sora-section-delete-btn, .__sora-element-delete-btn, .__sora-link-edit-btn, .__sora-link-popup, .__sora-link-popup-backdrop');
+    var soraOverlays = docClone.querySelectorAll('.__sora-bg-overlay, .__sora-img-overlay, .__sora-text-pencil, .__sora-text-toolbar, .__sora-section-edit-btn, .__sora-section-delete-btn, .__sora-element-delete-btn, .__sora-link-edit-btn, .__sora-link-popup, .__sora-link-popup-backdrop');
     for (var j = 0; j < soraOverlays.length; j++) {
       if (soraOverlays[j].parentNode) {
         soraOverlays[j].parentNode.removeChild(soraOverlays[j]);
@@ -820,6 +922,243 @@ export function injectEditingCapabilities(html: string): string {
     el.appendChild(pencil);
 
     var isEditing = false;
+    var toolbar = null;
+
+    var ttColorPresets = ['#000000','#374151','#6b7280','#ffffff','#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#0e7490'];
+    var ttSizeMap = {XS:'12px',S:'14px',M:'16px',L:'20px',XL:'28px',XXL:'36px'};
+    var ttWeightMap = {Light:'300',Normal:'400',Semi:'600',Bold:'700'};
+
+    function closeToolbar() {
+      if (!isEditing) return;
+      isEditing = false;
+      el.contentEditable = 'false';
+      el.classList.remove('__sora-editing');
+      if (toolbar && toolbar.parentNode) toolbar.parentNode.removeChild(toolbar);
+      toolbar = null;
+      pencil.style.display = '';
+      sendUpdate();
+    }
+
+    function createToolbar() {
+      if (toolbar) return;
+      toolbar = document.createElement('div');
+      toolbar.className = '__sora-text-toolbar';
+
+      var cs = window.getComputedStyle(el);
+
+      // Row 1: Colors
+      var row1 = document.createElement('div');
+      row1.className = '__sora-text-toolbar-row';
+      var lbl1 = document.createElement('span');
+      lbl1.className = '__sora-text-toolbar-label';
+      lbl1.textContent = 'Farbe';
+      row1.appendChild(lbl1);
+      ttColorPresets.forEach(function(c) {
+        var btn = document.createElement('button');
+        btn.className = '__sora-tt-color';
+        btn.style.backgroundColor = c;
+        if (c === '#ffffff') btn.style.border = '2px solid #d1d5db';
+        btn.addEventListener('mousedown', function(ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          el.style.color = c;
+          // Update active state
+          row1.querySelectorAll('.__sora-tt-color').forEach(function(b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+        });
+        row1.appendChild(btn);
+      });
+      toolbar.appendChild(row1);
+
+      // Row 2: Background colors
+      var row2 = document.createElement('div');
+      row2.className = '__sora-text-toolbar-row';
+      var lbl2 = document.createElement('span');
+      lbl2.className = '__sora-text-toolbar-label';
+      lbl2.textContent = 'Hinter.';
+      row2.appendChild(lbl2);
+      var bgPresets = ['transparent','#000000','#374151','#ffffff','#fef3c7','#dcfce7','#dbeafe','#f3e8ff','#fce7f3','#e0f2fe','#fee2e2','#0e7490'];
+      bgPresets.forEach(function(c) {
+        var btn = document.createElement('button');
+        btn.className = '__sora-tt-color';
+        if (c === 'transparent') {
+          btn.style.background = 'linear-gradient(45deg, #fff 40%, #ef4444 50%, #fff 60%)';
+          btn.title = 'Kein Hintergrund';
+        } else {
+          btn.style.backgroundColor = c;
+        }
+        if (c === '#ffffff') btn.style.border = '2px solid #d1d5db';
+        btn.addEventListener('mousedown', function(ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          if (c === 'transparent') {
+            el.style.backgroundColor = '';
+            el.style.padding = '';
+          } else {
+            el.style.backgroundColor = c;
+            if (!el.style.padding || el.style.padding === '') {
+              el.style.padding = '2px 6px';
+            }
+          }
+          row2.querySelectorAll('.__sora-tt-color').forEach(function(b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+        });
+        row2.appendChild(btn);
+      });
+      toolbar.appendChild(row2);
+
+      // Row 3: Size
+      var row3 = document.createElement('div');
+      row3.className = '__sora-text-toolbar-row';
+      var lbl3 = document.createElement('span');
+      lbl3.className = '__sora-text-toolbar-label';
+      lbl3.textContent = 'Grosse';
+      row3.appendChild(lbl3);
+      Object.keys(ttSizeMap).forEach(function(label) {
+        var btn = document.createElement('button');
+        btn.className = '__sora-tt-btn';
+        btn.textContent = label;
+        btn.addEventListener('mousedown', function(ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          el.style.fontSize = ttSizeMap[label];
+          row3.querySelectorAll('.__sora-tt-btn').forEach(function(b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+        });
+        row3.appendChild(btn);
+      });
+      toolbar.appendChild(row3);
+
+      // Row 4: Weight
+      var row4 = document.createElement('div');
+      row4.className = '__sora-text-toolbar-row';
+      var lbl4 = document.createElement('span');
+      lbl4.className = '__sora-text-toolbar-label';
+      lbl4.textContent = 'Stil';
+      row4.appendChild(lbl4);
+      Object.keys(ttWeightMap).forEach(function(label) {
+        var btn = document.createElement('button');
+        btn.className = '__sora-tt-btn';
+        btn.textContent = label;
+        btn.addEventListener('mousedown', function(ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          el.style.fontWeight = ttWeightMap[label];
+          row4.querySelectorAll('.__sora-tt-btn:not(.__sora-tt-italic):not(.__sora-tt-underline)').forEach(function(b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+        });
+        row4.appendChild(btn);
+      });
+
+      // Separator
+      var sep1 = document.createElement('div');
+      sep1.className = '__sora-text-toolbar-sep';
+      row4.appendChild(sep1);
+
+      // Italic toggle
+      var italicBtn = document.createElement('button');
+      italicBtn.className = '__sora-tt-btn __sora-tt-italic';
+      italicBtn.innerHTML = '<i>I</i>';
+      italicBtn.style.fontStyle = 'italic';
+      if (cs.fontStyle === 'italic') italicBtn.classList.add('active');
+      italicBtn.addEventListener('mousedown', function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var isItalic = el.style.fontStyle === 'italic';
+        el.style.fontStyle = isItalic ? 'normal' : 'italic';
+        italicBtn.classList.toggle('active');
+      });
+      row4.appendChild(italicBtn);
+
+      // Underline toggle
+      var underBtn = document.createElement('button');
+      underBtn.className = '__sora-tt-btn __sora-tt-underline';
+      underBtn.innerHTML = '<u>U</u>';
+      if (cs.textDecoration.indexOf('underline') !== -1) underBtn.classList.add('active');
+      underBtn.addEventListener('mousedown', function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var isUnder = el.style.textDecoration === 'underline';
+        el.style.textDecoration = isUnder ? 'none' : 'underline';
+        underBtn.classList.toggle('active');
+      });
+      row4.appendChild(underBtn);
+
+      toolbar.appendChild(row4);
+
+      // Row 5: Alignment
+      var row5 = document.createElement('div');
+      row5.className = '__sora-text-toolbar-row';
+      var lbl5 = document.createElement('span');
+      lbl5.className = '__sora-text-toolbar-label';
+      lbl5.textContent = 'Align';
+      row5.appendChild(lbl5);
+      var aligns = [
+        {val:'left', icon:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 10H3"/><path d="M21 6H3"/><path d="M21 14H3"/><path d="M17 18H3"/></svg>'},
+        {val:'center', icon:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 10H6"/><path d="M21 6H3"/><path d="M21 14H3"/><path d="M18 18H6"/></svg>'},
+        {val:'right', icon:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10H7"/><path d="M21 6H3"/><path d="M21 14H3"/><path d="M21 18H7"/></svg>'}
+      ];
+      aligns.forEach(function(a) {
+        var btn = document.createElement('button');
+        btn.className = '__sora-tt-btn';
+        btn.innerHTML = a.icon;
+        btn.style.padding = '0 6px';
+        if (cs.textAlign === a.val) btn.classList.add('active');
+        btn.addEventListener('mousedown', function(ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          el.style.textAlign = a.val;
+          row5.querySelectorAll('.__sora-tt-btn').forEach(function(b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+        });
+        row5.appendChild(btn);
+      });
+
+      // Separator
+      var sep2 = document.createElement('div');
+      sep2.className = '__sora-text-toolbar-sep';
+      row5.appendChild(sep2);
+
+      // Line height
+      var lhLabel = document.createElement('span');
+      lhLabel.className = '__sora-text-toolbar-label';
+      lhLabel.textContent = 'LH';
+      lhLabel.style.minWidth = '16px';
+      row5.appendChild(lhLabel);
+      ['1','1.3','1.5','1.8','2'].forEach(function(lh) {
+        var btn = document.createElement('button');
+        btn.className = '__sora-tt-btn';
+        btn.textContent = lh;
+        btn.style.padding = '0 5px';
+        btn.style.fontSize = '10px';
+        btn.addEventListener('mousedown', function(ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          el.style.lineHeight = lh;
+        });
+        row5.appendChild(btn);
+      });
+
+      // Done button at end
+      var doneBtn = document.createElement('button');
+      doneBtn.className = '__sora-tt-done';
+      doneBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> OK';
+      doneBtn.addEventListener('mousedown', function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        closeToolbar();
+      });
+      row5.appendChild(doneBtn);
+
+      toolbar.appendChild(row5);
+
+      el.appendChild(toolbar);
+
+      // Prevent clicks inside toolbar from blurring the element
+      toolbar.addEventListener('mousedown', function(ev) {
+        ev.stopPropagation();
+      });
+    }
 
     pencil.addEventListener('click', function(e) {
       e.preventDefault();
@@ -830,21 +1169,24 @@ export function injectEditingCapabilities(html: string): string {
       el.classList.add('__sora-editing');
       el.focus();
       pencil.style.display = 'none';
+      createToolbar();
     });
 
-    el.addEventListener('blur', function() {
+    // Close toolbar when clicking outside the element
+    document.addEventListener('mousedown', function(e) {
       if (!isEditing) return;
-      isEditing = false;
-      el.contentEditable = 'false';
-      el.classList.remove('__sora-editing');
-      pencil.style.display = '';
-      sendUpdate();
+      if (el.contains(e.target)) return;
+      closeToolbar();
     });
 
     el.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' && !e.shiftKey && isEditing) {
         e.preventDefault();
-        el.blur();
+        closeToolbar();
+      }
+      if (e.key === 'Escape' && isEditing) {
+        e.preventDefault();
+        closeToolbar();
       }
     });
 

@@ -9,6 +9,7 @@ const tabs: { label: string; href: string; genType?: GenType }[] = [
   { label: "Alle", href: "/" },
   { label: "KI Web Creator", href: "/web-creator", genType: "web" },
   { label: "Sora Video", href: "/video-generator", genType: "video" },
+  { label: "KI Bilder", href: "/image-editor", genType: "image" },
   { label: "KI Musik", href: "/music-generator", genType: "music" },
   { label: "Verlauf", href: "/history" },
 ];
@@ -23,6 +24,7 @@ export default function TabNav() {
         video: isGenerating("video"),
         music: isGenerating("music"),
         web: isGenerating("web"),
+        image: isGenerating("image"),
       });
     };
     update();
@@ -31,6 +33,7 @@ export default function TabNav() {
       subscribe("video", update),
       subscribe("music", update),
       subscribe("web", update),
+      subscribe("image", update),
     ];
     return () => unsubs.forEach((u) => u());
   }, []);

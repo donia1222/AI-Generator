@@ -1,4 +1,4 @@
-export type HistoryType = "video" | "music" | "web";
+export type HistoryType = "video" | "music" | "web" | "image";
 
 export interface HistoryItem {
   id: string;
@@ -14,6 +14,7 @@ const STORAGE_KEYS: Record<HistoryType, string> = {
   video: "history_video",
   music: "history_music",
   web: "history_web",
+  image: "history_image",
 };
 
 const MAX_ITEMS = 10;

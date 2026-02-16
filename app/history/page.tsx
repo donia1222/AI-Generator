@@ -6,6 +6,7 @@ import { injectEditingCapabilities } from "@/lib/iframe-editing";
 
 const TABS: { label: string; type: HistoryType }[] = [
   { label: "Videos", type: "video" },
+  { label: "Bilder", type: "image" },
   { label: "Musik", type: "music" },
   { label: "Webs", type: "web" },
 ];
@@ -147,6 +148,74 @@ function MusicCard({ item, onPlay }: { item: HistoryItem; onPlay: (audio: HTMLAu
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
             Herunterladen
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ImageCard({ item, onPreview }: { item: HistoryItem; onPreview: (url: string) => void }) {
+  return (
+    <div className="bg-white rounded-2xl border border-gunpowder-150 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+      <div
+        className="aspect-square bg-gunpowder-100 relative group cursor-pointer"
+        onClick={() => onPreview(item.url)}
+      >
+        <img
+          src={item.url}
+          alt={item.prompt}
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+          <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0891b2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 3h6v6" />
+              <path d="M10 14L21 3" />
+              <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+            </svg>
+          </div>
+        </div>
+        {item.metadata?.quality && (
+          <span className="absolute top-2 right-2 bg-black/70 text-white text-xs font-semibold px-2 py-0.5 rounded-md capitalize">
+            {item.metadata.quality}
+          </span>
+        )}
+      </div>
+      <div className="p-4">
+        <p className="text-sm max-md:text-[14px] text-gunpowder-700 leading-relaxed line-clamp-2 mb-2">
+          {item.prompt}
+        </p>
+        <div className="flex items-center justify-between">
+          <span className="text-xs max-md:text-[13px] text-gunpowder-400">{formatDate(item.createdAt)}</span>
+          {item.metadata?.styles && (
+            <span className="text-xs text-cyan-500 font-medium truncate max-w-[120px]">
+              {item.metadata.styles}
+            </span>
+          )}
+        </div>
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={() => onPreview(item.url)}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-semibold bg-cyan-50 text-cyan-600 hover:bg-cyan-100 transition-colors border-none cursor-pointer"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 3h6v6" />
+              <path d="M10 14L21 3" />
+              <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+            </svg>
+            Ansehen
+          </button>
+          <a
+            href={item.url}
+            download={`bild-${item.id}.png`}
+            className="inline-flex items-center justify-center h-9 w-9 rounded-lg bg-gunpowder-50 text-gunpowder-500 hover:bg-gunpowder-100 transition-colors"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
           </a>
         </div>
       </div>
@@ -320,7 +389,8 @@ export default function HistoryPage() {
   const [items, setItems] = useState<HistoryItem[]>([]);
   const [previewHTML, setPreviewHTML] = useState<string | null>(null);
   const [previewVideoURL, setPreviewVideoURL] = useState<string | null>(null);
-  const [counts, setCounts] = useState<Record<HistoryType, number>>({ video: 0, music: 0, web: 0 });
+  const [previewImageURL, setPreviewImageURL] = useState<string | null>(null);
+  const [counts, setCounts] = useState<Record<HistoryType, number>>({ video: 0, music: 0, web: 0, image: 0 });
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const handleMusicPlay = useCallback((audio: HTMLAudioElement) => {
@@ -336,6 +406,7 @@ export default function HistoryPage() {
       video: getHistory("video").length,
       music: getHistory("music").length,
       web: getHistory("web").length,
+      image: getHistory("image").length,
     });
   }, [activeTab]);
 
@@ -361,6 +432,7 @@ export default function HistoryPage() {
 
   const tabColors: Record<HistoryType, string> = {
     video: "from-purple-500 to-pink-500",
+    image: "from-cyan-500 to-blue-500",
     music: "from-orange-500 to-rose-500",
     web: "from-cerulean-400 to-blue-500",
   };
@@ -370,7 +442,7 @@ export default function HistoryPage() {
       <section className="bg-gradient-to-b from-[#f8f5ff] to-[#fdf8ff] py-16 max-md:py-10 overflow-hidden">
         <div className="max-w-[1200px] mx-auto px-6 max-md:px-4">
           <div className="text-center max-w-[720px] mx-auto mb-10 max-md:mb-6">
-            <h1 className="text-[64px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-4 max-md:text-[30px]">
+            <h1 className="text-[44px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-4 max-md:text-[30px]">
               Dein{" "}
               <span className={`bg-gradient-to-r ${tabColors[activeTab]} bg-clip-text text-transparent`}>
                 Verlauf
@@ -422,6 +494,7 @@ export default function HistoryPage() {
               <h3 className="text-lg max-md:text-[17px] font-bold text-gunpowder-700 mb-2">Noch kein Verlauf</h3>
               <p className="text-gunpowder-400 text-sm max-md:text-[14px]">
                 {activeTab === "video" && "Generiere dein erstes Video, um es hier zu sehen."}
+                {activeTab === "image" && "Generiere dein erstes Bild, um es hier zu sehen."}
                 {activeTab === "music" && "Generiere deinen ersten Song, um ihn hier zu sehen."}
                 {activeTab === "web" && "Generiere deine erste Website, um sie hier zu sehen."}
               </p>
@@ -431,6 +504,7 @@ export default function HistoryPage() {
               <div className="grid grid-cols-2 gap-6 max-md:grid-cols-1">
                 {items.map((item) => {
                   if (item.type === "video") return <VideoCard key={item.id} item={item} onPlay={setPreviewVideoURL} />;
+                  if (item.type === "image") return <ImageCard key={item.id} item={item} onPreview={setPreviewImageURL} />;
                   if (item.type === "music") return <MusicCard key={item.id} item={item} onPlay={handleMusicPlay} />;
                   return <WebCard key={item.id} item={item} onPreview={setPreviewHTML} />;
                 })}
@@ -459,6 +533,46 @@ export default function HistoryPage() {
           url={previewVideoURL}
           onClose={() => setPreviewVideoURL(null)}
         />
+      )}
+
+      {/* Image Preview Modal */}
+      {previewImageURL && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-[8px]" onClick={() => setPreviewImageURL(null)} />
+          <div className="relative max-w-[90vw] max-h-[90vh] flex flex-col bg-white overflow-hidden rounded-2xl shadow-2xl max-md:w-full max-md:h-full max-md:rounded-none max-md:max-w-none max-md:max-h-none">
+            <div className="flex items-center justify-between px-5 py-3 bg-gunpowder-900 shrink-0">
+              <button
+                onClick={() => setPreviewImageURL(null)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-none bg-white/10 cursor-pointer text-white hover:bg-white/20 transition-all text-[14px] font-semibold"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5" />
+                  <path d="M12 19l-7-7 7-7" />
+                </svg>
+                Zurück
+              </button>
+              <a
+                href={previewImageURL}
+                download={`bild-${Date.now()}.png`}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-none bg-cyan-600 cursor-pointer text-white hover:bg-cyan-700 transition-all text-[13px] font-semibold"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Herunterladen
+              </a>
+            </div>
+            <div className="flex-1 min-h-0 flex items-center justify-center p-4 max-md:p-0 bg-gunpowder-50">
+              <img
+                src={previewImageURL}
+                alt="Vorschau"
+                className="max-w-full max-h-[80vh] object-contain rounded-lg max-md:rounded-none"
+              />
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Web Preview Modal */}

@@ -735,7 +735,7 @@ export default function MusicGeneratorPage() {
       <section className="bg-gradient-to-b from-[#fff5f0] to-[#fff8f5] py-16 max-md:py-10 overflow-x-clip overflow-y-visible">
         <div className="max-w-[1200px] mx-auto px-6 max-md:px-4">
           <div className="text-center max-w-[720px] mx-auto">
-            <h1 className="text-[64px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-6 max-md:text-[32px] max-md:mb-4">
+            <h1 className="text-[44px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-6 max-md:text-[32px] max-md:mb-4">
               Erstelle deine{" "}
               <span className="bg-gradient-to-r from-orange-500 to-rose-500 bg-clip-text text-transparent">
                 KI-Musik

@@ -36,6 +36,16 @@ const tabs: { label: string; href: string; genType?: GenType; icon: React.ReactN
     ),
   },
   {
+    label: "KI Bilder",
+    href: "/image-editor",
+    genType: "image",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
+      </svg>
+    ),
+  },
+  {
     label: "KI Musik",
     href: "/music-generator",
     genType: "music",
@@ -67,6 +77,7 @@ export default function Header() {
         video: isGenerating("video"),
         music: isGenerating("music"),
         web: isGenerating("web"),
+        image: isGenerating("image"),
       });
     };
     update();
@@ -74,6 +85,7 @@ export default function Header() {
       subscribe("video", update),
       subscribe("music", update),
       subscribe("web", update),
+      subscribe("image", update),
     ];
     return () => unsubs.forEach((u) => u());
   }, []);
