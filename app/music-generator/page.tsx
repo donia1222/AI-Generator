@@ -141,7 +141,7 @@ export default function MusicGeneratorPage() {
     setMyMusic(musicHistory.map(item => ({
       id: item.id,
       url: item.url,
-      title: item.title,
+      title: item.title || "Untitled",
       createdAt: item.createdAt
     })).filter(m => m.url));
   }, [audioUrl, mixedAudioUrl]); // Refresh when new audio is generated
@@ -1000,7 +1000,7 @@ export default function MusicGeneratorPage() {
                   )}
                   {mode === "upload" && (
                     <p className="text-xs max-md:text-[13px] text-gunpowder-400 mb-2">
-                      Beschreibe zusätzliche Stil-Anweisungen für die Musik (z.B. "mehr Energie", "düsterer Sound").
+                      Beschreibe zusätzliche Stil-Anweisungen für die Musik (z.B. &quot;mehr Energie&quot;, &quot;düsterer Sound&quot;).
                     </p>
                   )}
                   <textarea
