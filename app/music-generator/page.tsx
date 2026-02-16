@@ -735,7 +735,7 @@ export default function MusicGeneratorPage() {
       <section className="bg-gradient-to-b from-[#fff5f0] to-[#fff8f5] py-16 max-md:py-10 overflow-x-clip overflow-y-visible">
         <div className="max-w-[1200px] mx-auto px-6 max-md:px-4">
           <div className="text-center max-w-[720px] mx-auto">
-            <h1 className="text-[64px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-6 max-md:text-[30px] max-md:mb-4">
+            <h1 className="text-[64px] leading-[1.1] font-extrabold tracking-[-0.02em] text-gunpowder-900 mb-6 max-md:text-[32px] max-md:mb-4">
               Erstelle deine{" "}
               <span className="bg-gradient-to-r from-orange-500 to-rose-500 bg-clip-text text-transparent">
                 KI-Musik
@@ -1206,7 +1206,7 @@ export default function MusicGeneratorPage() {
         <section ref={resultRef} className="py-16 bg-gunpowder-50 flex-1 max-md:py-10">
           <div className="max-w-[640px] mx-auto px-6 max-md:px-4">
             <div className="flex items-center justify-between mb-8 max-md:mb-5 max-md:flex-col max-md:items-start max-md:gap-3">
-              <h2 className="text-[42px] font-extrabold text-gunpowder-900 max-md:text-[20px]">
+              <h2 className="text-[42px] font-extrabold text-gunpowder-900 max-md:text-[22px]">
                 Dein Song
               </h2>
               <button
@@ -1405,7 +1405,7 @@ export default function MusicGeneratorPage() {
       {isMounted && myMusic.length > 0 && (
         <section className="py-16 bg-gradient-to-b from-gunpowder-50 to-white max-md:py-10">
           <div className="max-w-[800px] mx-auto px-6 max-md:px-4">
-            <h3 className="text-[42px] font-extrabold text-gunpowder-900 mb-3 max-md:text-[20px]">
+            <h3 className="text-[42px] font-extrabold text-gunpowder-900 mb-3 max-md:text-[22px]">
               Meine{" "}
               <span className="bg-gradient-to-r from-orange-500 to-rose-500 bg-clip-text text-transparent">
                 generierten Songs
@@ -1453,7 +1453,7 @@ export default function MusicGeneratorPage() {
   {/* Examples of generated music */}
       <section className="py-16 bg-gradient-to-b from-white to-[#fff8f5] max-md:py-10">
         <div className="max-w-[800px] mx-auto px-6 max-md:px-4">
-          <h3 className="text-[42px] font-extrabold text-gunpowder-900 mb-3 max-md:text-[20px]">
+          <h3 className="text-[42px] font-extrabold text-gunpowder-900 mb-3 max-md:text-[22px]">
             Beispiele{" "}
             <span className="bg-gradient-to-r from-orange-500 to-rose-500 bg-clip-text text-transparent">
               generierter Musik
@@ -1464,17 +1464,25 @@ export default function MusicGeneratorPage() {
           </p>
           <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
             {[
-              { src: "/images/mp3/5e608c9160444666bff460b623ad3fdf.mp3", title: "Sommernacht Vibes" },
-              { src: "/images/mp3/aad9e02c60e74a998b84b2308aaee1c7.mp3", title: "Chill Lo-Fi Beat" },
-              { src: "/images/mp3/c59c57330dd74c92bf4d59b538b4f974.mp3", title: "Urban Groove" },
-              { src: "/images/mp3/f609e0acd2de4724b28a194044f89d06.mp3", title: "Melodie der Nacht" },
+              { src: "/images/mp3/5e608c9160444666bff460b623ad3fdf.mp3", title: "Sommernacht Vibes", img: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=200&fit=crop" },
+              { src: "/images/mp3/aad9e02c60e74a998b84b2308aaee1c7.mp3", title: "Chill Lo-Fi Beat", img: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400&h=200&fit=crop" },
+              { src: "/images/mp3/c59c57330dd74c92bf4d59b538b4f974.mp3", title: "Urban Groove", img: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=200&fit=crop" },
+              { src: "/images/mp3/f609e0acd2de4724b28a194044f89d06.mp3", title: "Melodie der Nacht", img: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400&h=200&fit=crop" },
             ].map((track, i) => (
               <div
                 key={i}
                 className="bg-white rounded-2xl border border-gunpowder-150 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
               >
-                <div className="bg-gradient-to-r from-orange-500 to-rose-500 px-5 py-4">
-                  <div className="flex items-center gap-3">
+                <div className="relative bg-gradient-to-r from-orange-500 to-rose-500 px-5 py-4 overflow-hidden">
+                  {/* Background image with overlay */}
+                  <div
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${track.img})` }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/50 to-black/60" />
+
+                  {/* Content */}
+                  <div className="relative flex items-center gap-3 z-10">
                     <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm flex-shrink-0">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M9 18V5l12-2v13" />
@@ -1482,7 +1490,7 @@ export default function MusicGeneratorPage() {
                         <circle cx="18" cy="16" r="3" />
                       </svg>
                     </div>
-                    <h4 className="text-white font-bold text-sm truncate">{track.title}</h4>
+                    <h4 className="text-white font-bold text-sm truncate drop-shadow-lg">{track.title}</h4>
                   </div>
                 </div>
                 <div className="p-4">
