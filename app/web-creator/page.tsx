@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { TEMPLATES, TEMPLATE_NAMES } from "@/lib/prompts";
 import { startGeneration, getGeneration, clearGeneration, subscribe } from "@/lib/generation-store";
-import { addToHistory, updateLatestHistory, getHistory } from "@/lib/history";
+import { addToHistory, updateLatestHistory, getHistory, updateHistoryById, getHistoryById } from "@/lib/history";
 import PasswordModal, { isAuthenticated } from "@/components/PasswordModal";
 import { injectEditingCapabilities } from "@/lib/iframe-editing";
 
@@ -82,9 +82,20 @@ export default function WebCreatorPage() {
   const [isModifying, setIsModifying] = useState(false);
   const [error, setError] = useState("");
   const [myWebsites, setMyWebsites] = useState<Array<{id: string; html: string; prompt: string; createdAt: string}>>([]);
+  const [currentHistoryId, setCurrentHistoryId] = useState<string | null>(null);
+  const [targetSection, setTargetSection] = useState<string | null>(null);
 
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const iframeResultRef = useRef<HTMLIFrameElement>(null);
+
+  // Close result modal and sync lastAIHTML with the latest edited HTML
+  // so that if the modal is reopened, the iframe displays the latest version.
+  const closeResultModal = useCallback(() => {
+    if (resultHTML && resultHTML !== lastAIHTML) {
+      setLastAIHTML(resultHTML);
+    }
+    setResultModalOpen(false);
+  }, [resultHTML, lastAIHTML]);
 
   // Load user's generated websites from history
   useEffect(() => {
@@ -97,30 +108,88 @@ export default function WebCreatorPage() {
     })).filter(w => w.html));
   }, [resultModalOpen]); // Refresh when modal closes
 
-  const displayHTML = useMemo(() => {
-    if (!lastAIHTML) return "";
-    console.log('🎨 [displayHTML] Injecting editing capabilities into HTML');
-    const result = injectEditingCapabilities(lastAIHTML);
-    console.log('🎨 [displayHTML] Result length:', result.length);
-    return result;
+  const [displayURL, setDisplayURL] = useState("");
+
+  useEffect(() => {
+    if (!lastAIHTML) {
+      setDisplayURL("");
+      return;
+    }
+
+    console.log('🎨 [displayURL] Creating blob URL with editing capabilities');
+    const htmlWithEditing = injectEditingCapabilities(lastAIHTML);
+    const blob = new Blob([htmlWithEditing], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    console.log('🎨 [displayURL] Blob URL created:', url);
+    setDisplayURL(url);
+
+    // Cleanup old URL
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
   }, [lastAIHTML]);
 
-  // Listen for inline edits from iframe
+  // Listen for inline edits and section edit requests from iframe
   useEffect(() => {
     const handler = (event: MessageEvent) => {
+      // Handle inline edits (text/image changes)
       if (event.data?.type === "sora-edit" && event.data.html) {
         setResultHTML(event.data.html);
         setCurrentHTML(event.data.html);
-        updateLatestHistory("web", { html: event.data.html });
+
+        // Save to sessionStorage for immediate persistence
+        sessionStorage.setItem("web_completed_html", event.data.html);
+        sessionStorage.setItem("web_completed_timestamp", Date.now().toString());
+
+        // Save to localStorage via history system
+        if (currentHistoryId) {
+          updateHistoryById(currentHistoryId, { html: event.data.html });
+          console.log(`💾 Inline edit saved to localStorage for history ID: ${currentHistoryId}`);
+        } else {
+          updateLatestHistory("web", { html: event.data.html });
+          console.log("💾 Inline edit saved to latest history item");
+        }
+      }
+
+      // Handle section edit button clicks
+      if (event.data?.type === "sora-edit-section" && event.data.sectionName) {
+        console.log(`🎯 User wants to edit section: ${event.data.sectionName}`);
+        setTargetSection(event.data.sectionName);
+        setShowModifyPanel(true);
+        setModifyPrompt(`NUR "${event.data.sectionName}" ÄNDERN: `);
       }
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, []);
+  }, [currentHistoryId]);
 
   // Restore state from global store on mount + restore completed result from sessionStorage
   useEffect(() => {
-    // First, check if there's a completed web in sessionStorage
+    // First, try to restore from localStorage using history ID
+    const savedHistoryId = sessionStorage.getItem("web_current_history_id");
+    if (savedHistoryId) {
+      const historyItem = getHistoryById(savedHistoryId);
+      if (historyItem && historyItem.metadata?.html) {
+        console.log(`🔄 Restoring web from history ID: ${savedHistoryId}`);
+        const html = historyItem.metadata.html as string;
+        setCurrentHTML(html);
+        setResultHTML(html);
+        setLastAIHTML(html);
+        setCurrentHistoryId(savedHistoryId);
+        if (historyItem.prompt) setPrompt(historyItem.prompt);
+
+        // Also update sessionStorage to keep it in sync
+        sessionStorage.setItem("web_completed_html", html);
+        sessionStorage.setItem("web_completed_prompt", historyItem.prompt);
+        sessionStorage.setItem("web_completed_timestamp", Date.now().toString());
+        return;
+      } else {
+        // History item not found or doesn't have HTML, clear the ID
+        sessionStorage.removeItem("web_current_history_id");
+      }
+    }
+
+    // Fallback: check if there's a completed web in sessionStorage
     const savedHTML = sessionStorage.getItem("web_completed_html");
     const savedPrompt = sessionStorage.getItem("web_completed_prompt");
     const savedTimestamp = sessionStorage.getItem("web_completed_timestamp");
@@ -211,19 +280,25 @@ export default function WebCreatorPage() {
         setResultModalOpen(true);
       }
 
-      // Save to sessionStorage so it persists across page changes
-      sessionStorage.setItem("web_completed_html", html);
-      sessionStorage.setItem("web_completed_prompt", prompt || "Web generiert");
-      sessionStorage.setItem("web_completed_timestamp", Date.now().toString());
-
-      // Save to history
-      addToHistory({
+      // Save to history and get the generated ID
+      const newHistoryId = addToHistory({
         type: "web",
         prompt: prompt || "Web generiert",
         url: "",
         title: prompt?.substring(0, 60) || "Generierte Website",
         metadata: { html },
       });
+
+      if (newHistoryId) {
+        setCurrentHistoryId(newHistoryId);
+        sessionStorage.setItem("web_current_history_id", newHistoryId);
+        console.log(`💾 Saved new web to history with ID: ${newHistoryId}`);
+      }
+
+      // Save to sessionStorage so it persists across page changes
+      sessionStorage.setItem("web_completed_html", html);
+      sessionStorage.setItem("web_completed_prompt", prompt || "Web generiert");
+      sessionStorage.setItem("web_completed_timestamp", Date.now().toString());
     }
   };
 
@@ -266,6 +341,8 @@ export default function WebCreatorPage() {
     sessionStorage.removeItem("web_completed_html");
     sessionStorage.removeItem("web_completed_prompt");
     sessionStorage.removeItem("web_completed_timestamp");
+    sessionStorage.removeItem("web_current_history_id");
+    setCurrentHistoryId(null); // Reset history ID for new generation
 
     startProgress();
 
@@ -300,7 +377,19 @@ export default function WebCreatorPage() {
     setIsModifying(true);
     setError("");
 
-    const userMessage = `Here is the current HTML of the website:\n\n${resultHTML}\n\nThe user wants this change: ${modifyPrompt}`;
+    let userMessage: string;
+
+    // If editing a specific section, use a much more focused approach
+    if (targetSection) {
+      // Extract only the user's actual modification request
+      const actualPrompt = modifyPrompt.replace(/^NUR\s+"[^"]+"\s+ÄNDERN:\s*/i, '').trim();
+
+      // Format the message to trigger incremental modification in the API
+      userMessage = `Change the ${targetSection} section: ${actualPrompt}`;
+    } else {
+      // General modification
+      userMessage = modifyPrompt;
+    }
 
     try {
       const res = await fetch("/api/generate-website", {
@@ -320,7 +409,15 @@ export default function WebCreatorPage() {
         setResultHTML(html);
         setCurrentHTML(html);
         setLastAIHTML(html);
-        updateLatestHistory("web", { html });
+
+        // Update history - use currentHistoryId if available
+        if (currentHistoryId) {
+          updateHistoryById(currentHistoryId, { html });
+          console.log(`💾 AI modification saved to history ID: ${currentHistoryId}`);
+        } else {
+          updateLatestHistory("web", { html });
+          console.log("💾 AI modification saved to latest history");
+        }
 
         // Update sessionStorage
         sessionStorage.setItem("web_completed_html", html);
@@ -337,6 +434,7 @@ export default function WebCreatorPage() {
 
         setModifyPrompt("");
         setShowModifyPanel(false);
+        setTargetSection(null); // Clear section context
       }
     } catch (err) {
       console.error("AI modify error:", err);
@@ -611,7 +709,15 @@ export default function WebCreatorPage() {
                     setCurrentHTML(website.html);
                     setResultHTML(website.html);
                     setLastAIHTML(website.html);
+                    setCurrentHistoryId(website.id);
                     setResultModalOpen(true);
+
+                    // Save to sessionStorage so edits persist
+                    sessionStorage.setItem("web_current_history_id", website.id);
+                    sessionStorage.setItem("web_completed_html", website.html);
+                    sessionStorage.setItem("web_completed_prompt", website.prompt);
+                    sessionStorage.setItem("web_completed_timestamp", Date.now().toString());
+                    console.log(`📂 Loaded web from history: ${website.id}`);
                   }}
                 >
                   <div className="template-thumb relative w-full overflow-hidden" style={{ height: "240px" }}>
@@ -675,12 +781,12 @@ export default function WebCreatorPage() {
       {/* RESULT MODAL */}
       {resultModalOpen && resultHTML && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-[8px]" onClick={() => setResultModalOpen(false)} />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-[8px]" onClick={closeResultModal} />
           <div className="relative w-[85%] h-[90%] flex flex-col bg-white overflow-hidden rounded-2xl shadow-2xl max-md:w-full max-md:h-full max-md:rounded-none">
             {/* Modal header */}
             <div className="flex items-center justify-between px-5 py-3 border-b border-black/5 bg-white shrink-0">
               <button
-                onClick={() => setResultModalOpen(false)}
+                onClick={closeResultModal}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-none bg-[#e8f0fe] cursor-pointer text-[#1a3a5c] hover:bg-[#d4e4fc] transition-all text-[14px] font-semibold"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -746,9 +852,9 @@ export default function WebCreatorPage() {
             {/* Iframe */}
             <div className="flex-1 min-h-0 overflow-hidden flex items-start justify-center bg-gunpowder-50/50 relative">
               <iframe
-                key={lastAIHTML}
+                key={displayURL}
                 ref={iframeResultRef}
-                srcDoc={displayHTML}
+                src={displayURL}
                 sandbox="allow-same-origin allow-scripts"
                 title="Website Vorschau"
                 className={`h-full border-none block bg-white transition-all duration-300 ${
@@ -762,7 +868,14 @@ export default function WebCreatorPage() {
             {/* Modal footer */}
             <div className="px-5 py-4 border-t border-black/5 bg-white flex items-center justify-center gap-3 max-md:px-3 max-md:py-3 relative">
               <button
-                onClick={() => setShowModifyPanel(!showModifyPanel)}
+                onClick={() => {
+                  setShowModifyPanel(!showModifyPanel);
+                  if (showModifyPanel) {
+                    // Clear section context when closing panel
+                    setTargetSection(null);
+                    setModifyPrompt("");
+                  }
+                }}
                 className={`inline-flex items-center justify-center gap-2 h-[50px] px-6 rounded-full text-[15px] font-semibold transition-all cursor-pointer border-2 max-md:h-[44px] max-md:px-4 max-md:text-[14px] ${
                   showModifyPanel
                     ? "bg-purple-100 border-purple-400 text-purple-700"
@@ -792,9 +905,18 @@ export default function WebCreatorPage() {
                         <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
                       </svg>
                       <span className="text-sm font-bold text-gunpowder-700">KI-Bearbeitung</span>
+                      {targetSection && (
+                        <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-semibold rounded-md">
+                          {targetSection}
+                        </span>
+                      )}
                     </div>
                     <button
-                      onClick={() => setShowModifyPanel(false)}
+                      onClick={() => {
+                        setShowModifyPanel(false);
+                        setTargetSection(null);
+                        setModifyPrompt("");
+                      }}
                       className="flex items-center justify-center w-7 h-7 rounded-lg border-none bg-gunpowder-50 cursor-pointer text-gunpowder-400 hover:bg-gunpowder-100 hover:text-gunpowder-600 transition-all"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">

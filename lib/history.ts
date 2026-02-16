@@ -37,11 +37,11 @@ export function getAllHistory(): HistoryItem[] {
   return all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
-export function addToHistory(item: Omit<HistoryItem, "id" | "createdAt">): void {
+export function addToHistory(item: Omit<HistoryItem, "id" | "createdAt">): string {
   console.log("📝 addToHistory LLAMADO con:", item);
   if (typeof window === "undefined") {
     console.log("⚠️ window is undefined, no se guarda");
-    return;
+    return "";
   }
   const history = getHistory(item.type);
   console.log("📚 Historial actual tiene:", history.length, "items");
@@ -53,8 +53,20 @@ export function addToHistory(item: Omit<HistoryItem, "id" | "createdAt">): void 
   console.log("🆕 Nuevo item creado:", newItem);
   const updated = [newItem, ...history].slice(0, MAX_ITEMS);
   console.log("💾 Guardando", updated.length, "items en localStorage");
-  localStorage.setItem(STORAGE_KEYS[item.type], JSON.stringify(updated));
-  console.log("✅ localStorage.setItem ejecutado para", STORAGE_KEYS[item.type]);
+
+  try {
+    localStorage.setItem(STORAGE_KEYS[item.type], JSON.stringify(updated));
+    console.log("✅ localStorage.setItem ejecutado para", STORAGE_KEYS[item.type]);
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+      console.warn("⚠️ localStorage full - clearing old items");
+      // Keep only the 3 most recent items to free space
+      const reduced = updated.slice(0, 3);
+      localStorage.setItem(STORAGE_KEYS[item.type], JSON.stringify(reduced));
+    }
+  }
+
+  return newItem.id;
 }
 
 export function updateLatestHistory(type: HistoryType, metadata: Record<string, string>): void {
@@ -62,7 +74,56 @@ export function updateLatestHistory(type: HistoryType, metadata: Record<string, 
   const history = getHistory(type);
   if (history.length === 0) return;
   history[0].metadata = { ...history[0].metadata, ...metadata };
-  localStorage.setItem(STORAGE_KEYS[type], JSON.stringify(history));
+
+  try {
+    localStorage.setItem(STORAGE_KEYS[type], JSON.stringify(history));
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+      console.warn("⚠️ localStorage full - keeping only recent items");
+      const reduced = history.slice(0, 3);
+      localStorage.setItem(STORAGE_KEYS[type], JSON.stringify(reduced));
+    }
+  }
+}
+
+export function updateHistoryById(id: string, metadata: Record<string, string>): void {
+  if (typeof window === "undefined") return;
+
+  // Find the item across all history types
+  for (const type of Object.keys(STORAGE_KEYS) as HistoryType[]) {
+    const history = getHistory(type);
+    const index = history.findIndex(item => item.id === id);
+
+    if (index !== -1) {
+      history[index].metadata = { ...history[index].metadata, ...metadata };
+
+      try {
+        localStorage.setItem(STORAGE_KEYS[type], JSON.stringify(history));
+        console.log(`✅ Updated history item ${id} in localStorage`);
+      } catch (e) {
+        if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+          console.warn("⚠️ localStorage full - keeping only 3 items");
+          const reduced = history.slice(0, 3);
+          localStorage.setItem(STORAGE_KEYS[type], JSON.stringify(reduced));
+        }
+      }
+      return;
+    }
+  }
+
+  console.warn(`⚠️ History item ${id} not found`);
+}
+
+export function getHistoryById(id: string): HistoryItem | null {
+  if (typeof window === "undefined") return null;
+
+  for (const type of Object.keys(STORAGE_KEYS) as HistoryType[]) {
+    const history = getHistory(type);
+    const item = history.find(item => item.id === id);
+    if (item) return item;
+  }
+
+  return null;
 }
 
 export function clearHistory(type?: HistoryType): void {

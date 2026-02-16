@@ -1,7 +1,42 @@
 export function injectEditingCapabilities(html: string): string {
-  console.log('📝 [iframe-editing] Injecting editing capabilities');
-  console.log('📝 [iframe-editing] Input HTML length:', html.length);
-  console.log('📝 [iframe-editing] Input HTML preview:', html.substring(0, 200));
+  console.log('[iframe-editing] Injecting editing capabilities');
+  console.log('[iframe-editing] Input HTML length:', html.length);
+
+  // First, clean any existing injection code (in case HTML was saved with leftover markers)
+  let cleanedHTML = html;
+
+  // Remove SORA_EDIT block if present (handles corrupted saves)
+  const startIdx = cleanedHTML.indexOf('<!-- SORA_EDIT_START -->');
+  const endIdx = cleanedHTML.indexOf('<!-- SORA_EDIT_END -->');
+  if (startIdx !== -1 && endIdx !== -1) {
+    console.log('[iframe-editing] Cleaning existing injection code');
+    cleanedHTML = cleanedHTML.substring(0, startIdx) + cleanedHTML.substring(endIdx + '<!-- SORA_EDIT_END -->'.length);
+  }
+
+  // Also clean any leftover __sora DOM artifacts from bad saves
+  // Remove __sora-img-wrap divs (unwrap images)
+  cleanedHTML = cleanedHTML.replace(/<div[^>]*class="[^"]*__sora-img-wrap[^"]*"[^>]*>([\s\S]*?)<div[^>]*class="[^"]*__sora-img-overlay[^"]*"[\s\S]*?<\/div>\s*<\/div>/gi, function(_match, inner) {
+    return inner.trim();
+  });
+  // Remove any remaining __sora overlay/pencil/button elements
+  cleanedHTML = cleanedHTML.replace(/<div[^>]*class="[^"]*__sora-(?:img-overlay|bg-overlay|text-pencil)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
+  cleanedHTML = cleanedHTML.replace(/<button[^>]*class="[^"]*__sora-section-edit-btn[^"]*"[^>]*>[\s\S]*?<\/button>/gi, '');
+  cleanedHTML = cleanedHTML.replace(/<input[^>]*class="[^"]*__sora-file-input[^"]*"[^>]*\/?>/gi, '');
+  cleanedHTML = cleanedHTML.replace(/<div[^>]*id="__sora-editing-active"[^>]*><\/div>/gi, '');
+  // Remove __sora classes from class attributes
+  cleanedHTML = cleanedHTML.replace(/class="([^"]*)"/g, function(_match, classes) {
+    var cleaned = classes.split(/\s+/).filter(function(c: string) {
+      return c.indexOf('__sora') === -1;
+    }).join(' ');
+    return cleaned ? 'class="' + cleaned + '"' : '';
+  });
+  // Remove contenteditable="false" attributes left by text editing
+  cleanedHTML = cleanedHTML.replace(/\s*contenteditable="false"/gi, '');
+
+  // Build the editing block.
+  // IMPORTANT: We split the closing </script> tag to prevent the TypeScript/bundler
+  // parser from misinterpreting it. The two halves join to form a valid tag in the output.
+  const scriptClose = '</' + 'script>';
 
   const editingBlock = `
 <!-- SORA_EDIT_START -->
@@ -81,6 +116,38 @@ export function injectEditingCapabilities(html: string): string {
   opacity: 0 !important;
   pointer-events: none !important;
 }
+.__sora-section-edit-btn {
+  position: absolute !important;
+  top: 12px !important;
+  right: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 8px 14px !important;
+  background: rgba(124, 58, 237, 0.95) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 12px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  opacity: 0 !important;
+  transition: opacity 0.2s, transform 0.2s !important;
+  z-index: 999998 !important;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3) !important;
+  pointer-events: auto !important;
+}
+.__sora-section-edit-btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4) !important;
+  background: rgba(124, 58, 237, 1) !important;
+}
+.__sora-section-wrapper {
+  position: relative !important;
+}
+.__sora-section-wrapper:hover > .__sora-section-edit-btn {
+  opacity: 1 !important;
+}
 </style>
 <script>
 (function() {
@@ -107,6 +174,8 @@ export function injectEditingCapabilities(html: string): string {
   // Pencil SVG
   var pencilSVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
 
+  var wandSVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8L19 13"/><path d="M15 9h0"/><path d="M17.8 6.2L19 5"/><path d="M3 21l9-9"/><path d="M12.2 6.2L11 5"/></svg>';
+
   var TEXT_SELECTORS = 'h1,h2,h3,h4,h5,h6,p,span,a,li,button,label,td,th,blockquote';
 
   function isSoraEl(el) {
@@ -124,32 +193,85 @@ export function injectEditingCapabilities(html: string): string {
   }
 
   function getCleanHTML() {
-    var clone = document.documentElement.cloneNode(true);
-    // Remove all sora editing elements from clone
-    var soraEls = clone.querySelectorAll('[class*="__sora"], #__sora-editing-active, .__sora-file-input');
-    for (var i = 0; i < soraEls.length; i++) {
-      soraEls[i].parentNode.removeChild(soraEls[i]);
+    console.log('getCleanHTML called');
+
+    // Work on a clone of the DOM so we can manipulate it without affecting the live page
+    var docClone = document.documentElement.cloneNode(true);
+
+    // 1. Remove the sentinel element
+    var sentinelClone = docClone.querySelector('#__sora-editing-active');
+    if (sentinelClone) sentinelClone.parentNode.removeChild(sentinelClone);
+
+    // 2. Remove the file input
+    var fileInputClone = docClone.querySelector('.__sora-file-input');
+    if (fileInputClone) fileInputClone.parentNode.removeChild(fileInputClone);
+
+    // 3. Unwrap __sora-img-wrap divs (move img back to parent, remove wrapper)
+    var imgWraps = docClone.querySelectorAll('.__sora-img-wrap');
+    for (var i = 0; i < imgWraps.length; i++) {
+      var wrap = imgWraps[i];
+      var img = wrap.querySelector('img');
+      if (img && wrap.parentNode) {
+        wrap.parentNode.insertBefore(img, wrap);
+        wrap.parentNode.removeChild(wrap);
+      }
     }
-    // Remove sora classes from elements
-    var wraps = clone.querySelectorAll('.__sora-text-wrap, .__sora-img-wrap');
-    for (var j = 0; j < wraps.length; j++) {
-      wraps[j].classList.remove('__sora-text-wrap', '__sora-img-wrap', '__sora-editing');
+
+    // 4. Remove all __sora overlay elements (bg-overlay, img-overlay, text-pencil, section-edit-btn)
+    var soraOverlays = docClone.querySelectorAll('.__sora-bg-overlay, .__sora-img-overlay, .__sora-text-pencil, .__sora-section-edit-btn');
+    for (var j = 0; j < soraOverlays.length; j++) {
+      if (soraOverlays[j].parentNode) {
+        soraOverlays[j].parentNode.removeChild(soraOverlays[j]);
+      }
     }
-    // Remove the injected style and script block
-    var html = clone.outerHTML;
-    var startIdx = html.indexOf('<!-- SORA_EDIT_START -->');
-    var endIdx = html.indexOf('<!-- SORA_EDIT_END -->');
-    if (startIdx !== -1 && endIdx !== -1) {
-      html = html.substring(0, startIdx) + html.substring(endIdx + '<!-- SORA_EDIT_END -->'.length);
+
+    // 5. Remove contenteditable attributes
+    var editables = docClone.querySelectorAll('[contenteditable]');
+    for (var k = 0; k < editables.length; k++) {
+      editables[k].removeAttribute('contenteditable');
     }
-    return '<!DOCTYPE html>' + html;
+
+    // 6. Remove __sora classes from all elements (but keep other classes)
+    var allEls = docClone.querySelectorAll('*');
+    for (var m = 0; m < allEls.length; m++) {
+      var el = allEls[m];
+      if (el.className && typeof el.className === 'string' && el.className.indexOf('__sora') !== -1) {
+        var classes = el.className.split(/\\s+/).filter(function(c) {
+          return c.indexOf('__sora') === -1;
+        });
+        if (classes.length > 0) {
+          el.className = classes.join(' ');
+        } else {
+          el.removeAttribute('class');
+        }
+      }
+    }
+
+    // 7. Remove the SORA_EDIT_START ... SORA_EDIT_END block from the serialized HTML
+    var html = docClone.outerHTML;
+    var startMarker = '<!-- SORA_EDIT_START -->';
+    var endMarker = '<!-- SORA_EDIT_END -->';
+    var sIdx = html.indexOf(startMarker);
+    if (sIdx !== -1) {
+      var eIdx = html.indexOf(endMarker, sIdx);
+      if (eIdx !== -1) {
+        html = html.substring(0, sIdx) + html.substring(eIdx + endMarker.length);
+      }
+    }
+
+    // 8. Remove empty class="" attributes left over
+    html = html.replace(/\\s*class="\\s*"/g, '');
+
+    var result = '<!DOCTYPE html>' + html;
+    console.log('Clean HTML length:', result.length);
+    return result;
   }
 
   function sendUpdate() {
     window.parent.postMessage({ type: 'sora-edit', html: getCleanHTML() }, '*');
   }
 
-  // Clean up any pre-existing img wrappers
+  // Clean up any pre-existing img wrappers (from previous injection)
   var oldWrps = document.querySelectorAll('.__sora-img-wrap');
   oldWrps.forEach(function(wrap) {
     var img = wrap.querySelector('img');
@@ -164,7 +286,7 @@ export function injectEditingCapabilities(html: string): string {
   images.forEach(function(img) {
     if (img.closest('.__sora-img-wrap')) return;
 
-    // Preserve the image display mode - don't force inline-block
+    // Preserve the image display mode
     var parent = img.parentNode;
     var computedDisplay = window.getComputedStyle(img).display;
     var computedWidth = window.getComputedStyle(img).width;
@@ -204,17 +326,17 @@ export function injectEditingCapabilities(html: string): string {
   });
 
   // Setup elements with background-image
-  var allEls = document.querySelectorAll('*');
-  allEls.forEach(function(el) {
+  var allBgEls = document.querySelectorAll('*');
+  allBgEls.forEach(function(el) {
     if (isSoraEl(el)) return;
 
     // Skip if already has overlay
-    if (el.querySelector('.__sora-bg-overlay')) return;
+    if (el.querySelector && el.querySelector('.__sora-bg-overlay')) return;
 
     var bg = window.getComputedStyle(el).backgroundImage;
     if (!bg || bg === 'none') return;
     // Check if there's a URL (even if there's also a gradient)
-    if (!bg.match(/url\\(/)) return;
+    if (bg.indexOf('url(') === -1) return;
 
     // Only target elements with significant size (likely hero/banner images)
     var rect = el.getBoundingClientRect();
@@ -257,16 +379,97 @@ export function injectEditingCapabilities(html: string): string {
     fileInput.value = '';
   });
 
+  // Setup section edit buttons
+  function getSectionName(el) {
+    // Check for semantic tags
+    if (el.tagName === 'HEADER') return 'Header';
+    if (el.tagName === 'NAV') return 'Navigation';
+    if (el.tagName === 'FOOTER') return 'Footer';
+
+    // Check for common class names
+    var className = el.className || '';
+    if (typeof className !== 'string') className = '';
+
+    if (className.match(/hero/i)) return 'Hero-Bereich';
+    if (className.match(/feature/i)) return 'Features';
+    if (className.match(/about/i)) return 'Über uns';
+    if (className.match(/service/i)) return 'Dienstleistungen';
+    if (className.match(/contact/i)) return 'Kontakt';
+    if (className.match(/pricing/i)) return 'Preise';
+    if (className.match(/testimonial/i)) return 'Testimonials';
+    if (className.match(/team/i)) return 'Team';
+    if (className.match(/gallery/i)) return 'Galerie';
+    if (className.match(/cta|call-to-action/i)) return 'Call-to-Action';
+
+    // Check for IDs
+    var id = el.id || '';
+    if (id.match(/hero/i)) return 'Hero-Bereich';
+    if (id.match(/feature/i)) return 'Features';
+    if (id.match(/about/i)) return 'Über uns';
+    if (id.match(/service/i)) return 'Dienstleistungen';
+    if (id.match(/contact/i)) return 'Kontakt';
+
+    return null;
+  }
+
+  function isLargeSection(el) {
+    var rect = el.getBoundingClientRect();
+    return rect.height > 100 && rect.width > 200;
+  }
+
+  // Remove old section buttons
+  var oldSectionBtns = document.querySelectorAll('.__sora-section-edit-btn');
+  oldSectionBtns.forEach(function(btn) {
+    if (btn.parentNode) btn.parentNode.removeChild(btn);
+  });
+
+  // Find and setup sections
+  var sectionSelectors = 'header, nav, footer, main > section, main > div, body > section, body > div';
+  var potentialSections = document.querySelectorAll(sectionSelectors);
+
+  potentialSections.forEach(function(section) {
+    if (isSoraEl(section)) return;
+    if (!isLargeSection(section)) return;
+
+    var sectionName = getSectionName(section);
+    if (!sectionName) return;
+
+    // Make sure section is positioned for the button
+    var pos = window.getComputedStyle(section).position;
+    if (pos === 'static') {
+      section.style.position = 'relative';
+    }
+
+    section.classList.add('__sora-section-wrapper');
+
+    var editBtn = document.createElement('button');
+    editBtn.className = '__sora-section-edit-btn';
+    editBtn.innerHTML = wandSVG + '<span>Editar ' + sectionName + '</span>';
+    section.appendChild(editBtn);
+
+    editBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Send message to parent with section info
+      window.parent.postMessage({
+        type: 'sora-edit-section',
+        sectionName: sectionName,
+        sectionHTML: section.outerHTML
+      }, '*');
+    });
+  });
+
   // Clean up any pre-existing text pencils
   var oldPencils = document.querySelectorAll('.__sora-text-pencil');
   oldPencils.forEach(function(pencil) {
     if (pencil.parentNode) pencil.parentNode.removeChild(pencil);
   });
 
-  // Remove text-wrap classes from elements
+  // Remove text-wrap classes from elements (fix: no leading dot in class names)
   var oldTextWraps = document.querySelectorAll('.__sora-text-wrap');
   oldTextWraps.forEach(function(el) {
-    el.classList.remove('.__sora-text-wrap', '__sora-editing');
+    el.classList.remove('__sora-text-wrap', '__sora-editing');
   });
 
   // Setup text elements
@@ -317,19 +520,18 @@ export function injectEditingCapabilities(html: string): string {
     });
   });
 })();
-</script>
+${scriptClose}
 <!-- SORA_EDIT_END -->`;
 
   let result: string;
-  if (html.includes('</body>')) {
-    result = html.replace('</body>', editingBlock + '\n</body>');
+  if (cleanedHTML.includes('</body>')) {
+    result = cleanedHTML.replace('</body>', editingBlock + '\n</body>');
   } else {
-    result = html + editingBlock;
+    result = cleanedHTML + editingBlock;
   }
 
-  console.log('📝 [iframe-editing] Output HTML length:', result.length);
-  console.log('📝 [iframe-editing] Contains SORA_EDIT markers:', result.includes('SORA_EDIT_START') && result.includes('SORA_EDIT_END'));
-  console.log('📝 [iframe-editing] Output HTML preview:', result.substring(0, 300));
+  console.log('[iframe-editing] Output HTML length:', result.length);
+  console.log('[iframe-editing] Contains SORA_EDIT markers:', result.includes('SORA_EDIT_START') && result.includes('SORA_EDIT_END'));
 
   return result;
 }
