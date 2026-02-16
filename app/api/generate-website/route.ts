@@ -51,8 +51,11 @@ async function generateWithOpenAI(systemPrompt: string, userMessage: string) {
       }
 
       const data = await response.json();
+      const content = data.choices[0].message.content;
       console.log(`✅ Successfully used OpenAI model: ${model}`);
-      return data.choices[0].message.content;
+      console.log(`📄 Response length: ${content?.length || 0} characters`);
+      console.log(`📄 Response preview:`, content?.substring(0, 300));
+      return content;
 
     } catch (error) {
       lastError = error as Error;
@@ -72,7 +75,7 @@ async function generateWithGemini(systemPrompt: string, userMessage: string) {
 
   // Use Gemini 2.5 Flash (current model in 2026, fast and good quality)
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: {
@@ -105,6 +108,9 @@ async function generateWithGemini(systemPrompt: string, userMessage: string) {
   if (!text) {
     throw new Error("No text in Gemini response");
   }
+
+  console.log(`📄 Gemini response length: ${text.length} characters`);
+  console.log(`📄 Gemini response preview:`, text.substring(0, 300));
 
   return text;
 }
@@ -282,6 +288,7 @@ export async function POST(req: NextRequest) {
       console.log("🔄 Trying Gemini Pro...");
       const geminiResponse = await generateWithGemini(systemPrompt, userMessage);
       console.log("✅ Gemini Pro succeeded!");
+      console.log("📦 Returning response with length:", geminiResponse.length);
 
       return NextResponse.json({
         status: "success",
@@ -295,6 +302,7 @@ export async function POST(req: NextRequest) {
       // Fallback to OpenAI
       try {
         const openaiResponse = await generateWithOpenAI(systemPrompt, userMessage);
+        console.log("📦 Returning OpenAI fallback response with length:", openaiResponse.length);
         return NextResponse.json({
           status: "success",
           botReply: openaiResponse,
@@ -313,6 +321,7 @@ export async function POST(req: NextRequest) {
   console.log("⚠️ Gemini API key not configured - Using OpenAI...");
   try {
     const openaiResponse = await generateWithOpenAI(systemPrompt, userMessage);
+    console.log("📦 Returning OpenAI response with length:", openaiResponse.length);
     return NextResponse.json({
       status: "success",
       botReply: openaiResponse,

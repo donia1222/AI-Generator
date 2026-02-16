@@ -72,27 +72,42 @@ export async function POST(req: NextRequest) {
   let body: Record<string, unknown>;
 
   if (useAddInstrumental && uploadUrl) {
-    // UPLOAD-COVER + INSTRUMENTAL MODE:
+    // UPLOAD-COVER MODE:
     // Suno analyzes the uploaded audio (melody, rhythm, timing, structure)
-    // and generates ONLY the instrumental that follows the exact same timing.
-    // instrumental=true = no AI voice, only music/beat
-    // customMode=true = Suno follows the audio structure precisely
+    // customMode=true makes Suno follow the uploaded audio's structure/timing
+    // If lyrics provided: vocals are generated to match the uploaded instrumental's timing
+    // If no lyrics (instrumental): generates matching instrumental
     apiUrl = KIE_COVER_URL;
+
+    const hasLyrics = (prompt || "").trim().length > 0;
+    const useInstrumental = !!instrumental;
 
     body = {
       uploadUrl,
       model: "V5",
-      customMode: true,
-      instrumental: true,
+      customMode: true, // Always true for upload mode - makes Suno follow uploaded audio timing
+      instrumental: useInstrumental,
       callBackUrl: "https://example.com/callback",
       style: cleanStyle || "pop",
       title: title || "Untitled",
-      prompt: prompt
-        ? `Instrumental ${cleanStyle} version. ${prompt}`.substring(0, 500)
-        : `Instrumental ${cleanStyle} version that perfectly follows the melody, rhythm and timing of the uploaded audio`,
+      // Prompt contains the lyrics when provided, or description when instrumental-only
+      prompt: hasLyrics && !useInstrumental
+        ? prompt.substring(0, 500)
+        : `${cleanStyle} version that matches the uploaded audio`,
     };
 
-    console.log("Upload-cover instrumental mode - uploadUrl:", uploadUrl, "style:", cleanStyle);
+    // Set vocal gender when lyrics are provided
+    if (!useInstrumental && hasLyrics) {
+      if (vocal === "male") body.vocalGender = "m";
+      if (vocal === "female") body.vocalGender = "f";
+    }
+
+    console.log("Upload-cover mode:", {
+      hasLyrics,
+      instrumental: useInstrumental,
+      vocalGender: body.vocalGender || "none",
+      styleAndPrompt: `style=${body.style}, prompt=${body.prompt?.substring(0, 50)}...`
+    });
   } else {
     // Normal generation from text
     apiUrl = KIE_GENERATE_URL;

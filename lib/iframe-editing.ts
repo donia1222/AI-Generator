@@ -1,4 +1,8 @@
 export function injectEditingCapabilities(html: string): string {
+  console.log('📝 [iframe-editing] Injecting editing capabilities');
+  console.log('📝 [iframe-editing] Input HTML length:', html.length);
+  console.log('📝 [iframe-editing] Input HTML preview:', html.substring(0, 200));
+
   const editingBlock = `
 <!-- SORA_EDIT_START -->
 <style>
@@ -316,8 +320,16 @@ export function injectEditingCapabilities(html: string): string {
 </script>
 <!-- SORA_EDIT_END -->`;
 
+  let result: string;
   if (html.includes('</body>')) {
-    return html.replace('</body>', editingBlock + '\n</body>');
+    result = html.replace('</body>', editingBlock + '\n</body>');
+  } else {
+    result = html + editingBlock;
   }
-  return html + editingBlock;
+
+  console.log('📝 [iframe-editing] Output HTML length:', result.length);
+  console.log('📝 [iframe-editing] Contains SORA_EDIT markers:', result.includes('SORA_EDIT_START') && result.includes('SORA_EDIT_END'));
+  console.log('📝 [iframe-editing] Output HTML preview:', result.substring(0, 300));
+
+  return result;
 }

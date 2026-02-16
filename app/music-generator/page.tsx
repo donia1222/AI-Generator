@@ -62,6 +62,7 @@ export default function MusicGeneratorPage() {
   const [prompt, setPrompt] = useState("");
   const [instructions, setInstructions] = useState("");
   const [title, setTitle] = useState("");
+  const [uploadLyrics, setUploadLyrics] = useState(""); // NEW: Lyrics for upload mode
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
   const [vocal, setVocal] = useState<"male" | "female" | "none">("male");
@@ -105,6 +106,7 @@ export default function MusicGeneratorPage() {
     setPrompt(sessionStorage.getItem("music_prompt") || "");
     setInstructions(sessionStorage.getItem("music_instructions") || "");
     setTitle(sessionStorage.getItem("music_title") || "");
+    setUploadLyrics(sessionStorage.getItem("music_upload_lyrics") || "");
     try { setSelectedGenres(JSON.parse(sessionStorage.getItem("music_genres") || "[]")); } catch { /* ignore */ }
     try { setSelectedMoods(JSON.parse(sessionStorage.getItem("music_moods") || "[]")); } catch { /* ignore */ }
     const savedVocal = sessionStorage.getItem("music_vocal") as "male" | "female" | "none";
@@ -117,6 +119,7 @@ export default function MusicGeneratorPage() {
   useEffect(() => { if (hydrated) sessionStorage.setItem("music_prompt", prompt); }, [prompt, hydrated]);
   useEffect(() => { if (hydrated) sessionStorage.setItem("music_instructions", instructions); }, [instructions, hydrated]);
   useEffect(() => { if (hydrated) sessionStorage.setItem("music_title", title); }, [title, hydrated]);
+  useEffect(() => { if (hydrated) sessionStorage.setItem("music_upload_lyrics", uploadLyrics); }, [uploadLyrics, hydrated]);
   useEffect(() => { if (hydrated) sessionStorage.setItem("music_genres", JSON.stringify(selectedGenres)); }, [selectedGenres, hydrated]);
   useEffect(() => { if (hydrated) sessionStorage.setItem("music_moods", JSON.stringify(selectedMoods)); }, [selectedMoods, hydrated]);
   useEffect(() => { if (hydrated) sessionStorage.setItem("music_vocal", vocal); }, [vocal, hydrated]);
@@ -547,22 +550,26 @@ export default function MusicGeneratorPage() {
           setUploadedUrl(audioUploadUrl);
         }
 
-        // Step 2: Call add-instrumental with the uploaded audio URL
-        setProgressText("Suno analysiert dein Audio und generiert Instrumental...");
+        // Step 2: Call with uploaded audio URL
+        const hasLyrics = uploadLyrics.trim().length > 0;
+        const isInstrumental = vocal === "none" || !hasLyrics;
+
+        setProgressText(isInstrumental ? "Suno analysiert dein Audio und generiert Instrumental..." : "Suno analysiert dein Audio und singt die Lyrics...");
         setProgressPct(15);
 
         const cleanStyle = [...selectedGenres, ...selectedMoods].join(", ") || "pop";
+        const styleWithInstructions = prompt.trim() ? `${cleanStyle}, ${prompt.trim()}` : cleanStyle;
 
         const res = await fetch("/api/generate-music", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             uploadUrl: audioUploadUrl,
-            style: cleanStyle,
+            style: styleWithInstructions,
             title: title.trim() || "Untitled",
-            prompt: prompt.trim(),
-            instrumental: true,
-            vocal: "none",
+            prompt: uploadLyrics.trim(), // Use uploadLyrics for the actual lyrics
+            instrumental: isInstrumental,
+            vocal: isInstrumental ? "none" : vocal,
             useAddInstrumental: true,
           }),
         });
@@ -731,10 +738,10 @@ export default function MusicGeneratorPage() {
               {mode === "upload" && (
                 <div className="mb-5">
                   <label className="block text-sm max-md:text-[14px] font-semibold text-gunpowder-600 mb-2">
-                    Referenz-Audio hochladen
+                    Instrumental / Audio hochladen
                   </label>
                   <p className="text-xs max-md:text-[13px] text-gunpowder-400 mb-3">
-                    Lade ein Audio als Referenz hoch (max. 8 Min). Die KI analysiert den Stil und generiert einen neuen Song im gleichen oder ähnlichen Stil.
+                    Lade ein Instrumental oder Audio hoch. Die KI kann darüber singen (wenn du Lyrics hinzufügst) oder ein ähnliches Instrumental generieren.
                   </p>
 
                   {!uploadedFile ? (
@@ -903,15 +910,49 @@ export default function MusicGeneratorPage() {
               </div>
               )}
 
-              {/* Lyrics / Prompt */}
+              {/* Lyrics for UPLOAD mode */}
+              {mode === "upload" && (
+                <div className="mb-3">
+                  <label className="block text-sm max-md:text-[14px] font-semibold text-gunpowder-600 mb-1.5">
+                    Lyrics / Songtext (optional)
+                  </label>
+                  <p className="text-xs max-md:text-[13px] text-gunpowder-400 mb-2">
+                    Schreibe hier die Lyrics, die über das hochgeladene Instrumental gesungen werden sollen. Leer lassen für nur Instrumental.
+                  </p>
+                  <textarea
+                    value={uploadLyrics}
+                    onChange={(e) => setUploadLyrics(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        handleGenerate();
+                      }
+                    }}
+                    placeholder="z.B. Vers 1:\nDie Sonne scheint auf mein Gesicht\nIch spüre den Wind, er flüstert leis...\n\nRefrain:\nDas ist unser Sommer..."
+                    rows={6}
+                    maxLength={5000}
+                    className="w-full px-6 py-5 border-2 border-gunpowder-200 rounded-2xl font-jakarta text-base leading-relaxed text-gunpowder-900 bg-white resize-y transition-all duration-200 focus:outline-none focus:border-orange-400 focus:shadow-[0_0_0_4px_rgba(249,115,22,0.1)] placeholder:text-gunpowder-300 max-md:px-4 max-md:py-4 max-md:rounded-xl"
+                  />
+                  <div className="text-right text-xs text-gunpowder-300 mt-1">
+                    {uploadLyrics.length}/5000
+                  </div>
+                </div>
+              )}
+
+              {/* Prompt / Description */}
               {mode !== "mix" && (
                 <div className="mb-3">
                   <label className="block text-sm max-md:text-[14px] font-semibold text-gunpowder-600 mb-1.5">
-                    {mode === "upload" ? "Beschreibung / Stil-Anweisungen" : "Lyrics / Songtext"}
+                    {mode === "upload" ? "Stil-Beschreibung (optional)" : "Lyrics / Songtext"}
                   </label>
                   {mode === "create" && (
                     <p className="text-xs max-md:text-[13px] text-gunpowder-400 mb-2">
                       Schreibe hier den Text, der gesungen werden soll. Die KI singt genau das, was du schreibst.
+                    </p>
+                  )}
+                  {mode === "upload" && (
+                    <p className="text-xs max-md:text-[13px] text-gunpowder-400 mb-2">
+                      Beschreibe zusätzliche Stil-Anweisungen für die Musik (z.B. "mehr Energie", "düsterer Sound").
                     </p>
                   )}
                   <textarea
@@ -925,10 +966,10 @@ export default function MusicGeneratorPage() {
                     }}
                     placeholder={
                       mode === "upload"
-                        ? "z.B. Generiere einen Song im gleichen Stil wie das hochgeladene Audio, mit mehr Energie..."
+                        ? "z.B. Mach es energetischer, füge mehr Bass hinzu..."
                         : "z.B. Vers 1:\nDie Sonne scheint auf mein Gesicht\nIch spüre den Wind, er flüstert leis...\n\nRefrain:\nDas ist unser Sommer..."
                     }
-                    rows={mode === "create" ? 6 : 4}
+                    rows={mode === "create" ? 6 : 3}
                     maxLength={5000}
                     className="w-full px-6 py-5 border-2 border-gunpowder-200 rounded-2xl font-jakarta text-base leading-relaxed text-gunpowder-900 bg-white resize-y transition-all duration-200 focus:outline-none focus:border-orange-400 focus:shadow-[0_0_0_4px_rgba(249,115,22,0.1)] placeholder:text-gunpowder-300 max-md:px-4 max-md:py-4 max-md:rounded-xl"
                   />
@@ -961,8 +1002,8 @@ export default function MusicGeneratorPage() {
                 </div>
               )}
 
-              {/* Vocal gender - solo en modo crear (en upload se conserva tu voz) */}
-              {mode === "create" && (
+              {/* Vocal gender - for create and upload modes */}
+              {(mode === "create" || mode === "upload") && (
                 <div className="mb-4">
                   <label className="block text-sm max-md:text-[14px] font-semibold text-gunpowder-600 mb-1.5">
                     Stimme

@@ -44,9 +44,21 @@ const PROGRESS_STEPS = [
 ];
 
 function extractHTML(text: string): string {
+  console.log('🔍 [extractHTML] Input length:', text.length);
+  console.log('🔍 [extractHTML] Input preview:', text.substring(0, 300));
+
   const fenceMatch = text.match(/```(?:html)?\s*\n?([\s\S]*?)```/);
-  if (fenceMatch) return fenceMatch[1].trim();
-  if (text.trim().match(/^<!DOCTYPE|^<html/i)) return text.trim();
+  if (fenceMatch) {
+    console.log('🔍 [extractHTML] Found markdown fence');
+    return fenceMatch[1].trim();
+  }
+
+  if (text.trim().match(/^<!DOCTYPE|^<html/i)) {
+    console.log('🔍 [extractHTML] Found DOCTYPE or <html>');
+    return text.trim();
+  }
+
+  console.log('🔍 [extractHTML] Wrapping content in basic HTML structure');
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body>${text}</body></html>`;
 }
 
@@ -87,7 +99,10 @@ export default function WebCreatorPage() {
 
   const displayHTML = useMemo(() => {
     if (!lastAIHTML) return "";
-    return injectEditingCapabilities(lastAIHTML);
+    console.log('🎨 [displayHTML] Injecting editing capabilities into HTML');
+    const result = injectEditingCapabilities(lastAIHTML);
+    console.log('🎨 [displayHTML] Result length:', result.length);
+    return result;
   }, [lastAIHTML]);
 
   // Listen for inline edits from iframe
@@ -179,8 +194,14 @@ export default function WebCreatorPage() {
 
   const handleWebResult = (data: Record<string, string>, shouldOpenModal: boolean = true) => {
     finishProgress();
+    console.log('✅ [handleWebResult] Received data:', { status: data.status, replyLength: data.botReply?.length });
+
     if (data.status === "success" && data.botReply) {
+      console.log('✅ [handleWebResult] Bot reply preview:', data.botReply.substring(0, 500));
       const html = extractHTML(data.botReply);
+      console.log('✅ [handleWebResult] Extracted HTML length:', html.length);
+      console.log('✅ [handleWebResult] Extracted HTML preview:', html.substring(0, 300));
+
       setCurrentHTML(html);
       setResultHTML(html);
       setLastAIHTML(html);
