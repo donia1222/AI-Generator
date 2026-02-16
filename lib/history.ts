@@ -38,15 +38,23 @@ export function getAllHistory(): HistoryItem[] {
 }
 
 export function addToHistory(item: Omit<HistoryItem, "id" | "createdAt">): void {
-  if (typeof window === "undefined") return;
+  console.log("📝 addToHistory LLAMADO con:", item);
+  if (typeof window === "undefined") {
+    console.log("⚠️ window is undefined, no se guarda");
+    return;
+  }
   const history = getHistory(item.type);
+  console.log("📚 Historial actual tiene:", history.length, "items");
   const newItem: HistoryItem = {
     ...item,
     id: `${item.type}_${Date.now()}`,
     createdAt: new Date().toISOString(),
   };
+  console.log("🆕 Nuevo item creado:", newItem);
   const updated = [newItem, ...history].slice(0, MAX_ITEMS);
+  console.log("💾 Guardando", updated.length, "items en localStorage");
   localStorage.setItem(STORAGE_KEYS[item.type], JSON.stringify(updated));
+  console.log("✅ localStorage.setItem ejecutado para", STORAGE_KEYS[item.type]);
 }
 
 export function updateLatestHistory(type: HistoryType, metadata: Record<string, string>): void {

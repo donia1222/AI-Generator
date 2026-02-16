@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { addToHistory } from "@/lib/history";
+import { addToHistory, getHistory } from "@/lib/history";
 import { startGeneration, getGeneration, clearGeneration, subscribe } from "@/lib/generation-store";
 import { playAudio } from "@/lib/audio-store";
 import PasswordModal, { isAuthenticated } from "@/components/PasswordModal";
@@ -80,6 +80,7 @@ export default function MusicGeneratorPage() {
   const [instrumentalFile, setInstrumentalFile] = useState<File | null>(null);
   const [vocalVol, setVocalVol] = useState(1.0);
   const [instVol, setInstVol] = useState(0.45);
+  const [myMusic, setMyMusic] = useState<Array<{id: string; url: string; title: string; createdAt: string}>>([]);
 
   // Upload state
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -98,6 +99,17 @@ export default function MusicGeneratorPage() {
   const instrumentalRef = useRef<HTMLAudioElement>(null);
   const originalRef = useRef<HTMLAudioElement>(null);
   const mixedRef = useRef<HTMLAudioElement>(null);
+
+  // Load user's generated music from history
+  useEffect(() => {
+    const musicHistory = getHistory("music").slice(0, 10); // Last 10 songs
+    setMyMusic(musicHistory.map(item => ({
+      id: item.id,
+      url: item.url,
+      title: item.title,
+      createdAt: item.createdAt
+    })).filter(m => m.url));
+  }, [audioUrl, mixedAudioUrl]); // Refresh when new audio is generated
 
   // Restore form fields from sessionStorage on mount (avoids hydration mismatch)
   const [hydrated, setHydrated] = useState(false);
@@ -1339,6 +1351,56 @@ export default function MusicGeneratorPage() {
           </div>
         </section>
       )}
+
+  {/* My Generated Music */}
+      {myMusic.length > 0 && (
+        <section className="py-16 bg-gradient-to-b from-gunpowder-50 to-white max-md:py-10">
+          <div className="max-w-[800px] mx-auto px-6 max-md:px-4">
+            <h3 className="text-[42px] font-extrabold text-gunpowder-900 mb-3 max-md:text-[20px]">
+              Meine{" "}
+              <span className="bg-gradient-to-r from-orange-500 to-rose-500 bg-clip-text text-transparent">
+                generierten Songs
+              </span>
+            </h3>
+            <p className="text-[16px] text-gunpowder-500 mb-8 max-md:text-[14px]">
+              Deine letzten {myMusic.length} KI-generierten Songs
+            </p>
+            <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
+              {myMusic.map((track) => (
+                <div
+                  key={track.id}
+                  className="bg-white rounded-2xl border border-gunpowder-150 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="bg-gradient-to-r from-orange-500 to-rose-500 px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm flex-shrink-0">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 18V5l12-2v13" />
+                          <circle cx="6" cy="18" r="3" />
+                          <circle cx="18" cy="16" r="3" />
+                        </svg>
+                      </div>
+                      <h4 className="text-white font-bold text-sm truncate">{track.title}</h4>
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <button
+                      onClick={() => playAudio(track.url, track.title)}
+                      className="w-full h-12 rounded-xl bg-gradient-to-r from-orange-500 to-rose-500 text-white font-semibold text-sm hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                      Im Mini Player abspielen
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
   {/* Examples of generated music */}
       <section className="py-16 bg-gradient-to-b from-white to-[#fff8f5] max-md:py-10">
         <div className="max-w-[800px] mx-auto px-6 max-md:px-4">

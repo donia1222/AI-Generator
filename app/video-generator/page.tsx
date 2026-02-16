@@ -197,6 +197,16 @@ export default function VideoGeneratorPage() {
           sessionStorage.removeItem("video_generating_timestamp");
 
           // Save to history
+          console.log("🎬 GUARDANDO VIDEO EN HISTORIAL:", {
+            type: "video",
+            prompt: fullPrompt,
+            url: statusData.videoUrl,
+            metadata: {
+              duration: duration,
+              orientation: orientation,
+              styles: selectedStyles.join(", "),
+            },
+          });
           addToHistory({
             type: "video",
             prompt: fullPrompt,
@@ -207,6 +217,8 @@ export default function VideoGeneratorPage() {
               styles: selectedStyles.join(", "),
             },
           });
+          console.log("✅ addToHistory EJECUTADO");
+          console.log("📦 localStorage history_video:", localStorage.getItem("history_video"));
 
           setTimeout(() => {
             resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
