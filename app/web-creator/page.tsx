@@ -131,7 +131,9 @@ export default function WebCreatorPage() {
   const getIframeHTML = useCallback(() => {
     try {
       const iframe = iframeResultRef.current;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (iframe?.contentWindow && (iframe.contentWindow as any).__soraGetCleanHTML) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const html = (iframe.contentWindow as any).__soraGetCleanHTML();
         console.log('📋 Extracted HTML from iframe, length:', html?.length);
         return html;
@@ -529,6 +531,7 @@ export default function WebCreatorPage() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const openTemplateModal = (idx: number) => {
     setModalTemplateIdx(idx);
     setModalOpen(true);
