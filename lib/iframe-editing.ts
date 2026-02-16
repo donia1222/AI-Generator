@@ -417,6 +417,9 @@ export function injectEditingCapabilities(html: string): string {
   }
 
   function isLargeSection(el) {
+    // Always allow semantic elements (header, nav, footer) regardless of size
+    var tag = el.tagName;
+    if (tag === 'HEADER' || tag === 'NAV' || tag === 'FOOTER') return true;
     var rect = el.getBoundingClientRect();
     return rect.height > 100 && rect.width > 200;
   }

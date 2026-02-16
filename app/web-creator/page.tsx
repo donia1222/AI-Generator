@@ -88,6 +88,7 @@ export default function WebCreatorPage() {
   const [editSidebarOpen, setEditSidebarOpen] = useState(false);
   const [editingSectionIndex, setEditingSectionIndex] = useState<number | null>(null);
   const [editingSectionName, setEditingSectionName] = useState("");
+  const [hasEdits, setHasEdits] = useState(false);
   const [editingSectionStyles, setEditingSectionStyles] = useState<Record<string, string>>({});
 
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -102,6 +103,7 @@ export default function WebCreatorPage() {
       setLastAIHTML(resultHTML);
     }
     setResultModalOpen(false);
+    setHasEdits(false);
   }, [resultHTML, lastAIHTML]);
 
   // Load user's generated websites from history
@@ -143,6 +145,7 @@ export default function WebCreatorPage() {
       if (event.data?.type === "sora-edit" && event.data.html) {
         setResultHTML(event.data.html);
         setCurrentHTML(event.data.html);
+        setHasEdits(true);
 
         // Save to sessionStorage for immediate persistence
         sessionStorage.setItem("web_completed_html", event.data.html);
@@ -419,6 +422,7 @@ export default function WebCreatorPage() {
         setResultHTML(html);
         setCurrentHTML(html);
         setLastAIHTML(html);
+        setHasEdits(true);
 
         // Update history - use currentHistoryId if available
         if (currentHistoryId) {
@@ -869,13 +873,25 @@ export default function WebCreatorPage() {
             <div className="flex items-center justify-between px-5 py-3 border-b border-black/5 bg-white shrink-0">
               <button
                 onClick={closeResultModal}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-none bg-[#e8f0fe] cursor-pointer text-[#1a3a5c] hover:bg-[#d4e4fc] transition-all text-[14px] font-semibold"
+                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-none cursor-pointer transition-all text-[14px] font-semibold ${
+                  hasEdits
+                    ? "bg-[#e8f5e9] text-[#2e7d32] hover:bg-[#c8e6c9]"
+                    : "bg-[#e8f0fe] text-[#1a3a5c] hover:bg-[#d4e4fc]"
+                }`}
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 12H5" />
-                  <path d="M12 19l-7-7 7-7" />
-                </svg>
-                Zurück
+                {hasEdits ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+                    <polyline points="17 21 17 13 7 13 7 21" />
+                    <polyline points="7 3 7 8 15 8" />
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M19 12H5" />
+                    <path d="M12 19l-7-7 7-7" />
+                  </svg>
+                )}
+                {hasEdits ? "Guardar y volver" : "Zurück"}
               </button>
 
               {/* Device toggle */}
