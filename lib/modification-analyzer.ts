@@ -152,6 +152,6 @@ export class ModificationAnalyzer {
     }
 
     // Remove duplicates
-    return [...new Set(sections)];
+    return Array.from(new Set(sections));
   }
 }
