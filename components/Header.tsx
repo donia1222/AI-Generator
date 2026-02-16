@@ -107,8 +107,8 @@ export default function Header() {
           >
             <span className="flex items-center justify-center w-9 h-9 max-md:w-8 max-md:h-8 rounded-full bg-gunpowder-50 border border-gunpowder-150 transition-all group-hover:bg-begonia-50 group-hover:border-begonia-200 group-active:scale-95">
               <svg
-                width="18"
-                height="18"
+                width="22"
+                height="22"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -121,14 +121,14 @@ export default function Header() {
               </svg>
             </span>
             <span className="flex flex-col leading-none">
-              <span className="text-[23px] max-md:text-[19px] font-extrabold">Lweb</span>
+              <span className="text-[23px] max-md:text-[21px] font-extrabold">Lweb</span>
               <span className="flex items-center gap-1 mt-0.5">
                 <svg width="16" height="16" viewBox="0 0 16 16" className="flex-shrink-0">
                   <rect width="16" height="16" rx="3" fill="#EE0000" />
                   <rect x="7" y="3" width="2" height="10" fill="#fff" />
                   <rect x="3" y="7" width="10" height="2" fill="#fff" />
                 </svg>
-                <span className="text-[13px] max-md:text-[12px] font-semibold text-gunpowder-400">Schweiz</span>
+                <span className="text-[13px] max-md:text-[13px] font-semibold text-gunpowder-400">Schweiz</span>
               </span>
             </span>
           </Link>
@@ -203,7 +203,7 @@ export default function Header() {
 
             {/* Footer */}
             <div className="px-5 py-3 border-t border-gunpowder-100 bg-gunpowder-50/50">
-              <p className="text-[11px] text-gunpowder-400 text-center font-medium">
+              <p className="text-[12px] text-gunpowder-400 text-center font-medium">
                 KI Creator Suite — Powered by Gemini, Suno & Sora
               </p>
             </div>
