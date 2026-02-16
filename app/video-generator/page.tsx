@@ -241,6 +241,7 @@ export default function VideoGeneratorPage() {
       }
     }, 3000); // Poll every 3 seconds
 
+    
     // Store the interval ref
     pollingIntervalRef.current = pollInterval;
   };
