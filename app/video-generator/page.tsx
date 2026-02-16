@@ -48,7 +48,6 @@ export default function VideoGeneratorPage() {
   const [error, setError] = useState("");
   const [attachedImage, setAttachedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
-  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
 
   const resultRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -70,7 +69,6 @@ export default function VideoGeneratorPage() {
       // Check if generation is still recent (within 10 minutes)
       const elapsed = Date.now() - parseInt(savedTimestamp);
       if (elapsed < 10 * 60 * 1000) {
-        setCurrentJobId(savedJobId);
         setIsGenerating(true);
         setProgressPct(5);
         setProgressText("Wiederaufnahme der Generierung...");
@@ -197,7 +195,6 @@ export default function VideoGeneratorPage() {
           sessionStorage.removeItem("video_generating_jobId");
           sessionStorage.removeItem("video_generating_prompt");
           sessionStorage.removeItem("video_generating_timestamp");
-          setCurrentJobId(null);
 
           // Save to history
           addToHistory({
@@ -224,7 +221,6 @@ export default function VideoGeneratorPage() {
           sessionStorage.removeItem("video_generating_jobId");
           sessionStorage.removeItem("video_generating_prompt");
           sessionStorage.removeItem("video_generating_timestamp");
-          setCurrentJobId(null);
         }
       } catch (err) {
         console.error("Error polling video status:", err);
@@ -237,7 +233,6 @@ export default function VideoGeneratorPage() {
         sessionStorage.removeItem("video_generating_jobId");
         sessionStorage.removeItem("video_generating_prompt");
         sessionStorage.removeItem("video_generating_timestamp");
-        setCurrentJobId(null);
       }
     }, 3000); // Poll every 3 seconds
 
@@ -289,7 +284,6 @@ export default function VideoGeneratorPage() {
 
       if (data.status === "pending" && data.jobId) {
         // Save generation state to sessionStorage
-        setCurrentJobId(data.jobId);
         sessionStorage.setItem("video_generating_jobId", data.jobId);
         sessionStorage.setItem("video_generating_prompt", fullPrompt);
         sessionStorage.setItem("video_generating_timestamp", Date.now().toString());
