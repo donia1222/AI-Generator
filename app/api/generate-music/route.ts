@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
       hasLyrics,
       instrumental: useInstrumental,
       vocalGender: body.vocalGender || "none",
-      styleAndPrompt: `style=${body.style}, prompt=${body.prompt?.substring(0, 50)}...`
+      styleAndPrompt: `style=${body.style}, prompt=${String(body.prompt || '').substring(0, 50)}...`
     });
   } else {
     // Normal generation from text
