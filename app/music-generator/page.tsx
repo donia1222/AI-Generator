@@ -81,6 +81,7 @@ export default function MusicGeneratorPage() {
   const [vocalVol, setVocalVol] = useState(1.0);
   const [instVol, setInstVol] = useState(0.45);
   const [myMusic, setMyMusic] = useState<Array<{id: string; url: string; title: string; createdAt: string}>>([]);
+  const [isMounted, setIsMounted] = useState(false);
 
   // Upload state
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -100,8 +101,42 @@ export default function MusicGeneratorPage() {
   const originalRef = useRef<HTMLAudioElement>(null);
   const mixedRef = useRef<HTMLAudioElement>(null);
 
+  // Auto-send to mini player when any audio starts playing (and prevent inline playback)
+  useEffect(() => {
+    const audios = [
+      { ref: instrumentalRef, title: audioTitle || "KI-Song" },
+      { ref: originalRef, title: "Original Vocal" },
+      { ref: mixedRef, title: audioTitle || "Mixed Track" }
+    ];
+    const handlers: Array<(e: Event) => void> = [];
+
+    audios.forEach(({ ref, title }) => {
+      if (ref.current) {
+        const handler = (e: Event) => {
+          const audio = ref.current;
+          if (audio) {
+            e.preventDefault();
+            audio.pause(); // Stop inline playback
+            playAudio(audio.src, title);
+          }
+        };
+        ref.current.addEventListener('play', handler);
+        handlers.push(handler);
+      }
+    });
+
+    return () => {
+      audios.forEach(({ ref }, index) => {
+        if (ref.current) {
+          ref.current.removeEventListener('play', handlers[index]);
+        }
+      });
+    };
+  }, [audioUrl, mixedAudioUrl, audioTitle]);
+
   // Load user's generated music from history
   useEffect(() => {
+    setIsMounted(true);
     const musicHistory = getHistory("music").slice(0, 10); // Last 10 songs
     setMyMusic(musicHistory.map(item => ({
       id: item.id,
@@ -1209,9 +1244,16 @@ export default function MusicGeneratorPage() {
                       </div>
                     </div>
                     <div className="px-8 py-6 max-md:px-5 max-md:py-4">
-                      <audio ref={mixedRef} controls className="w-full" src={mixedAudioUrl}>
-                        Dein Browser unterstützt kein Audio.
-                      </audio>
+                      <button
+                        onClick={() => playAudio(mixedAudioUrl, audioTitle || "Mixed Track")}
+                        className="w-full h-14 rounded-xl bg-gradient-to-r from-orange-500 to-rose-500 text-white font-bold text-base hover:shadow-lg transition-all flex items-center justify-center gap-3"
+                      >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                          <path d="M8 5v14l11-7z"/>
+                        </svg>
+                        Im Mini Player abspielen
+                      </button>
+                      <audio ref={mixedRef} src={mixedAudioUrl} className="hidden" />
                     </div>
 
                     {/* Volume Controls + Remix */}
@@ -1279,9 +1321,16 @@ export default function MusicGeneratorPage() {
                   </div>
                 </div>
                 <div className="px-8 py-6">
-                  <audio ref={instrumentalRef} controls className="w-full" src={audioUrl}>
-                    Dein Browser unterstützt kein Audio.
-                  </audio>
+                  <button
+                    onClick={() => playAudio(audioUrl, audioTitle || "KI-Song")}
+                    className="w-full h-14 rounded-xl bg-gradient-to-r from-orange-500 to-rose-500 text-white font-bold text-base hover:shadow-lg transition-all flex items-center justify-center gap-3"
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    Im Mini Player abspielen
+                  </button>
+                  <audio ref={instrumentalRef} src={audioUrl} className="hidden" />
                 </div>
               </div>
             )}
@@ -1353,7 +1402,7 @@ export default function MusicGeneratorPage() {
       )}
 
   {/* My Generated Music */}
-      {myMusic.length > 0 && (
+      {isMounted && myMusic.length > 0 && (
         <section className="py-16 bg-gradient-to-b from-gunpowder-50 to-white max-md:py-10">
           <div className="max-w-[800px] mx-auto px-6 max-md:px-4">
             <h3 className="text-[42px] font-extrabold text-gunpowder-900 mb-3 max-md:text-[20px]">
@@ -1413,17 +1462,7 @@ export default function MusicGeneratorPage() {
           <p className="text-[16px] text-gunpowder-500 mb-8 max-md:text-[14px]">
             Höre dir an, was unsere KI bereits erstellt hat.
           </p>
-          <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1" ref={(el) => {
-            if (!el) return;
-            const audios = el.querySelectorAll<HTMLAudioElement>("audio");
-            audios.forEach((a) => {
-              if (a.dataset.bound) return;
-              a.dataset.bound = "1";
-              a.addEventListener("play", () => {
-                audios.forEach((other) => { if (other !== a) other.pause(); });
-              });
-            });
-          }}>
+          <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
             {[
               { src: "/images/mp3/5e608c9160444666bff460b623ad3fdf.mp3", title: "Sommernacht Vibes" },
               { src: "/images/mp3/aad9e02c60e74a998b84b2308aaee1c7.mp3", title: "Chill Lo-Fi Beat" },
@@ -1447,7 +1486,15 @@ export default function MusicGeneratorPage() {
                   </div>
                 </div>
                 <div className="p-4">
-                  <audio controls className="w-full h-10" src={track.src} preload="none" />
+                  <button
+                    onClick={() => playAudio(track.src, track.title)}
+                    className="w-full h-10 rounded-xl bg-gradient-to-r from-orange-500 to-rose-500 text-white font-semibold text-sm hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    Im Mini Player abspielen
+                  </button>
                 </div>
               </div>
             ))}

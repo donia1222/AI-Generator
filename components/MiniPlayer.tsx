@@ -19,6 +19,8 @@ export default function MiniPlayer() {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+  const [volume, setVolume] = useState(1.0);
+  const [isMuted, setIsMuted] = useState(false);
 
   // Sync <audio> element with store state
   useEffect(() => {
@@ -45,6 +47,13 @@ export default function MiniPlayer() {
       }
     }
   }, [audio?.url, audio?.isPlaying]);
+
+  // Update volume
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.volume = isMuted ? 0 : volume;
+  }, [volume, isMuted]);
 
   if (!audio) return null;
 
@@ -109,6 +118,48 @@ export default function MiniPlayer() {
           <p className="text-xs text-gunpowder-400">
             {fmt(currentTime)} / {duration ? fmt(duration) : "--:--"}
           </p>
+        </div>
+
+        {/* Volume Control */}
+        <div className="flex items-center gap-2 flex-shrink-0 max-md:hidden">
+          <button
+            onClick={() => setIsMuted(!isMuted)}
+            className="w-8 h-8 flex items-center justify-center rounded-full text-gunpowder-300 hover:text-white transition-colors cursor-pointer border-none"
+          >
+            {isMuted || volume === 0 ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <line x1="23" y1="9" x2="17" y2="15" />
+                <line x1="17" y1="9" x2="23" y2="15" />
+              </svg>
+            ) : volume < 0.5 ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+              </svg>
+            )}
+          </button>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={isMuted ? 0 : volume}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              setVolume(v);
+              if (v > 0) setIsMuted(false);
+            }}
+            className="w-20 h-1 accent-orange-500 cursor-pointer"
+            style={{
+              background: `linear-gradient(to right, rgb(249, 115, 22) 0%, rgb(249, 115, 22) ${(isMuted ? 0 : volume) * 100}%, rgb(55, 65, 81) ${(isMuted ? 0 : volume) * 100}%, rgb(55, 65, 81) 100%)`
+            }}
+          />
         </div>
 
         {/* Close */}
