@@ -42,6 +42,7 @@ const GENRE_CHIPS = [
   "Funk",
   "Latin",
   "Schlager",
+  "Circus / Zirkusmusik",
 ];
 
 const MOOD_CHIPS = [
