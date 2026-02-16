@@ -25,7 +25,7 @@ export function injectEditingCapabilities(html: string): string {
   cleanedHTML = cleanedHTML.replace(/<div[^>]*id="__sora-editing-active"[^>]*><\/div>/gi, '');
   // Remove __sora classes from class attributes
   cleanedHTML = cleanedHTML.replace(/class="([^"]*)"/g, function(_match, classes) {
-    var cleaned = classes.split(/\s+/).filter(function(c: string) {
+    const cleaned = classes.split(/\s+/).filter(function(c: string) {
       return c.indexOf('__sora') === -1;
     }).join(' ');
     return cleaned ? 'class="' + cleaned + '"' : '';
@@ -225,10 +225,14 @@ export function injectEditingCapabilities(html: string): string {
       }
     }
 
-    // 5. Remove contenteditable attributes
+    // 5. Remove contenteditable and data-sora-idx attributes
     var editables = docClone.querySelectorAll('[contenteditable]');
     for (var k = 0; k < editables.length; k++) {
       editables[k].removeAttribute('contenteditable');
+    }
+    var idxEls = docClone.querySelectorAll('[data-sora-idx]');
+    for (var ki = 0; ki < idxEls.length; ki++) {
+      idxEls[ki].removeAttribute('data-sora-idx');
     }
 
     // 6. Remove __sora classes from all elements (but keep other classes)
@@ -426,6 +430,8 @@ export function injectEditingCapabilities(html: string): string {
   // Find and setup sections
   var sectionSelectors = 'header, nav, footer, main > section, main > div, body > section, body > div';
   var potentialSections = document.querySelectorAll(sectionSelectors);
+  var sectionIdx = 0;
+  var sectionMap = {};
 
   potentialSections.forEach(function(section) {
     if (isSoraEl(section)) return;
@@ -441,6 +447,9 @@ export function injectEditingCapabilities(html: string): string {
     }
 
     section.classList.add('__sora-section-wrapper');
+    var idx = sectionIdx++;
+    section.setAttribute('data-sora-idx', idx);
+    sectionMap[idx] = section;
 
     var editBtn = document.createElement('button');
     editBtn.className = '__sora-section-edit-btn';
@@ -451,13 +460,116 @@ export function injectEditingCapabilities(html: string): string {
       e.preventDefault();
       e.stopPropagation();
 
-      // Send message to parent with section info
+      // Extract current computed styles
+      var cs = window.getComputedStyle(section);
+      var currentStyles = {
+        backgroundColor: cs.backgroundColor,
+        color: cs.color,
+        fontFamily: cs.fontFamily,
+        fontSize: cs.fontSize,
+        padding: cs.padding,
+        borderRadius: cs.borderRadius,
+        backgroundImage: cs.backgroundImage
+      };
+
+      // Send message to parent with section info + styles
       window.parent.postMessage({
         type: 'sora-edit-section',
         sectionName: sectionName,
-        sectionHTML: section.outerHTML
+        sectionHTML: section.outerHTML,
+        sectionIndex: idx,
+        currentStyles: currentStyles
       }, '*');
     });
+  });
+
+  // Listen for style changes from parent
+  window.addEventListener('message', function(event) {
+    if (!event.data || !event.data.type) return;
+
+    if (event.data.type === 'sora-apply-style') {
+      var target = sectionMap[event.data.sectionIndex];
+      if (!target) return;
+      var styles = event.data.styles;
+      if (styles) {
+        // If setting a gradient via 'background', clear conflicting properties first
+        if (styles.background && styles.background.indexOf('gradient') !== -1) {
+          target.style.backgroundColor = '';
+          target.style.backgroundImage = '';
+          target.style.background = styles.background;
+        } else if (styles.backgroundColor) {
+          // When setting solid bg color, clear background shorthand
+          target.style.background = '';
+          target.style.backgroundColor = styles.backgroundColor;
+        } else {
+          Object.keys(styles).forEach(function(prop) {
+            target.style[prop] = styles[prop];
+          });
+        }
+      }
+      sendUpdate();
+    }
+
+    if (event.data.type === 'sora-apply-font') {
+      var target = sectionMap[event.data.sectionIndex];
+      if (!target) return;
+      if (event.data.googleFontUrl) {
+        var existing = document.querySelector('link[href="' + event.data.googleFontUrl + '"]');
+        if (!existing) {
+          var link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = event.data.googleFontUrl;
+          document.head.appendChild(link);
+        }
+      }
+      if (event.data.fontFamily) {
+        target.style.fontFamily = event.data.fontFamily;
+        var textChildren = target.querySelectorAll('h1,h2,h3,h4,h5,h6,p,span,a,li,button,label,blockquote,div');
+        textChildren.forEach(function(child) {
+          child.style.fontFamily = event.data.fontFamily;
+        });
+      }
+      sendUpdate();
+    }
+
+    // Set background image on section
+    if (event.data.type === 'sora-apply-bg-image') {
+      var target = sectionMap[event.data.sectionIndex];
+      if (!target) return;
+      target.style.backgroundImage = 'url(' + event.data.dataUrl + ')';
+      target.style.backgroundSize = 'cover';
+      target.style.backgroundPosition = 'center';
+      target.style.backgroundRepeat = 'no-repeat';
+      sendUpdate();
+    }
+
+    // Apply color overlay on top of existing background image
+    if (event.data.type === 'sora-apply-overlay') {
+      var target = sectionMap[event.data.sectionIndex];
+      if (!target) return;
+      var cs = window.getComputedStyle(target);
+      var currentBg = cs.backgroundImage;
+      var overlayColor = event.data.overlayColor; // e.g. "rgba(0,0,0,0.5)"
+
+      if (currentBg && currentBg !== 'none') {
+        // Remove any existing gradient overlay (keep only url() parts)
+        var urlParts = [];
+        var urlMatch;
+        var urlRegex = /url\\([^)]+\\)/g;
+        while ((urlMatch = urlRegex.exec(currentBg)) !== null) {
+          urlParts.push(urlMatch[0]);
+        }
+        if (urlParts.length > 0) {
+          target.style.backgroundImage = 'linear-gradient(' + overlayColor + ',' + overlayColor + '),' + urlParts.join(',');
+        } else {
+          // No image URL found, just set as background color
+          target.style.backgroundColor = overlayColor;
+        }
+      } else {
+        target.style.backgroundColor = overlayColor;
+      }
+      sendUpdate();
+    }
   });
 
   // Clean up any pre-existing text pencils

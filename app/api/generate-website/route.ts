@@ -282,11 +282,16 @@ export async function POST(req: NextRequest) {
   const geminiApiKey = process.env.GEMINI_API_KEY;
   const systemPrompt = isModify ? MODIFY_SYSTEM_PROMPT : CREATOR_SYSTEM_PROMPT;
 
+  // For full regeneration on modify, include the current HTML in the user message
+  const finalUserMessage = (isModify && currentHTML)
+    ? `Here is the current HTML of the website:\n\n${currentHTML}\n\nThe user wants this change: ${userMessage}\n\nReturn the COMPLETE modified HTML preserving ALL existing inline styles, classes, and structure. Only change what the user asked for.`
+    : userMessage;
+
   // Try Gemini first if configured
   if (geminiApiKey) {
     try {
       console.log("🔄 Trying Gemini Pro...");
-      const geminiResponse = await generateWithGemini(systemPrompt, userMessage);
+      const geminiResponse = await generateWithGemini(systemPrompt, finalUserMessage);
       console.log("✅ Gemini Pro succeeded!");
       console.log("📦 Returning response with length:", geminiResponse.length);
 
@@ -301,7 +306,7 @@ export async function POST(req: NextRequest) {
 
       // Fallback to OpenAI
       try {
-        const openaiResponse = await generateWithOpenAI(systemPrompt, userMessage);
+        const openaiResponse = await generateWithOpenAI(systemPrompt, finalUserMessage);
         console.log("📦 Returning OpenAI fallback response with length:", openaiResponse.length);
         return NextResponse.json({
           status: "success",
@@ -320,7 +325,7 @@ export async function POST(req: NextRequest) {
   // If Gemini is not configured, use OpenAI directly
   console.log("⚠️ Gemini API key not configured - Using OpenAI...");
   try {
-    const openaiResponse = await generateWithOpenAI(systemPrompt, userMessage);
+    const openaiResponse = await generateWithOpenAI(systemPrompt, finalUserMessage);
     console.log("📦 Returning OpenAI response with length:", openaiResponse.length);
     return NextResponse.json({
       status: "success",
