@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import ProgressBar from "@/components/ProgressBar";
 import { addToHistory } from "@/lib/history";
 import { startGeneration, getGeneration, clearGeneration, subscribe } from "@/lib/generation-store";
 import { playAudio } from "@/lib/audio-store";
@@ -122,9 +121,35 @@ export default function MusicGeneratorPage() {
   useEffect(() => { if (hydrated) sessionStorage.setItem("music_moods", JSON.stringify(selectedMoods)); }, [selectedMoods, hydrated]);
   useEffect(() => { if (hydrated) sessionStorage.setItem("music_vocal", vocal); }, [vocal, hydrated]);
 
-  // Restore state from global store on mount + subscribe for updates
+  // Restore state from global store on mount + subscribe for updates + restore completed audio
   useEffect(() => {
     const restoreFromStore = () => {
+      // First, check if there's a completed audio in sessionStorage
+      const savedAudioUrl = sessionStorage.getItem("music_completed_audioUrl");
+      const savedMixedUrl = sessionStorage.getItem("music_completed_mixedUrl");
+      const savedTitle = sessionStorage.getItem("music_completed_title");
+      const savedTimestamp = sessionStorage.getItem("music_completed_timestamp");
+
+      if ((savedAudioUrl || savedMixedUrl) && savedTimestamp) {
+        // Check if result is recent (within 1 hour)
+        const elapsed = Date.now() - parseInt(savedTimestamp);
+        if (elapsed < 60 * 60 * 1000) {
+          if (savedAudioUrl) setAudioUrl(savedAudioUrl);
+          if (savedMixedUrl) setMixedAudioUrl(savedMixedUrl);
+          if (savedTitle) setAudioTitle(savedTitle);
+          setTimeout(() => {
+            resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 200);
+          return; // Don't check generation store if we have a completed result
+        } else {
+          // Clear old data
+          sessionStorage.removeItem("music_completed_audioUrl");
+          sessionStorage.removeItem("music_completed_mixedUrl");
+          sessionStorage.removeItem("music_completed_title");
+          sessionStorage.removeItem("music_completed_timestamp");
+        }
+      }
+
       const gen = getGeneration("music");
       if (!gen) return;
 
@@ -364,7 +389,19 @@ export default function MusicGeneratorPage() {
     setAudioUrl("");
     setOriginalAudioUrl("");
     setMixedAudioUrl("");
+
+    // Clear any previous completed result
+    sessionStorage.removeItem("music_completed_audioUrl");
+    sessionStorage.removeItem("music_completed_mixedUrl");
+    sessionStorage.removeItem("music_completed_title");
+    sessionStorage.removeItem("music_completed_timestamp");
+
     startProgress();
+
+    // Auto-scroll to skeleton
+    setTimeout(() => {
+      resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
 
     const styleParts = [...selectedGenres, ...selectedMoods];
     if (vocal === "male") styleParts.push("male vocals");
@@ -458,6 +495,13 @@ export default function MusicGeneratorPage() {
         const mixUrl = URL.createObjectURL(mixBlob);
         setMixedAudioUrl(mixUrl);
         playAudio(mixUrl, genData.title || "AI Mix");
+
+        // Save to sessionStorage
+        sessionStorage.setItem("music_completed_audioUrl", aiInstUrl);
+        sessionStorage.setItem("music_completed_mixedUrl", mixUrl);
+        sessionStorage.setItem("music_completed_title", genData.title || "AI Mix");
+        sessionStorage.setItem("music_completed_timestamp", Date.now().toString());
+
         addToHistory({
           type: "music",
           prompt: "Mix: " + (mixVocalFile?.name || "Stimme") + " + KI-Instrumental",
@@ -544,6 +588,12 @@ export default function MusicGeneratorPage() {
         setAudioUrl(data.audioUrl);
         setAudioTitle(data.title || title || "KI-Song");
         playAudio(data.audioUrl, data.title || title || "KI-Song");
+
+        // Save to sessionStorage so it persists across page changes
+        sessionStorage.setItem("music_completed_audioUrl", data.audioUrl);
+        sessionStorage.setItem("music_completed_title", data.title || title || "KI-Song");
+        sessionStorage.setItem("music_completed_timestamp", Date.now().toString());
+
         addToHistory({
           type: "music",
           prompt: prompt.trim(),
@@ -594,6 +644,9 @@ export default function MusicGeneratorPage() {
               const mixObjUrl = URL.createObjectURL(mixBlob);
               setMixedAudioUrl(mixObjUrl);
               playAudio(mixObjUrl, data.title || title || "KI-Song");
+
+              // Save mixed audio to sessionStorage
+              sessionStorage.setItem("music_completed_mixedUrl", mixObjUrl);
             } else {
               console.error("Mix failed, showing tracks separately");
             }
@@ -1008,8 +1061,6 @@ export default function MusicGeneratorPage() {
                 </div>
               )}
 
-              <ProgressBar isActive={isGenerating} percent={progressPct} text={progressText} />
-
               {error && (
                 <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-sm max-md:text-[14px] text-red-600 font-medium">
                   {error}
@@ -1020,8 +1071,49 @@ export default function MusicGeneratorPage() {
         </div>
       </section>
 
+      {/* SKELETON - Audio being generated */}
+      {isGenerating && !audioUrl && !mixedAudioUrl && (
+        <section ref={resultRef} className="flex flex-col items-center justify-center min-h-[500px] bg-gunpowder-50 flex-1 px-6 py-16 max-md:px-4 max-md:py-10">
+          {/* Progress bar above skeleton */}
+          <div className="w-full max-w-[640px] mb-8 max-md:mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-base font-semibold text-gunpowder-700 max-md:text-sm">{progressText}</span>
+              <span className="text-base font-bold text-gunpowder-900 max-md:text-sm">{progressPct}%</span>
+            </div>
+            <div className="h-3 bg-gunpowder-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-orange-500 to-rose-500 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Audio Player Skeleton */}
+          <div className="w-full max-w-[640px] bg-white rounded-[24px] shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-black/5 overflow-hidden">
+            {/* Header with shimmer */}
+            <div className="bg-gradient-to-r from-orange-500 to-rose-500 px-8 py-6 max-md:px-5 max-md:py-4 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
+              <div className="flex items-center gap-4 relative">
+                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                  {/* Spinner */}
+                  <div className="w-8 h-8 rounded-full border-3 border-white/30 border-t-white animate-spin" />
+                </div>
+                <div className="flex-1">
+                  <div className="h-5 bg-white/30 rounded-lg w-32 mb-2 animate-pulse" />
+                  <div className="h-3 bg-white/20 rounded w-24 animate-pulse" />
+                </div>
+              </div>
+            </div>
+            {/* Player skeleton */}
+            <div className="px-8 py-6 max-md:px-5 max-md:py-4">
+              <div className="h-12 bg-gunpowder-100 rounded-lg animate-pulse" />
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* RESULT */}
-      {(audioUrl || mixedAudioUrl) && (
+      {(audioUrl || mixedAudioUrl) && !isGenerating && (
         <section ref={resultRef} className="py-16 bg-gunpowder-50 flex-1 max-md:py-10">
           <div className="max-w-[640px] mx-auto px-6 max-md:px-4">
             <div className="flex items-center justify-between mb-8 max-md:mb-5 max-md:flex-col max-md:items-start max-md:gap-3">

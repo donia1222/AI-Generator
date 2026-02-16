@@ -1,21 +1,9 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import ProgressBar from "@/components/ProgressBar";
 import VideoPlayer from "@/components/VideoPlayer";
 import { addToHistory } from "@/lib/history";
-import { startGeneration, getGeneration, clearGeneration, subscribe } from "@/lib/generation-store";
 import PasswordModal, { isAuthenticated } from "@/components/PasswordModal";
-
-const PROGRESS_STEPS = [
-  { pct: 5, text: "Sende Anfrage an Sora..." },
-  { pct: 15, text: "Video wird vorbereitet..." },
-  { pct: 30, text: "Szene wird aufgebaut..." },
-  { pct: 50, text: "Rendern der Frames..." },
-  { pct: 70, text: "Bewegungen werden berechnet..." },
-  { pct: 85, text: "Feinschliff & Qualitätskontrolle..." },
-  { pct: 92, text: "Fast fertig..." },
-];
 
 const STYLE_CHIPS = [
   "Cinematic",
@@ -60,10 +48,11 @@ export default function VideoGeneratorPage() {
   const [error, setError] = useState("");
   const [attachedImage, setAttachedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
 
-  const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Persist form fields to sessionStorage
   useEffect(() => { sessionStorage.setItem("video_prompt", prompt); }, [prompt]);
@@ -71,70 +60,43 @@ export default function VideoGeneratorPage() {
   useEffect(() => { sessionStorage.setItem("video_duration", duration); }, [duration]);
   useEffect(() => { sessionStorage.setItem("video_orientation", orientation); }, [orientation]);
 
-  // Restore state from global store on mount
+  // Restore ongoing generation on mount
   useEffect(() => {
-    const gen = getGeneration("video");
-    if (!gen) return;
+    const savedJobId = sessionStorage.getItem("video_generating_jobId");
+    const savedPrompt = sessionStorage.getItem("video_generating_prompt");
+    const savedTimestamp = sessionStorage.getItem("video_generating_timestamp");
 
-    if (gen.status === "pending") {
-      setIsGenerating(true);
-      // Resume progress from elapsed time
-      const elapsed = Date.now() - gen.startedAt;
-      const stepsPassed = Math.min(Math.floor(elapsed / 3000), PROGRESS_STEPS.length - 1);
-      setProgressPct(PROGRESS_STEPS[stepsPassed].pct);
-      setProgressText(PROGRESS_STEPS[stepsPassed].text);
-      let step = stepsPassed + 1;
-      progressRef.current = setInterval(() => {
-        if (step < PROGRESS_STEPS.length) {
-          setProgressPct(PROGRESS_STEPS[step].pct);
-          setProgressText(PROGRESS_STEPS[step].text);
-          step++;
-        }
-      }, 3000);
-      gen.promise.then(() => {
-        const updated = getGeneration("video");
-        if (updated?.status === "done" && updated.result) {
-          handleResult(updated.result as Record<string, string>);
-        } else if (updated?.status === "error") {
-          finishProgress();
-          setError(updated.error || "Ein Fehler ist aufgetreten.");
-        }
-      });
-    } else if (gen.status === "done" && gen.result) {
-      const r = gen.result as Record<string, string>;
-      if (r.videoUrl) setVideoUrl(r.videoUrl);
-    } else if (gen.status === "error") {
-      setError(gen.error || "Ein Fehler ist aufgetreten.");
+    if (savedJobId && savedTimestamp) {
+      // Check if generation is still recent (within 10 minutes)
+      const elapsed = Date.now() - parseInt(savedTimestamp);
+      if (elapsed < 10 * 60 * 1000) {
+        setCurrentJobId(savedJobId);
+        setIsGenerating(true);
+        setProgressPct(5);
+        setProgressText("Wiederaufnahme der Generierung...");
+
+        // Resume polling
+        setTimeout(() => {
+          pollVideoStatus(savedJobId, savedPrompt || "Video");
+        }, 500);
+      } else {
+        // Clear old generation data
+        sessionStorage.removeItem("video_generating_jobId");
+        sessionStorage.removeItem("video_generating_prompt");
+        sessionStorage.removeItem("video_generating_timestamp");
+      }
     }
-
-    return subscribe("video", () => {
-      const g = getGeneration("video");
-      if (g?.status !== "pending") setIsGenerating(false);
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleResult = (data: Record<string, string>) => {
-    finishProgress();
-    if (data.status === "success" && data.videoUrl) {
-      setVideoUrl(data.videoUrl);
-      addToHistory({
-        type: "video",
-        prompt: data._prompt || prompt,
-        url: data.videoUrl,
-        metadata: {
-          duration: data._duration || duration,
-          orientation: data._orientation || orientation,
-          styles: data._styles || selectedStyles.join(", "),
-        },
-      });
-      setTimeout(() => {
-        resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 200);
-    } else {
-      setError(data.message || "Ein Fehler ist aufgetreten. Bitte versuche es erneut.");
-    }
-  };
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, []);
+
 
   const handleImageAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -157,22 +119,7 @@ export default function VideoGeneratorPage() {
     );
   };
 
-  const startProgress = useCallback(() => {
-    if (progressRef.current) clearInterval(progressRef.current);
-    let step = 0;
-    setProgressPct(0);
-    setProgressText("Starte Videogenerierung...");
-    progressRef.current = setInterval(() => {
-      if (step < PROGRESS_STEPS.length) {
-        setProgressPct(PROGRESS_STEPS[step].pct);
-        setProgressText(PROGRESS_STEPS[step].text);
-        step++;
-      }
-    }, 3000);
-  }, []);
-
   const finishProgress = useCallback(() => {
-    if (progressRef.current) clearInterval(progressRef.current);
     setProgressPct(100);
     setProgressText("Fertig!");
     setTimeout(() => setIsGenerating(false), 800);
@@ -187,13 +134,131 @@ export default function VideoGeneratorPage() {
     generateVideo();
   };
 
+  const pollVideoStatus = async (jobId: string, fullPrompt: string) => {
+    let retryCount404 = 0;
+    const MAX_404_RETRIES = 3;
+
+    // Clear any existing polling interval
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const statusRes = await fetch(`/api/video-status?jobId=${jobId}`);
+        const statusData = await statusRes.json();
+
+        // Handle 404 errors with retry logic (job might still be creating)
+        if (statusRes.status === 404 && retryCount404 < MAX_404_RETRIES) {
+          retryCount404++;
+          console.log(`Job not found yet, retrying... (${retryCount404}/${MAX_404_RETRIES})`);
+          return;
+        }
+
+        if (statusData.status === "error" || !statusRes.ok) {
+          clearInterval(pollInterval);
+          finishProgress();
+          setError(statusData.message || "Ein Fehler ist aufgetreten.");
+          return;
+        }
+
+        // Update progress bar based on status
+        if (statusData.status === "queued") {
+          // Show minimum progress while in queue to indicate activity
+          setProgressPct(Math.max(5, statusData.progress || 0));
+          setProgressText("In der Warteschlange...");
+        } else if (statusData.status === "in_progress") {
+          const progress = statusData.progress || 0;
+          // Ensure progress is at least 10% when actively processing
+          setProgressPct(Math.max(10, progress));
+
+          if (progress < 20) {
+            setProgressText("Video wird vorbereitet...");
+          } else if (progress < 40) {
+            setProgressText("Szene wird aufgebaut...");
+          } else if (progress < 60) {
+            setProgressText("Rendern der Frames...");
+          } else if (progress < 80) {
+            setProgressText("Bewegungen werden berechnet...");
+          } else if (progress < 95) {
+            setProgressText("Feinschliff & Qualitätskontrolle...");
+          } else {
+            setProgressText("Fast fertig...");
+          }
+        }
+
+        if (statusData.status === "completed" && statusData.videoUrl) {
+          clearInterval(pollInterval);
+          pollingIntervalRef.current = null;
+          finishProgress();
+          setVideoUrl(statusData.videoUrl);
+
+          // Clear generation state from sessionStorage
+          sessionStorage.removeItem("video_generating_jobId");
+          sessionStorage.removeItem("video_generating_prompt");
+          sessionStorage.removeItem("video_generating_timestamp");
+          setCurrentJobId(null);
+
+          // Save to history
+          addToHistory({
+            type: "video",
+            prompt: fullPrompt,
+            url: statusData.videoUrl,
+            metadata: {
+              duration: duration,
+              orientation: orientation,
+              styles: selectedStyles.join(", "),
+            },
+          });
+
+          setTimeout(() => {
+            resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 200);
+        } else if (statusData.status === "failed") {
+          clearInterval(pollInterval);
+          pollingIntervalRef.current = null;
+          finishProgress();
+          setError(statusData.error || "Ein Fehler ist aufgetreten. Bitte versuche es erneut.");
+
+          // Clear generation state
+          sessionStorage.removeItem("video_generating_jobId");
+          sessionStorage.removeItem("video_generating_prompt");
+          sessionStorage.removeItem("video_generating_timestamp");
+          setCurrentJobId(null);
+        }
+      } catch (err) {
+        console.error("Error polling video status:", err);
+        clearInterval(pollInterval);
+        pollingIntervalRef.current = null;
+        finishProgress();
+        setError("Netzwerkfehler beim Abrufen des Status.");
+
+        // Clear generation state
+        sessionStorage.removeItem("video_generating_jobId");
+        sessionStorage.removeItem("video_generating_prompt");
+        sessionStorage.removeItem("video_generating_timestamp");
+        setCurrentJobId(null);
+      }
+    }, 3000); // Poll every 3 seconds
+
+    // Store the interval ref
+    pollingIntervalRef.current = pollInterval;
+  };
+
   const generateVideo = async () => {
     if (!prompt.trim()) return;
     setIsGenerating(true);
     setError("");
     setVideoUrl("");
-    clearGeneration("video");
-    startProgress();
+
+    // Start with initial progress
+    setProgressPct(5);
+    setProgressText("Sende Anfrage an Sora...");
+
+    // Auto-scroll to skeleton
+    setTimeout(() => {
+      resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
 
     let fullPrompt = prompt.trim();
     if (selectedStyles.length > 0) {
@@ -208,24 +273,34 @@ export default function VideoGeneratorPage() {
       formData.append("image", attachedImage);
     }
 
-    // Store metadata in the result for history
-    const meta = {
-      _prompt: fullPrompt,
-      _duration: duration,
-      _orientation: orientation,
-      _styles: selectedStyles.join(", "),
-    };
-
     try {
-      const data = await startGeneration("video", async () => {
-        const res = await fetch("/api/generate-video", {
-          method: "POST",
-          body: formData,
-        });
-        const json = await res.json();
-        return { ...json, ...meta };
+      const res = await fetch("/api/generate-video", {
+        method: "POST",
+        body: formData,
       });
-      handleResult(data as Record<string, string>);
+      const data = await res.json();
+
+      if (data.status === "error") {
+        finishProgress();
+        setError(data.message || "Ein Fehler ist aufgetreten.");
+        return;
+      }
+
+      if (data.status === "pending" && data.jobId) {
+        // Save generation state to sessionStorage
+        setCurrentJobId(data.jobId);
+        sessionStorage.setItem("video_generating_jobId", data.jobId);
+        sessionStorage.setItem("video_generating_prompt", fullPrompt);
+        sessionStorage.setItem("video_generating_timestamp", Date.now().toString());
+
+        // Wait a bit before starting polling to ensure job is created
+        setTimeout(() => {
+          pollVideoStatus(data.jobId, fullPrompt);
+        }, 500);
+      } else {
+        finishProgress();
+        setError("Unerwartete Antwort vom Server.");
+      }
     } catch (err) {
       console.error("Error generating video:", err);
       finishProgress();
@@ -408,8 +483,6 @@ export default function VideoGeneratorPage() {
                 </div>
               )}
 
-              <ProgressBar isActive={isGenerating} percent={progressPct} text={progressText} />
-
               {error && (
                 <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-sm max-md:text-[14px] text-red-600 font-medium">
                   {error}
@@ -419,6 +492,38 @@ export default function VideoGeneratorPage() {
           </div>
         </div>
       </section>
+
+      {/* SKELETON - Video being generated */}
+      {isGenerating && !videoUrl && (
+        <section ref={resultRef} className="flex flex-col items-center justify-center min-h-[500px] bg-gunpowder-50 flex-1 px-6 py-16 max-md:px-4 max-md:py-10">
+          {/* Progress bar above skeleton */}
+          <div className="w-full max-w-[800px] mb-8 max-md:mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-base font-semibold text-gunpowder-700 max-md:text-sm">{progressText}</span>
+              <span className="text-base font-bold text-gunpowder-900 max-md:text-sm">{progressPct}%</span>
+            </div>
+            <div className="h-3 bg-gunpowder-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Skeleton */}
+          <div className={`relative w-full bg-gradient-to-br from-gunpowder-100 via-gunpowder-50 to-gunpowder-100 rounded-2xl overflow-hidden shadow-2xl ${
+            orientation === "portrait" ? "aspect-[9/16] max-w-[450px]" : "aspect-video max-w-[800px]"
+          }`}>
+              {/* Animated shimmer effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+
+              {/* Spinner */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-20 h-20 rounded-full border-4 border-white/20 border-t-purple-400 animate-spin" />
+              </div>
+            </div>
+        </section>
+      )}
 
       {/* RESULT */}
       {videoUrl && (
@@ -478,6 +583,8 @@ export default function VideoGeneratorPage() {
               "/images/videos/sora-video-1771028858761.mp4",
               "/images/videos/sora-video-1771029951935.mp4",
               "/images/videos/sora-video-1771056893067.mp4",
+              "/images/videos/sora-video-1771195079581.mp4",
+              "/images/videos/sora-video-1771195461686.mp4",
             ].map((src, i) => (
               <div
                 key={i}

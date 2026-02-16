@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import ProgressBar from "@/components/ProgressBar";
 import { TEMPLATES, TEMPLATE_NAMES } from "@/lib/prompts";
 import { startGeneration, getGeneration, clearGeneration, subscribe } from "@/lib/generation-store";
-import { addToHistory, updateLatestHistory } from "@/lib/history";
+import { addToHistory, updateLatestHistory, getHistory } from "@/lib/history";
 import PasswordModal, { isAuthenticated } from "@/components/PasswordModal";
 import { injectEditingCapabilities } from "@/lib/iframe-editing";
 
@@ -69,9 +68,22 @@ export default function WebCreatorPage() {
   const [showModifyPanel, setShowModifyPanel] = useState(false);
   const [modifyPrompt, setModifyPrompt] = useState("");
   const [isModifying, setIsModifying] = useState(false);
+  const [error, setError] = useState("");
+  const [myWebsites, setMyWebsites] = useState<Array<{id: string; html: string; prompt: string; createdAt: string}>>([]);
 
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const iframeResultRef = useRef<HTMLIFrameElement>(null);
+
+  // Load user's generated websites from history
+  useEffect(() => {
+    const webHistory = getHistory("web").slice(0, 10); // Last 10 webs
+    setMyWebsites(webHistory.map(item => ({
+      id: item.id,
+      html: item.metadata?.html as string || "",
+      prompt: item.prompt,
+      createdAt: item.createdAt
+    })).filter(w => w.html));
+  }, [resultModalOpen]); // Refresh when modal closes
 
   const displayHTML = useMemo(() => {
     if (!lastAIHTML) return "";
@@ -91,8 +103,33 @@ export default function WebCreatorPage() {
     return () => window.removeEventListener("message", handler);
   }, []);
 
-  // Restore state from global store on mount
+  // Restore state from global store on mount + restore completed result from sessionStorage
   useEffect(() => {
+    // First, check if there's a completed web in sessionStorage
+    const savedHTML = sessionStorage.getItem("web_completed_html");
+    const savedPrompt = sessionStorage.getItem("web_completed_prompt");
+    const savedTimestamp = sessionStorage.getItem("web_completed_timestamp");
+
+    if (savedHTML && savedTimestamp) {
+      // Check if result is recent (within 1 hour)
+      const elapsed = Date.now() - parseInt(savedTimestamp);
+      if (elapsed < 60 * 60 * 1000) {
+        // Save the HTML but DON'T open the modal automatically
+        setCurrentHTML(savedHTML);
+        setResultHTML(savedHTML);
+        setLastAIHTML(savedHTML);
+        // setResultModalOpen(true); ← REMOVED - don't auto-open
+        if (savedPrompt) setPrompt(savedPrompt);
+        return; // Don't check generation store if we have a completed result
+      } else {
+        // Clear old data
+        sessionStorage.removeItem("web_completed_html");
+        sessionStorage.removeItem("web_completed_prompt");
+        sessionStorage.removeItem("web_completed_timestamp");
+      }
+    }
+
+    // Then check generation store for ongoing generation
     const gen = getGeneration("web");
     if (!gen) return;
 
@@ -115,7 +152,8 @@ export default function WebCreatorPage() {
       gen.promise.then(() => {
         const updated = getGeneration("web");
         if (updated?.status === "done" && updated.result) {
-          handleWebResult(updated.result as Record<string, string>);
+          // Don't auto-open modal when restoring from generation store
+          handleWebResult(updated.result as Record<string, string>, false);
         } else if (updated?.status === "error") {
           finishProgress();
         }
@@ -127,7 +165,8 @@ export default function WebCreatorPage() {
         setCurrentHTML(html);
         setResultHTML(html);
         setLastAIHTML(html);
-        setResultModalOpen(true);
+        // Don't auto-open modal on page reload
+        // setResultModalOpen(true); ← Only open when actively generating
       }
     }
 
@@ -138,14 +177,23 @@ export default function WebCreatorPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleWebResult = (data: Record<string, string>) => {
+  const handleWebResult = (data: Record<string, string>, shouldOpenModal: boolean = true) => {
     finishProgress();
     if (data.status === "success" && data.botReply) {
       const html = extractHTML(data.botReply);
       setCurrentHTML(html);
       setResultHTML(html);
       setLastAIHTML(html);
-      setResultModalOpen(true);
+
+      // Only open modal if this is an active generation, not a restore
+      if (shouldOpenModal) {
+        setResultModalOpen(true);
+      }
+
+      // Save to sessionStorage so it persists across page changes
+      sessionStorage.setItem("web_completed_html", html);
+      sessionStorage.setItem("web_completed_prompt", prompt || "Web generiert");
+      sessionStorage.setItem("web_completed_timestamp", Date.now().toString());
 
       // Save to history
       addToHistory({
@@ -192,7 +240,18 @@ export default function WebCreatorPage() {
     setIsGenerating(true);
     setResultModalOpen(false);
     clearGeneration("web");
+
+    // Clear any previous completed result
+    sessionStorage.removeItem("web_completed_html");
+    sessionStorage.removeItem("web_completed_prompt");
+    sessionStorage.removeItem("web_completed_timestamp");
+
     startProgress();
+
+    // Auto-scroll to skeleton
+    setTimeout(() => {
+      document.getElementById("web-skeleton")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
 
     const isModify = selectedTemplate >= 0 && !!currentHTML;
     const userMessage = isModify
@@ -218,6 +277,7 @@ export default function WebCreatorPage() {
   const handleAIModify = async () => {
     if (!modifyPrompt.trim() || isModifying) return;
     setIsModifying(true);
+    setError("");
 
     const userMessage = `Here is the current HTML of the website:\n\n${resultHTML}\n\nThe user wants this change: ${modifyPrompt}`;
 
@@ -228,17 +288,29 @@ export default function WebCreatorPage() {
         body: JSON.stringify({ userMessage, isModify: true }),
       });
       const data = await res.json();
+
+      if (data.status === "error") {
+        setError(data.message || "Fehler bei der KI-Bearbeitung. Bitte versuche es erneut.");
+        return;
+      }
+
       if (data.status === "success" && data.botReply) {
         const html = extractHTML(data.botReply);
         setResultHTML(html);
         setCurrentHTML(html);
         setLastAIHTML(html);
         updateLatestHistory("web", { html });
+
+        // Update sessionStorage
+        sessionStorage.setItem("web_completed_html", html);
+        sessionStorage.setItem("web_completed_timestamp", Date.now().toString());
+
         setModifyPrompt("");
         setShowModifyPanel(false);
       }
     } catch (err) {
       console.error("AI modify error:", err);
+      setError("Netzwerkfehler. Bitte überprüfe deine Verbindung und versuche es erneut.");
     } finally {
       setIsModifying(false);
     }
@@ -350,12 +422,57 @@ export default function WebCreatorPage() {
                   </button>
                 </div>
               )}
-
-              <ProgressBar isActive={isGenerating} percent={progressPct} text={progressText} />
             </div>
           </div>
         </div>
       </section>
+
+      {/* SKELETON - Website being generated */}
+      {isGenerating && (
+        <section id="web-skeleton" className="flex flex-col items-center justify-center min-h-[500px] bg-white flex-1 px-6 py-16 max-md:px-4 max-md:py-10">
+          {/* Progress bar above skeleton */}
+          <div className="w-full max-w-[800px] mb-8 max-md:mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-base font-semibold text-gunpowder-700 max-md:text-sm">{progressText}</span>
+              <span className="text-base font-bold text-gunpowder-900 max-md:text-sm">{progressPct}%</span>
+            </div>
+            <div className="h-3 bg-gunpowder-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-begonia-400 to-purple-500 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Website Skeleton */}
+          <div className="w-full max-w-[800px] aspect-video bg-gradient-to-br from-gunpowder-50 via-white to-gunpowder-50 rounded-2xl overflow-hidden shadow-2xl border-2 border-gunpowder-100 relative">
+            {/* Animated shimmer effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer" />
+
+            {/* Browser chrome */}
+            <div className="absolute top-0 left-0 right-0 h-8 bg-gunpowder-100/50 backdrop-blur-sm border-b border-gunpowder-200/50 flex items-center px-3 gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-red-400/40 animate-pulse" />
+              <div className="w-2.5 h-2.5 rounded-full bg-yellow-400/40 animate-pulse" style={{ animationDelay: "150ms" }} />
+              <div className="w-2.5 h-2.5 rounded-full bg-green-400/40 animate-pulse" style={{ animationDelay: "300ms" }} />
+            </div>
+
+            {/* Spinner in center */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full border-4 border-gunpowder-200 border-t-begonia-400 animate-spin" />
+            </div>
+
+            {/* Page structure skeleton */}
+            <div className="absolute top-12 left-0 right-0 bottom-0 p-6 space-y-4 opacity-30">
+              <div className="h-12 bg-gunpowder-200 rounded-lg animate-pulse" />
+              <div className="grid grid-cols-3 gap-4">
+                <div className="h-32 bg-gunpowder-200 rounded-lg animate-pulse" style={{ animationDelay: "200ms" }} />
+                <div className="h-32 bg-gunpowder-200 rounded-lg animate-pulse" style={{ animationDelay: "400ms" }} />
+                <div className="h-32 bg-gunpowder-200 rounded-lg animate-pulse" style={{ animationDelay: "600ms" }} />
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* TEMPLATES */}
       <section className="pb-16 -mt-5 bg-gradient-to-b from-[#fffcf5] to-white max-md:pb-10 overflow-x-clip">
@@ -380,6 +497,19 @@ export default function WebCreatorPage() {
             >
               Alle
             </button>
+            {myWebsites.length > 0 && (
+              <button
+                onClick={() => setPreviewTab(999)}
+                className="shrink-0 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all cursor-pointer border-2 max-sm:px-3 max-sm:py-2 max-sm:text-[13px]"
+                style={{
+                  borderColor: previewTab === 999 ? "#7dd3a4" : "transparent",
+                  background: previewTab === 999 ? "#7dd3a412" : "#f5f3f0",
+                  color: previewTab === 999 ? "#5cb85c" : "#6b6b6b",
+                }}
+              >
+                Meine Websites ({myWebsites.length})
+              </button>
+            )}
             {TEMPLATE_NAMES.map((name, i) => (
               <button
                 key={i}
@@ -439,8 +569,50 @@ export default function WebCreatorPage() {
             </div>
           )}
 
+          {/* My Websites grid */}
+          {previewTab === 999 && myWebsites.length > 0 && (
+            <div className="grid grid-cols-4 gap-5 max-lg:grid-cols-3 max-md:grid-cols-2 max-sm:grid-cols-1">
+              {myWebsites.map((website, idx) => (
+                <div
+                  key={website.id}
+                  className="relative rounded-2xl overflow-hidden bg-white shadow-[0_4px_16px_rgba(0,0,0,0.06)] border-2 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group"
+                  style={{ borderColor: "rgba(125, 211, 164, 0.3)" }}
+                  onClick={() => {
+                    setCurrentHTML(website.html);
+                    setResultHTML(website.html);
+                    setLastAIHTML(website.html);
+                    setResultModalOpen(true);
+                  }}
+                >
+                  <div className="template-thumb relative w-full overflow-hidden" style={{ height: "240px" }}>
+                    <iframe
+                      srcDoc={website.html}
+                      sandbox="allow-same-origin"
+                      title={website.prompt}
+                      className="absolute top-0 left-0 border-none block pointer-events-none"
+                      style={{
+                        width: "1280px",
+                        height: "960px",
+                        transformOrigin: "top left",
+                      }}
+                    />
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white via-white/95 to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 flex items-center justify-between">
+                    <p className="text-[13px] max-md:text-[14px] font-bold truncate" style={{ color: "#5cb85c" }}>
+                      {website.prompt.substring(0, 30)}...
+                    </p>
+                    <span className="text-[11px] max-md:text-[12px] font-semibold px-2 py-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: "rgba(125, 211, 164, 0.15)", color: "#5cb85c" }}>
+                      Bearbeiten
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Single template preview */}
-          {previewTab >= 0 && (
+          {previewTab >= 0 && previewTab < TEMPLATE_NAMES.length && (
           <div
             className="relative rounded-[20px] overflow-hidden bg-white shadow-[0_8px_32px_rgba(0,0,0,0.08)] border-2 transition-all duration-300"
             style={{ borderColor: TAB_COLORS[previewTab] }}
@@ -544,6 +716,7 @@ export default function WebCreatorPage() {
             {/* Iframe */}
             <div className="flex-1 min-h-0 overflow-hidden flex items-start justify-center bg-gunpowder-50/50 relative">
               <iframe
+                key={lastAIHTML}
                 ref={iframeResultRef}
                 srcDoc={displayHTML}
                 sandbox="allow-same-origin allow-scripts"
@@ -621,6 +794,11 @@ export default function WebCreatorPage() {
                     >
                       {isModifying ? "Wird bearbeitet..." : "Änderung anwenden"}
                     </button>
+                    {error && (
+                      <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600">
+                        {error}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

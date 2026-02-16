@@ -21,7 +21,7 @@ function formatDate(iso: string) {
   });
 }
 
-function VideoCard({ item }: { item: HistoryItem }) {
+function VideoCard({ item, onPlay }: { item: HistoryItem; onPlay: (url: string) => void }) {
   return (
     <div className="bg-white rounded-2xl border border-gunpowder-150 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       <div className="aspect-video bg-gunpowder-100 relative">
@@ -57,17 +57,15 @@ function VideoCard({ item }: { item: HistoryItem }) {
           )}
         </div>
         <div className="mt-3 flex gap-2">
-          <a
-            href={item.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 inline-flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-semibold bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors"
+          <button
+            onClick={() => onPlay(item.url)}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-semibold bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors border-none cursor-pointer"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="5 3 19 12 5 21 5 3" />
             </svg>
             Abspielen
-          </a>
+          </button>
           <a
             href={item.url}
             download={`video-${item.id}.mp4`}
@@ -198,6 +196,49 @@ function WebCard({ item, onPreview }: { item: HistoryItem; onPreview: (html: str
   );
 }
 
+function VideoPreviewModal({ url, onClose }: { url: string; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-8 max-md:p-0">
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-auto max-w-[90vw] max-h-[85vh] flex flex-col bg-black overflow-hidden rounded-2xl shadow-2xl max-md:w-full max-md:h-full max-md:max-w-full max-md:max-h-full max-md:rounded-none">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-black/90 shrink-0">
+          <button
+            onClick={onClose}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-none bg-white/10 cursor-pointer text-white hover:bg-white/20 transition-all text-[14px] font-semibold"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 12H5" />
+              <path d="M12 19l-7-7 7-7" />
+            </svg>
+            Zurück
+          </button>
+          <a
+            href={url}
+            download="video.mp4"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-none bg-purple-600 cursor-pointer text-white hover:bg-purple-700 transition-all text-[13px] font-semibold"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Herunterladen
+          </a>
+        </div>
+        <div className="flex-1 min-h-0 flex items-center justify-center bg-black p-4">
+          <video
+            src={url}
+            controls
+            autoPlay
+            className="max-w-full max-h-full object-contain rounded-lg"
+            style={{ maxHeight: "calc(85vh - 68px)" }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function WebPreviewModal({ html, onClose, onUpdate }: { html: string; onClose: () => void; onUpdate: (html: string) => void }) {
   // Only inject editing on initial open, not on every inline edit
   const [displayHTML] = useState(() => injectEditingCapabilities(html));
@@ -269,6 +310,7 @@ export default function HistoryPage() {
   const [activeTab, setActiveTab] = useState<HistoryType>("video");
   const [items, setItems] = useState<HistoryItem[]>([]);
   const [previewHTML, setPreviewHTML] = useState<string | null>(null);
+  const [previewVideoURL, setPreviewVideoURL] = useState<string | null>(null);
   const [counts, setCounts] = useState<Record<HistoryType, number>>({ video: 0, music: 0, web: 0 });
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -379,7 +421,7 @@ export default function HistoryPage() {
             <>
               <div className="grid grid-cols-2 gap-6 max-md:grid-cols-1">
                 {items.map((item) => {
-                  if (item.type === "video") return <VideoCard key={item.id} item={item} />;
+                  if (item.type === "video") return <VideoCard key={item.id} item={item} onPlay={setPreviewVideoURL} />;
                   if (item.type === "music") return <MusicCard key={item.id} item={item} onPlay={handleMusicPlay} />;
                   return <WebCard key={item.id} item={item} onPreview={setPreviewHTML} />;
                 })}
@@ -401,6 +443,14 @@ export default function HistoryPage() {
           )}
         </div>
       </section>
+
+      {/* Video Preview Modal */}
+      {previewVideoURL && (
+        <VideoPreviewModal
+          url={previewVideoURL}
+          onClose={() => setPreviewVideoURL(null)}
+        />
+      )}
 
       {/* Web Preview Modal */}
       {previewHTML && (

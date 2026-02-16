@@ -22,20 +22,26 @@ export function injectEditingCapabilities(html: string): string {
 }
 .__sora-bg-overlay {
   position: absolute !important;
-  top: 8px !important; right: 8px !important;
-  width: 36px !important; height: 36px !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 64px !important; height: 64px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background: rgba(0,0,0,0.6) !important;
-  border-radius: 10px !important;
+  background: rgba(0,0,0,0.7) !important;
+  border-radius: 16px !important;
   opacity: 0 !important;
-  transition: opacity 0.18s !important;
+  transition: opacity 0.2s, transform 0.2s !important;
   cursor: pointer !important;
   pointer-events: auto !important;
   z-index: 999999 !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3) !important;
 }
-*:hover > .__sora-bg-overlay { opacity: 1 !important; }
+*:hover > .__sora-bg-overlay {
+  opacity: 1 !important;
+  transform: translate(-50%, -50%) scale(1.05) !important;
+}
 .__sora-text-pencil {
   position: absolute !important;
   top: -4px !important; right: -4px !important;
@@ -92,7 +98,7 @@ export function injectEditingCapabilities(html: string): string {
 
   // Camera SVG
   var cameraSVG = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>';
-  var cameraSVGSmall = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>';
+  var cameraSVGSmall = '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>';
 
   // Pencil SVG
   var pencilSVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
@@ -139,6 +145,16 @@ export function injectEditingCapabilities(html: string): string {
     window.parent.postMessage({ type: 'sora-edit', html: getCleanHTML() }, '*');
   }
 
+  // Clean up any pre-existing img wrappers
+  var oldWrps = document.querySelectorAll('.__sora-img-wrap');
+  oldWrps.forEach(function(wrap) {
+    var img = wrap.querySelector('img');
+    if (img && wrap.parentNode) {
+      wrap.parentNode.insertBefore(img, wrap);
+      wrap.parentNode.removeChild(wrap);
+    }
+  });
+
   // Setup <img> elements
   var images = document.querySelectorAll('img');
   images.forEach(function(img) {
@@ -177,12 +193,23 @@ export function injectEditingCapabilities(html: string): string {
     });
   });
 
+  // Clean up any pre-existing overlays from previous injections
+  var oldOverlays = document.querySelectorAll('.__sora-bg-overlay');
+  oldOverlays.forEach(function(overlay) {
+    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+  });
+
   // Setup elements with background-image
   var allEls = document.querySelectorAll('*');
   allEls.forEach(function(el) {
     if (isSoraEl(el)) return;
+
+    // Skip if already has overlay
+    if (el.querySelector('.__sora-bg-overlay')) return;
+
     var bg = window.getComputedStyle(el).backgroundImage;
-    if (!bg || bg === 'none' || bg.indexOf('gradient') !== -1) return;
+    if (!bg || bg === 'none') return;
+    // Check if there's a URL (even if there's also a gradient)
     if (!bg.match(/url\\(/)) return;
 
     // Only target elements with significant size (likely hero/banner images)
@@ -226,12 +253,24 @@ export function injectEditingCapabilities(html: string): string {
     fileInput.value = '';
   });
 
+  // Clean up any pre-existing text pencils
+  var oldPencils = document.querySelectorAll('.__sora-text-pencil');
+  oldPencils.forEach(function(pencil) {
+    if (pencil.parentNode) pencil.parentNode.removeChild(pencil);
+  });
+
+  // Remove text-wrap classes from elements
+  var oldTextWraps = document.querySelectorAll('.__sora-text-wrap');
+  oldTextWraps.forEach(function(el) {
+    el.classList.remove('.__sora-text-wrap', '__sora-editing');
+  });
+
   // Setup text elements
   var textEls = document.querySelectorAll(TEXT_SELECTORS);
   textEls.forEach(function(el) {
     if (isSoraEl(el)) return;
     if (!hasDirectText(el)) return;
-    if (el.closest('.__sora-text-wrap')) return;
+    if (el.classList.contains('__sora-text-wrap')) return;
 
     var origPos = window.getComputedStyle(el).position;
     if (origPos === 'static') {

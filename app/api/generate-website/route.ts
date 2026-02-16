@@ -3,68 +3,159 @@ import { CREATOR_SYSTEM_PROMPT, MODIFY_SYSTEM_PROMPT } from "@/lib/prompts";
 
 export const maxDuration = 60;
 
-export async function POST(req: NextRequest) {
-  const { userMessage, isModify } = await req.json();
-
-  const geminiUrl = process.env.GEMINI_PHP_URL;
-  if (!geminiUrl) {
-    return NextResponse.json(
-      { status: "error", message: "GEMINI_PHP_URL not configured" },
-      { status: 500 }
-    );
+async function generateWithOpenAI(systemPrompt: string, userMessage: string) {
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (!openaiKey) {
+    throw new Error("OPENAI_API_KEY not configured");
   }
 
-  const systemPrompt = isModify ? MODIFY_SYSTEM_PROMPT : CREATOR_SYSTEM_PROMPT;
+  // Try models that should be available if you have access to Sora
+  const models = [
+    "chatgpt-4o-latest",   // Alias to the latest GPT-4o (should work if Sora works)
+    "gpt-4-turbo",         // GPT-4 Turbo (older but widely available)
+    "gpt-4.1-nano",        // Cheapest GPT-4.1 (try if available)
+    "gpt-4.1-mini",        // Good balance of cost/quality
+    "gpt-3.5-turbo"        // Last resort (weak but always works)
+  ];
+  let lastError: Error | null = null;
 
-  try {
-    const response = await fetch(geminiUrl, {
+  for (const model of models) {
+    try {
+      console.log(`🔄 Trying OpenAI model: ${model}`);
+
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${openaiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMessage },
+          ],
+          temperature: 0.7,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error(`❌ ${model} failed:`, JSON.stringify(error, null, 2));
+        lastError = new Error(`${model}: ${error.error?.message || response.statusText}`);
+        continue; // Try next model
+      }
+
+      const data = await response.json();
+      console.log(`✅ Successfully used OpenAI model: ${model}`);
+      return data.choices[0].message.content;
+
+    } catch (error) {
+      lastError = error as Error;
+      console.error(`❌ ${model} exception:`, error);
+      continue; // Try next model
+    }
+  }
+
+  throw lastError || new Error("All OpenAI models failed");
+}
+
+async function generateWithGemini(systemPrompt: string, userMessage: string) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY not configured");
+  }
+
+  // Use Gemini 2.5 Flash (current model in 2026, fast and good quality)
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        conversationHistory: [],
-        prompt: systemPrompt,
-        userMessage: userMessage,
+        contents: [
+          {
+            parts: [
+              { text: systemPrompt + "\n\n" + userMessage }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 8192,
+        },
       }),
-    });
+    }
+  );
 
-    const responseText = await response.text();
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Gemini API error: ${error}`);
+  }
 
-    let data;
+  const data = await response.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+  if (!text) {
+    throw new Error("No text in Gemini response");
+  }
+
+  return text;
+}
+
+export async function POST(req: NextRequest) {
+  const { userMessage, isModify } = await req.json();
+
+  const geminiApiKey = process.env.GEMINI_API_KEY;
+  const systemPrompt = isModify ? MODIFY_SYSTEM_PROMPT : CREATOR_SYSTEM_PROMPT;
+
+  // Try Gemini first if configured
+  if (geminiApiKey) {
     try {
-      data = JSON.parse(responseText);
-    } catch {
-      console.error("Gemini API returned invalid JSON:", responseText.substring(0, 500));
-      return NextResponse.json(
-        { status: "error", message: "Gemini API returned an invalid response. The server may have timed out." },
-        { status: 502 }
-      );
-    }
+      console.log("🔄 Trying Gemini Pro...");
+      const geminiResponse = await generateWithGemini(systemPrompt, userMessage);
+      console.log("✅ Gemini Pro succeeded!");
 
-    if (!response.ok) {
-      console.error("Gemini PHP error:", response.status, JSON.stringify(data));
-      return NextResponse.json(
-        { status: "error", message: data.message || `Gemini API error: ${response.status}` },
-        { status: response.status }
-      );
-    }
-
-    if (data.status === "success" && data.botReply) {
       return NextResponse.json({
         status: "success",
-        botReply: data.botReply,
+        botReply: geminiResponse,
       });
-    }
 
+    } catch (error) {
+      console.error("❌ Gemini error:", error);
+      console.log("⚠️ Gemini failed - Falling back to OpenAI...");
+
+      // Fallback to OpenAI
+      try {
+        const openaiResponse = await generateWithOpenAI(systemPrompt, userMessage);
+        return NextResponse.json({
+          status: "success",
+          botReply: openaiResponse,
+        });
+      } catch (openaiError) {
+        console.error("OpenAI fallback also failed:", openaiError);
+        return NextResponse.json(
+          { status: "error", message: "Gemini und OpenAI sind nicht verfügbar. Bitte versuche es später erneut." },
+          { status: 503 }
+        );
+      }
+    }
+  }
+
+  // If Gemini is not configured, use OpenAI directly
+  console.log("⚠️ Gemini API key not configured - Using OpenAI...");
+  try {
+    const openaiResponse = await generateWithOpenAI(systemPrompt, userMessage);
     return NextResponse.json({
-      status: "error",
-      message: data.message || "No response from Gemini: " + JSON.stringify(data).substring(0, 200),
+      status: "success",
+      botReply: openaiResponse,
     });
-  } catch (error) {
-    console.error("Gemini API error:", error);
+  } catch (openaiError) {
+    console.error("OpenAI error:", openaiError);
     return NextResponse.json(
-      { status: "error", message: "Failed to call Gemini API" },
+      { status: "error", message: "Kein KI-Dienst verfügbar. Bitte GEMINI_API_KEY oder OPENAI_API_KEY konfigurieren." },
       { status: 500 }
     );
   }
