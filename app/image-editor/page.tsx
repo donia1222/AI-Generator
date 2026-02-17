@@ -49,6 +49,7 @@ export default function ImageEditorPage() {
 
   // Image preview modal
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [showExamples, setShowExamples] = useState(false);
 
   // Recent images from history
   const [recentImages, setRecentImages] = useState<
@@ -472,6 +473,53 @@ export default function ImageEditorPage() {
                 rows={4}
                 className="w-full px-6 py-5 border-2 border-gunpowder-200 rounded-2xl font-jakarta text-base leading-relaxed text-gunpowder-900 bg-white resize-y transition-all duration-200 focus:outline-none focus:border-cyan-400 focus:shadow-[0_0_0_4px_rgba(6,182,212,0.1)] placeholder:text-gunpowder-300 max-md:px-4 max-md:py-4 max-md:rounded-xl"
               />
+
+              {/* Example prompts toggle */}
+              <div className="mt-3 mb-1">
+                <button
+                  type="button"
+                  onClick={() => setShowExamples(!showExamples)}
+                  className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-cyan-500 hover:text-cyan-700 transition-colors"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                  </svg>
+                  {showExamples ? "Beispiele ausblenden" : "Beispiel-Prompts"}
+                </button>
+                {showExamples && (
+                  <div className="grid grid-cols-2 gap-2 mt-2 max-sm:grid-cols-1 animate-slideDown">
+                    {(mode === "generate"
+                      ? [
+                          "Ein futuristisches Stadtbild bei Nacht mit Neonlichtern und fliegenden Autos",
+                          "Ein fotorealistisches Porträt einer Katze, die als König auf einem Thron sitzt",
+                          "Ein impressionistisches Gemälde von einem Schweizer Bergsee bei Sonnenaufgang",
+                          "Ein minimalistisches Logo für eine Technologie-Firma in blau und weiss",
+                        ]
+                      : mode === "edit"
+                      ? [
+                          "Füge einen dramatischen Sonnenuntergang im Hintergrund hinzu",
+                          "Ändere die Farben zu einem warmen Herbstton",
+                          "Entferne den Hintergrund und ersetze ihn mit einer Berglandschaft",
+                          "Füge Schnee und Winteratmosphäre hinzu",
+                        ]
+                      : [
+                          "Langsame Kamerafahrt nach vorn mit sanfter Bewegung in der Szene",
+                          "Dramatischer Zoom mit Partikeleffekten und Lichtveränderungen",
+                          "Sanfte Drehung um das Motiv mit weichem Bokeh-Effekt",
+                          "Zeitraffer-Effekt mit sich veränderndem Himmel und Wolken",
+                        ]
+                    ).map((example, i) => (
+                      <button
+                        key={i}
+                        onClick={() => { setPrompt(example); setShowExamples(false); }}
+                        className="text-left p-3 bg-white rounded-xl border border-gunpowder-100 text-[12px] text-gunpowder-500 leading-relaxed hover:border-cyan-300 hover:bg-cyan-50/30 transition-all cursor-pointer"
+                      >
+                        {example}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Image upload area (for edit + video modes) */}
               {(mode === "edit" || mode === "video") && (
@@ -1164,63 +1212,6 @@ export default function ImageEditorPage() {
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Example prompts */}
-      {!resultImage && !videoUrl && !isGenerating && (
-        <section className="py-16 bg-gradient-to-b from-[#f0f8ff] to-white max-md:py-10">
-          <div className="max-w-[800px] mx-auto px-6 max-md:px-4">
-            <h3 className="text-sm max-md:text-[14px] font-bold text-gunpowder-400 uppercase tracking-[0.08em] mb-6">
-              Beispiel-Prompts
-            </h3>
-            <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
-              {mode === "generate"
-                ? [
-                    "Ein futuristisches Stadtbild bei Nacht mit Neonlichtern und fliegenden Autos",
-                    "Ein fotorealistisches Porträt einer Katze, die als König auf einem Thron sitzt",
-                    "Ein impressionistisches Gemälde von einem Schweizer Bergsee bei Sonnenaufgang",
-                    "Ein minimalistisches Logo für eine Technologie-Firma in blau und weiss",
-                  ].map((example, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setPrompt(example)}
-                      className="text-left p-4 bg-white rounded-2xl border border-gunpowder-150 text-sm max-md:text-[14px] text-gunpowder-600 leading-relaxed hover:border-cyan-300 hover:bg-cyan-50/30 transition-all cursor-pointer"
-                    >
-                      {example}
-                    </button>
-                  ))
-                : mode === "edit"
-                ? [
-                    "Füge einen dramatischen Sonnenuntergang im Hintergrund hinzu",
-                    "Ändere die Farben zu einem warmen Herbstton",
-                    "Entferne den Hintergrund und ersetze ihn mit einer Berglandschaft",
-                    "Füge Schnee und Winteratmosphäre hinzu",
-                  ].map((example, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setPrompt(example)}
-                      className="text-left p-4 bg-white rounded-2xl border border-gunpowder-150 text-sm max-md:text-[14px] text-gunpowder-600 leading-relaxed hover:border-cyan-300 hover:bg-cyan-50/30 transition-all cursor-pointer"
-                    >
-                      {example}
-                    </button>
-                  ))
-                : [
-                    "Langsame Kamerafahrt nach vorn mit sanfter Bewegung in der Szene",
-                    "Dramatischer Zoom mit Partikeleffekten und Lichtveränderungen",
-                    "Sanfte Drehung um das Motiv mit weichem Bokeh-Effekt",
-                    "Zeitraffer-Effekt mit sich veränderndem Himmel und Wolken",
-                  ].map((example, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setPrompt(example)}
-                      className="text-left p-4 bg-white rounded-2xl border border-gunpowder-150 text-sm max-md:text-[14px] text-gunpowder-600 leading-relaxed hover:border-cyan-300 hover:bg-cyan-50/30 transition-all cursor-pointer"
-                    >
-                      {example}
-                    </button>
-                  ))}
             </div>
           </div>
         </section>

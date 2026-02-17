@@ -92,6 +92,7 @@ export default function WebCreatorPage() {
   const [hasEdits, setHasEdits] = useState(false);
   const [editingSectionStyles, setEditingSectionStyles] = useState<Record<string, string>>({});
   const [pageTitle, setPageTitle] = useState("");
+  const [showInfo, setShowInfo] = useState(false);
 
   // Extract page title from HTML whenever resultHTML changes
   useEffect(() => {
@@ -662,9 +663,55 @@ export default function WebCreatorPage() {
                 Vorlage ausgewählt — beschreibe hier deine Änderungen und klicke auf Vorschau generieren.
               </p>
             ) : (
-              <p className="text-[15px] leading-relaxed text-gunpowder-400 mb-10 max-md:text-[16px] max-md:mb-6 max-w-[560px] mx-auto">
-                Du brauchst nur eine einfache Webpräsenz für dein Unternehmen? Generiere eine Website, passe Texte und Bilder direkt an und lass die KI Änderungen für dich vornehmen — alles ohne Programmierkenntnisse.
-              </p>
+              <>
+                <p className="text-[15px] leading-relaxed text-gunpowder-400 mb-4 max-md:text-[16px] max-md:mb-3 max-w-[560px] mx-auto">
+                  Du brauchst nur eine einfache Webpräsenz für dein Unternehmen? Generiere eine Website, passe Texte und Bilder direkt an und lass die KI Änderungen für dich vornehmen — alles ohne Programmierkenntnisse.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowInfo(!showInfo)}
+                  className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-cerulean-500 hover:text-cerulean-700 transition-colors mb-4 max-md:mb-3"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                  </svg>
+                  {showInfo ? "Info ausblenden" : "Wie funktioniert es?"}
+                </button>
+                {showInfo && (
+                  <div className="max-w-[560px] mx-auto mb-8 max-md:mb-5 animate-slideDown">
+                    <div className="grid grid-cols-2 max-md:grid-cols-1 gap-2.5">
+                      <div className="bg-white rounded-xl border border-gunpowder-100 p-4">
+                        <div className="w-8 h-8 rounded-lg bg-cerulean-25 flex items-center justify-center mb-2.5">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#15a0da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg>
+                        </div>
+                        <p className="text-[13px] font-bold text-gunpowder-800 mb-0.5">Eine HTML-Datei</p>
+                        <p className="text-[12px] text-gunpowder-400 leading-relaxed">HTML, CSS &amp; JavaScript — alles in einem File, sofort einsatzbereit.</p>
+                      </div>
+                      <div className="bg-white rounded-xl border border-gunpowder-100 p-4">
+                        <div className="w-8 h-8 rounded-lg bg-cerulean-25 flex items-center justify-center mb-2.5">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#15a0da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                        </div>
+                        <p className="text-[13px] font-bold text-gunpowder-800 mb-0.5">Direkt bearbeiten</p>
+                        <p className="text-[12px] text-gunpowder-400 leading-relaxed">Texte, Farben und Bilder direkt im visuellen Editor ändern.</p>
+                      </div>
+                      <div className="bg-white rounded-xl border border-gunpowder-100 p-4">
+                        <div className="w-8 h-8 rounded-lg bg-cerulean-25 flex items-center justify-center mb-2.5">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#15a0da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8L19 13"/><path d="M15 9h0"/><path d="M17.8 6.2L19 5"/><path d="M3 21l9-9"/><path d="M12.2 6.2L11 5"/></svg>
+                        </div>
+                        <p className="text-[13px] font-bold text-gunpowder-800 mb-0.5">KI-Änderungen</p>
+                        <p className="text-[12px] text-gunpowder-400 leading-relaxed">Beschreibe was du willst — die KI passt den Code an.</p>
+                      </div>
+                      <div className="bg-white rounded-xl border border-gunpowder-100 p-4">
+                        <div className="w-8 h-8 rounded-lg bg-cerulean-25 flex items-center justify-center mb-2.5">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#15a0da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        </div>
+                        <p className="text-[13px] font-bold text-gunpowder-800 mb-0.5">Als .html laden</p>
+                        <p className="text-[12px] text-gunpowder-400 leading-relaxed">Fertige Website herunterladen und sofort verwenden.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
             <div className="max-w-[640px] mx-auto text-left">

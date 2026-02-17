@@ -82,6 +82,7 @@ export default function MusicGeneratorPage() {
   const [instVol, setInstVol] = useState(0.45);
   const [myMusic, setMyMusic] = useState<Array<{id: string; url: string; title: string; createdAt: string}>>([]);
   const [isMounted, setIsMounted] = useState(false);
+  const [showExamples, setShowExamples] = useState(false);
 
   // Upload state
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -1024,6 +1025,39 @@ export default function MusicGeneratorPage() {
                   <div className="text-right text-xs text-gunpowder-300 mt-1">
                     {prompt.length}/5000
                   </div>
+
+                  {/* Example prompts toggle */}
+                  <div className="mt-3 mb-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowExamples(!showExamples)}
+                      className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-orange-500 hover:text-orange-700 transition-colors"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                      </svg>
+                      {showExamples ? "Beispiele ausblenden" : "Beispiel-Prompts"}
+                    </button>
+                    {showExamples && (
+                      <div className="grid grid-cols-2 gap-2 mt-2 max-sm:grid-cols-1 animate-slideDown">
+                        {[
+                          { title: "Sommerhit", desc: "Ein fröhlicher Pop-Song über den Sommer am See, mit eingängigem Refrain und guter Laune" },
+                          { title: "Chill Lo-Fi", desc: "Entspannte Lo-Fi Beats zum Studieren, mit sanftem Piano und warmen Klängen" },
+                          { title: "Rap Track", desc: "Ein energetischer Hip-Hop Beat mit harten Bässen und selbstbewussten Lyrics über Erfolg" },
+                          { title: "Ballade", desc: "Eine emotionale Liebesballade mit Klavierbegleitung und gefühlvoller Stimme" },
+                        ].map((example, i) => (
+                          <button
+                            key={i}
+                            onClick={() => { setPrompt(example.desc); setTitle(example.title); setShowExamples(false); }}
+                            className="text-left p-3 bg-white rounded-xl border border-gunpowder-100 text-gunpowder-500 hover:border-orange-300 hover:bg-orange-50/30 transition-all cursor-pointer"
+                          >
+                            <span className="block text-[12px] font-bold text-gunpowder-800 mb-0.5">{example.title}</span>
+                            <span className="block text-[12px] leading-relaxed">{example.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -1511,38 +1545,6 @@ export default function MusicGeneratorPage() {
       </section>
 
 
-      {/* Example prompts */}
-      {!audioUrl && !mixedAudioUrl && !isGenerating && (
-        <section className="py-16 bg-gradient-to-b from-[#fff8f5] to-white max-md:py-10">
-          <div className="max-w-[800px] mx-auto px-6 max-md:px-4">
-            <h3 className="text-sm max-md:text-[14px] font-bold text-gunpowder-400 uppercase tracking-[0.08em] mb-6">
-              Beispiel-Ideen
-            </h3>
-            <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
-              {[
-                { title: "Sommerhit", desc: "Ein fröhlicher Pop-Song über den Sommer am See, mit eingängigem Refrain und guter Laune" },
-                { title: "Chill Lo-Fi", desc: "Entspannte Lo-Fi Beats zum Studieren, mit sanftem Piano und warmen Klängen" },
-                { title: "Rap Track", desc: "Ein energetischer Hip-Hop Beat mit harten Bässen und selbstbewussten Lyrics über Erfolg" },
-                { title: "Ballade", desc: "Eine emotionale Liebesballade mit Klavierbegleitung und gefühlvoller Stimme" },
-              ].map((example, i) => (
-                <button
-                  key={i}
-                  onClick={() => {
-                    setPrompt(example.desc);
-                    setTitle(example.title);
-                  }}
-                  className="text-left p-4 bg-white rounded-2xl border border-gunpowder-150 hover:border-orange-300 hover:bg-orange-50/30 transition-all cursor-pointer"
-                >
-                  <span className="block text-sm max-md:text-[14px] font-bold text-gunpowder-800 mb-1">{example.title}</span>
-                  <span className="block text-[13px] max-md:text-[14px] text-gunpowder-500 leading-relaxed">{example.desc}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-    
       <PasswordModal
         open={showPasswordModal}
         onSuccess={() => { setShowPasswordModal(false); generateMusic(); }}
