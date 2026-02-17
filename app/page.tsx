@@ -4,7 +4,21 @@ import Link from "next/link";
 
 
 const tools = [
-
+  {
+    title: "KI Web Creator",
+    desc: "Beschreibe deine Traumwebsite und unsere KI erstellt sie in Sekunden.",
+    href: "/web-creator",
+    chip: "mit Gemini",
+    gradient: "from-begonia-400 to-rose-500",
+    bgImage: "https://images.unsplash.com/photo-1547658719-da2b51169166?w=800&q=80",
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="2" y1="12" x2="22" y2="12" />
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+      </svg>
+    ),
+  },
   {
     title: "Sora Video",
     desc: "Beschreibe dein Video und Sora generiert es für dich in Minuten.",

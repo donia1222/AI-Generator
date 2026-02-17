@@ -417,9 +417,36 @@ export function injectEditingCapabilities(html: string): string {
 .__sora-img-wrap:hover > .__sora-element-delete-btn {
   opacity: 1 !important;
 }
+@media (max-width: 768px) {
+  .__sora-section-edit-btn,
+  .__sora-section-delete-btn,
+  .__sora-element-delete-btn,
+  .__sora-text-pencil,
+  .__sora-img-overlay,
+  .__sora-bg-overlay,
+  .__sora-link-edit-btn,
+  .__sora-text-toolbar,
+  .__sora-link-popup,
+  .__sora-link-popup-backdrop,
+  .__sora-file-input {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+  }
+  .__sora-editing {
+    outline: none !important;
+    cursor: default !important;
+  }
+  [contenteditable="true"] {
+    -webkit-user-modify: read-only !important;
+  }
+}
 </style>
 <script id="__sora-editing-script">
 (function() {
+  // Disable editing on mobile devices
+  if (window.innerWidth <= 768) return;
   if (document.getElementById('__sora-editing-active')) return;
   var sentinel = document.createElement('div');
   sentinel.id = '__sora-editing-active';

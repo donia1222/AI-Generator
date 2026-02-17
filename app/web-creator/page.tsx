@@ -923,7 +923,7 @@ export default function WebCreatorPage() {
                     <p className="text-[13px] max-md:text-[14px] font-bold truncate" style={{ color: "#5cb85c" }}>
                       {website.prompt.substring(0, 30)}...
                     </p>
-                    <span className="text-[11px] max-md:text-[12px] font-semibold px-2 py-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: "rgba(125, 211, 164, 0.15)", color: "#5cb85c" }}>
+                    <span className="text-[11px] max-md:text-[12px] font-semibold px-2 py-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity hidden md:inline" style={{ backgroundColor: "rgba(125, 211, 164, 0.15)", color: "#5cb85c" }}>
                       Bearbeiten
                     </span>
                   </div>
@@ -1413,8 +1413,8 @@ export default function WebCreatorPage() {
               )}
             </div>
 
-            {/* Modal footer */}
-            <div className="px-5 py-3 border-t border-black/5 bg-white flex items-center justify-center gap-3 max-md:px-3 max-md:py-2.5 shrink-0">
+            {/* Modal footer - hidden on mobile */}
+            <div className="px-5 py-3 border-t border-black/5 bg-white hidden md:flex items-center justify-center gap-3 shrink-0">
               <button
                 onClick={() => {
                   if (editSidebarOpen) {
@@ -1425,7 +1425,7 @@ export default function WebCreatorPage() {
                     setEditingSectionIndex(null);
                   }
                 }}
-                className={`inline-flex items-center justify-center gap-2 h-[44px] px-5 rounded-full text-[14px] font-semibold transition-all cursor-pointer border-2 ${
+                className={`hidden md:inline-flex items-center justify-center gap-2 h-[44px] px-5 rounded-full text-[14px] font-semibold transition-all cursor-pointer border-2 ${
                   editSidebarOpen
                     ? "bg-purple-100 border-purple-400 text-purple-700"
                     : "bg-white border-purple-300 text-purple-600 hover:bg-purple-50 hover:border-purple-400"
@@ -1464,7 +1464,7 @@ export default function WebCreatorPage() {
                 Zurück
               </button>
 
-              <div className="flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-3">
                 <button
                   onClick={() => { setModalOpen(false); openTemplateInEditor(modalTemplateIdx); }}
                   className="inline-flex items-center justify-center gap-2 h-[44px] px-6 rounded-full text-[15px] font-semibold bg-purple-600 text-white shadow-[0_4px_16px_rgba(124,58,237,0.3)] hover:bg-purple-700 hover:-translate-y-px hover:shadow-[0_6px_24px_rgba(124,58,237,0.4)] transition-all cursor-pointer border-none"
