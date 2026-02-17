@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import TabNav from "@/components/TabNav";
 import MiniPlayer from "@/components/MiniPlayer";
+import CookieBanner from "@/components/CookieBanner";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -49,6 +50,8 @@ export default function RootLayout({
                 <a href="/agb" className="text-gunpowder-500 hover:text-white transition-colors">AGB</a>
                 <span className="text-gunpowder-700">·</span>
                 <a href="/kontakt" className="text-gunpowder-500 hover:text-white transition-colors">Kontakt</a>
+                <span className="text-gunpowder-700">·</span>
+                <a href="/produkt" className="text-gunpowder-500 hover:text-white transition-colors">Code &amp; Preis</a>
               </nav>
             </div>
             <p className="text-[12px] text-gunpowder-600 mt-3 max-md:text-center">
@@ -56,6 +59,7 @@ export default function RootLayout({
             </p>
           </div>
         </footer>
+        <CookieBanner />
         <Analytics />
       </body>
     </html>
