@@ -271,107 +271,96 @@ export default function Header() {
       {/* Buy / Contact modal */}
       {buyOpen && (
         <div
-          className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn"
+          className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center md:p-4 animate-fadeIn"
           onClick={(e) => { if (e.target === e.currentTarget) setBuyOpen(false); }}
         >
-          <div className="relative w-full max-w-[620px] bg-white rounded-3xl shadow-[0_30px_80px_rgba(0,0,0,0.2)] overflow-hidden animate-slideDown">
+          <div className="relative w-full max-w-[620px] bg-white rounded-t-2xl md:rounded-3xl shadow-[0_30px_80px_rgba(0,0,0,0.2)] overflow-hidden animate-slideDown max-h-[95dvh] flex flex-col">
             {/* Close button */}
             <button
               type="button"
               onClick={() => setBuyOpen(false)}
-              className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-gunpowder-100 hover:bg-gunpowder-200 transition-colors"
+              className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/20 md:bg-gunpowder-100 hover:bg-white/30 md:hover:bg-gunpowder-200 transition-colors"
               aria-label="Schliessen"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white md:text-gunpowder-900"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
 
-            {/* Header */}
-            <div className="px-8 pt-8 pb-5 border-b border-gunpowder-100 bg-gradient-to-br from-gunpowder-900 to-gunpowder-800 text-white">
-              <div className="flex items-center gap-2 mb-2">
-                <svg width="16" height="16" viewBox="0 0 16 16" className="flex-shrink-0">
-                  <rect width="16" height="16" rx="3" fill="#EE0000" />
-                  <rect x="7" y="3" width="2" height="10" fill="#fff" />
-                  <rect x="3" y="7" width="10" height="2" fill="#fff" />
-                </svg>
-                <span className="text-[13px] font-semibold text-white/60">Lweb Schweiz</span>
-              </div>
-              <h2 className="text-[24px] max-md:text-[20px] font-extrabold leading-tight">KI Creator Suite kaufen</h2>
-              <p className="text-[14px] text-white/70 mt-2 leading-relaxed">
-                Die komplette KI-Suite — fertig für Agenturen, Freelancer und Content Creator.
-                Einfach Ihre eigenen API-Keys einsetzen und sofort produktiv arbeiten.
-              </p>
-              <p className="text-[13px] text-white/50 mt-1">
-                Optimiert für den DACH-Markt (Schweiz, Deutschland, Österreich)
-              </p>
-            </div>
-
-            {/* Pricing plans */}
-            <div className="px-8 py-6 space-y-3">
-              <p className="text-[12px] font-bold text-gunpowder-400 uppercase tracking-wider mb-3">Pakete — Einmalzahlung</p>
-
-              {/* Plan 1 */}
-              <div className="flex items-center justify-between p-4 rounded-2xl border border-gunpowder-100 hover:border-cerulean-200 hover:bg-cerulean-25/50 transition-all">
-                <div>
-                  <p className="text-[15px] font-bold text-gunpowder-900">Web Generierung</p>
-                  <p className="text-[13px] text-gunpowder-400 mt-0.5">Webseiten erstellen &amp; bearbeiten mit KI</p>
+            {/* Scrollable content */}
+            <div className="overflow-y-auto flex-1">
+              {/* Header */}
+              <div className="px-5 md:px-8 pt-5 md:pt-8 pb-4 md:pb-5 bg-gradient-to-br from-gunpowder-900 to-gunpowder-800 text-white">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <svg width="14" height="14" viewBox="0 0 16 16" className="flex-shrink-0">
+                    <rect width="16" height="16" rx="3" fill="#EE0000" />
+                    <rect x="7" y="3" width="2" height="10" fill="#fff" />
+                    <rect x="3" y="7" width="10" height="2" fill="#fff" />
+                  </svg>
+                  <span className="text-[12px] font-semibold text-white/60">Lweb Schweiz</span>
                 </div>
-                <div className="text-right flex-shrink-0 ml-4">
-                  <p className="text-[22px] font-extrabold text-gunpowder-900">1&apos;500 <span className="text-[14px] font-semibold text-gunpowder-400">CHF</span></p>
-                </div>
-              </div>
-
-              {/* Plan 2 */}
-              <div className="relative flex items-center justify-between p-4 rounded-2xl border-2 border-begonia-300 bg-begonia-25/50">
-                <span className="absolute -top-2.5 left-4 bg-begonia-400 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full">Beliebt</span>
-                <div>
-                  <p className="text-[15px] font-bold text-gunpowder-900">Web + Bilder + Musik</p>
-                  <p className="text-[13px] text-gunpowder-400 mt-0.5">Webseiten, Bildgenerierung &amp; Musik mit KI</p>
-                </div>
-                <div className="text-right flex-shrink-0 ml-4">
-                  <p className="text-[22px] font-extrabold text-gunpowder-900">3&apos;500 <span className="text-[14px] font-semibold text-gunpowder-400">CHF</span></p>
-                </div>
-              </div>
-
-              {/* Plan 3 */}
-              <div className="flex items-center justify-between p-4 rounded-2xl border border-gunpowder-100 hover:border-cerulean-200 hover:bg-cerulean-25/50 transition-all">
-                <div>
-                  <p className="text-[15px] font-bold text-gunpowder-900">Komplett-Paket</p>
-                  <p className="text-[13px] text-gunpowder-400 mt-0.5">Webseiten, Bilder, Musik &amp; Video — alles inklusive</p>
-                </div>
-                <div className="text-right flex-shrink-0 ml-4">
-                  <p className="text-[22px] font-extrabold text-gunpowder-900">4&apos;900 <span className="text-[14px] font-semibold text-gunpowder-400">CHF</span></p>
-                </div>
-              </div>
-            </div>
-
-            {/* Info + CTA */}
-            <div className="px-8 pb-8">
-              <div className="bg-gunpowder-50 rounded-2xl p-4 mb-3">
-                <p className="text-[13px] text-gunpowder-500 leading-relaxed">
-                  <span className="font-bold text-gunpowder-700">So funktioniert es:</span> Sie erhalten die komplette Web-App genau so, wie Sie sie hier sehen. Sie müssen nur Ihre eigenen API-Keys hinterlegen — fertig. Kein weiterer Aufwand nötig.
+                <h2 className="text-[20px] md:text-[24px] font-extrabold leading-tight">KI Creator Suite kaufen</h2>
+                <p className="text-[13px] text-white/70 mt-1.5 leading-relaxed">
+                  Fertig für Agenturen, Freelancer &amp; Content Creator. API-Keys einsetzen und sofort arbeiten.
                 </p>
               </div>
-              <div className="bg-cerulean-25 border border-cerulean-100 rounded-2xl p-4 mb-5">
-                <p className="text-[13px] text-gunpowder-500 leading-relaxed">
-                  <span className="font-bold text-cerulean-600">API-Keys günstig erhalten:</span> Alle benötigten API-Keys (OpenAI, Gemini, Suno) können Sie über{" "}
-                  <a href="https://kie.ai" target="_blank" rel="noopener noreferrer" className="font-bold text-cerulean-500 underline hover:text-cerulean-700 transition-colors">kie.ai</a>
-                  {" "}zu einem sehr guten Preis beziehen — deutlich günstiger als direkt bei den einzelnen Anbietern.
+
+              {/* Pricing plans */}
+              <div className="px-5 md:px-8 py-4 md:py-6 space-y-2.5">
+                <p className="text-[11px] font-bold text-gunpowder-400 uppercase tracking-wider mb-2">Pakete — Einmalzahlung</p>
+
+                {/* Plan 1 */}
+                <div className="flex items-center justify-between p-3 md:p-4 rounded-xl border border-gunpowder-100">
+                  <div>
+                    <p className="text-[14px] font-bold text-gunpowder-900">Web Generierung</p>
+                    <p className="text-[12px] text-gunpowder-400">Webseiten erstellen &amp; bearbeiten</p>
+                  </div>
+                  <p className="text-[20px] md:text-[22px] font-extrabold text-gunpowder-900 flex-shrink-0 ml-3">1&apos;500 <span className="text-[13px] font-semibold text-gunpowder-400">CHF</span></p>
+                </div>
+
+                {/* Plan 2 */}
+                <div className="relative flex items-center justify-between p-3 md:p-4 rounded-xl border-2 border-begonia-300 bg-begonia-25/50">
+                  <span className="absolute -top-2 left-3 bg-begonia-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Beliebt</span>
+                  <div>
+                    <p className="text-[14px] font-bold text-gunpowder-900">Web + Bilder + Musik</p>
+                    <p className="text-[12px] text-gunpowder-400">Webseiten, Bilder &amp; Musik mit KI</p>
+                  </div>
+                  <p className="text-[20px] md:text-[22px] font-extrabold text-gunpowder-900 flex-shrink-0 ml-3">3&apos;500 <span className="text-[13px] font-semibold text-gunpowder-400">CHF</span></p>
+                </div>
+
+                {/* Plan 3 */}
+                <div className="flex items-center justify-between p-3 md:p-4 rounded-xl border border-gunpowder-100">
+                  <div>
+                    <p className="text-[14px] font-bold text-gunpowder-900">Komplett-Paket</p>
+                    <p className="text-[12px] text-gunpowder-400">Web, Bilder, Musik &amp; Video — alles</p>
+                  </div>
+                  <p className="text-[20px] md:text-[22px] font-extrabold text-gunpowder-900 flex-shrink-0 ml-3">4&apos;900 <span className="text-[13px] font-semibold text-gunpowder-400">CHF</span></p>
+                </div>
+              </div>
+
+              {/* Info + CTA */}
+              <div className="px-5 md:px-8 pb-5 md:pb-8">
+                <div className="bg-gunpowder-50 rounded-xl p-3 mb-2.5 text-[12px] text-gunpowder-500 leading-relaxed">
+                  <span className="font-bold text-gunpowder-700">So funktioniert es:</span> Sie erhalten die Web-App wie hier gezeigt. Nur eigene API-Keys einsetzen — fertig.
+                </div>
+                <div className="bg-cerulean-25 border border-cerulean-100 rounded-xl p-3 mb-4 text-[12px] text-gunpowder-500 leading-relaxed">
+                  <span className="font-bold text-cerulean-600">API-Keys günstig:</span> Über{" "}
+                  <a href="https://kie.ai" target="_blank" rel="noopener noreferrer" className="font-bold text-cerulean-500 underline">kie.ai</a>
+                  {" "}günstiger als direkt bei OpenAI, Gemini &amp; Suno.
+                </div>
+                <a
+                  href="https://wa.me/41765608645?text=Hallo%20Lweb%2C%20ich%20interessiere%20mich%20f%C3%BCr%20die%20KI%20Creator%20Suite.%20K%C3%B6nnte%20ich%20bitte%20einen%20Probecode%20erhalten%3F"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-[#25D366] hover:bg-[#1fb855] text-white text-[14px] font-bold transition-all active:scale-[0.98] shadow-[0_4px_16px_rgba(37,211,102,0.3)]"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                  </svg>
+                  WhatsApp — Probecode anfordern
+                </a>
+                <p className="text-[11px] text-gunpowder-400 text-center mt-2.5">
+                  +41 76 560 86 45 · Einmalig, inkl. Source-Code &amp; Lizenz
                 </p>
               </div>
-              <a
-                href="https://wa.me/41765608645?text=Hallo%20Lweb%2C%20ich%20interessiere%20mich%20f%C3%BCr%20die%20KI%20Creator%20Suite.%20K%C3%B6nnte%20ich%20bitte%20einen%20Probecode%20erhalten%3F"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-[#25D366] hover:bg-[#1fb855] text-white text-[15px] font-bold transition-all active:scale-[0.98] shadow-[0_4px_16px_rgba(37,211,102,0.3)]"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                </svg>
-                WhatsApp — Probecode anfordern
-              </a>
-              <p className="text-[12px] text-gunpowder-400 text-center mt-3">
-                +41 76 560 86 45 · Alle Preise in CHF, einmalig, inkl. Source-Code &amp; Lizenz
-              </p>
             </div>
           </div>
         </div>
