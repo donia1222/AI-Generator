@@ -411,7 +411,7 @@ export default function ImageEditorPage() {
     if (!resultImage) return;
     setMode("video");
   };
-
+  
   return (
     <>
       {/* HERO / INPUT */}
