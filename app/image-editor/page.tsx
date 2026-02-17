@@ -1128,6 +1128,46 @@ export default function ImageEditorPage() {
         </section>
       )}
 
+      {/* Example generated images */}
+      {!resultImage && !videoUrl && !isGenerating && (
+        <section className="py-16 bg-gradient-to-b from-white to-[#f0f8ff] max-md:py-10">
+          <div className="max-w-[800px] mx-auto px-6 max-md:px-4">
+            <h3 className="text-[42px] font-extrabold text-gunpowder-900 mb-3 max-md:text-[20px]">
+              Beispiele{" "}
+              <span className="bg-gradient-to-r from-cyan-500 to-blue-500 bg-clip-text text-transparent">
+                generierter Bilder
+              </span>
+            </h3>
+            <p className="text-[16px] text-gunpowder-500 mb-8 max-md:text-[14px]">
+              Schau dir an, was mit KI bereits erstellt wurde.
+            </p>
+            <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
+              {[
+                "/images/bild/IMG_6256.jpeg",
+                "/images/bild/a8ea9f30-c1aa-4e06-8abb-4c04223ff385.jpeg",
+                "/images/bild/Imagen JPEG-4B55-B176-E2-0.jpeg",
+                "/images/bild/Unknown-1.png",
+                "/images/bild/snacks_1767696301406.jpg",
+              ].map((src, i) => (
+                <div
+                  key={i}
+                  onClick={() => setPreviewImage(src)}
+                  className="bg-white rounded-2xl border border-gunpowder-150 overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer hover:-translate-y-0.5"
+                >
+                  <div className="aspect-square bg-gunpowder-100">
+                    <img
+                      src={src}
+                      alt={`Beispiel ${i + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Example prompts */}
       {!resultImage && !videoUrl && !isGenerating && (
         <section className="py-16 bg-gradient-to-b from-[#f0f8ff] to-white max-md:py-10">
