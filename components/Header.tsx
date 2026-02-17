@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { isGenerating, subscribe, type GenType } from "@/lib/generation-store";
 
-const tabs: { label: string; href: string; genType?: GenType; icon: React.ReactNode }[] = [
+const tabs: { label: string; subtitle?: string; href: string; genType?: GenType; icon: React.ReactNode }[] = [
   {
     label: "Alle",
     href: "/",
@@ -17,6 +17,7 @@ const tabs: { label: string; href: string; genType?: GenType; icon: React.ReactN
   },
   {
     label: "KI Web Creator",
+    subtitle: "mit Gemini 2.5 Flash",
     href: "/web-creator",
     genType: "web",
     icon: (
@@ -27,6 +28,7 @@ const tabs: { label: string; href: string; genType?: GenType; icon: React.ReactN
   },
   {
     label: "Sora Video",
+    subtitle: "mit Sora von OpenAI",
     href: "/video-generator",
     genType: "video",
     icon: (
@@ -37,6 +39,7 @@ const tabs: { label: string; href: string; genType?: GenType; icon: React.ReactN
   },
   {
     label: "KI Bilder",
+    subtitle: "mit ChatGPT Imagen-1",
     href: "/image-editor",
     genType: "image",
     icon: (
@@ -47,6 +50,7 @@ const tabs: { label: string; href: string; genType?: GenType; icon: React.ReactN
   },
   {
     label: "KI Musik",
+    subtitle: "mit Suno",
     href: "/music-generator",
     genType: "music",
     icon: (
@@ -65,6 +69,15 @@ const tabs: { label: string; href: string; genType?: GenType; icon: React.ReactN
     ),
   },
 ];
+
+const headerBgByRoute: Record<string, string> = {
+  "/": "#fffbf2",
+  "/web-creator": "#fffbf2",
+  "/video-generator": "#f8f0ff",
+  "/image-editor": "#f0f8ff",
+  "/music-generator": "#fff5f0",
+  "/history": "#f8f5ff",
+};
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -95,6 +108,11 @@ export default function Header() {
     setMenuOpen(false);
   }, [pathname]);
 
+  // Set body background to match page color
+  useEffect(() => {
+    document.body.style.backgroundColor = headerBgByRoute[pathname] || "#fffbf2";
+  }, [pathname]);
+
   // Lock body scroll when modal is open
   useEffect(() => {
     if (menuOpen) {
@@ -111,7 +129,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 w-full z-50 backdrop-blur-[12px] h-[72px]" style={{ background: "linear-gradient(to bottom, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.5) 70%, rgba(255,255,255,0) 100%)" }}>
+      <header className="fixed top-0 left-0 w-full z-50 h-[72px]" style={{ background: headerBgByRoute[pathname] || "#fffbf2" }}>
         <div className="flex items-center justify-between h-[72px] max-w-[1200px] mx-auto px-8 max-md:px-5">
           <Link
             href={pathname === "/" ? "https://www.lweb.ch" : "/"}
@@ -204,7 +222,14 @@ export default function Header() {
                     <span className={`flex-shrink-0 ${isActive ? "text-white" : "text-gunpowder-400"}`}>
                       {tab.icon}
                     </span>
-                    {tab.label}
+                    <span className="flex flex-col">
+                      <span>{tab.label}</span>
+                      {tab.subtitle && (
+                        <span className={`text-[11px] font-medium ${isActive ? "text-white/70" : "text-gunpowder-400"}`}>
+                          {tab.subtitle}
+                        </span>
+                      )}
+                    </span>
                     {isGen && (
                       <span className="ml-auto w-2.5 h-2.5 bg-[#4dd35b] rounded-full animate-pulse" />
                     )}
@@ -216,7 +241,7 @@ export default function Header() {
             {/* Footer */}
             <div className="px-5 py-3 border-t border-gunpowder-100 bg-gunpowder-50/50">
               <p className="text-[12px] text-gunpowder-400 text-center font-medium">
-                KI Creator Suite — Powered by Gemini, Suno & Sora
+                KI Generator ist ein Produkt von Lweb Schweiz 🇨🇭
               </p>
             </div>
           </div>

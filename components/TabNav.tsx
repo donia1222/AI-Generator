@@ -5,6 +5,15 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { isGenerating, subscribe, type GenType } from "@/lib/generation-store";
 
+const pageBgByRoute: Record<string, string> = {
+  "/": "#fffbf2",
+  "/web-creator": "#fffbf2",
+  "/video-generator": "#f8f0ff",
+  "/image-editor": "#f0f8ff",
+  "/music-generator": "#fff5f0",
+  "/history": "#f8f5ff",
+};
+
 const tabs: { label: string; href: string; genType?: GenType }[] = [
   { label: "Alle", href: "/" },
   { label: "KI Web Creator", href: "/web-creator", genType: "web" },
@@ -39,7 +48,7 @@ export default function TabNav() {
   }, []);
 
   return (
-    <div className="flex justify-center pt-[84px] pb-4 bg-gradient-to-b from-white to-[#fffbf2] max-md:hidden">
+    <div className="flex justify-center pt-[84px] pb-4 max-md:hidden" style={{ background: pageBgByRoute[pathname] || "#fffbf2" }}>
       <div className="inline-flex bg-gunpowder-50 rounded-full p-1 border border-gunpowder-150">
         {tabs.map((tab) => {
           const isActive = pathname === tab.href;
