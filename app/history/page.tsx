@@ -455,17 +455,17 @@ export default function HistoryPage() {
 
           {/* Tabs */}
           <div className="flex justify-center mb-8">
-            <div className="inline-flex bg-white border-2 border-gunpowder-150 rounded-2xl p-1">
+            <div className="inline-flex bg-white border-2 border-gunpowder-150 rounded-2xl p-1 max-md:flex max-md:flex-wrap max-md:justify-center max-md:gap-2 max-md:bg-transparent max-md:border-0 max-md:p-0 max-md:rounded-none">
               {TABS.map((tab) => {
                 const count = counts[tab.type];
                 return (
                   <button
                     key={tab.type}
                     onClick={() => setActiveTab(tab.type)}
-                    className={`px-6 py-2.5 rounded-xl text-sm max-md:text-[14px] font-semibold transition-all cursor-pointer ${
+                    className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer max-md:px-4 max-md:py-2 max-md:rounded-full max-md:text-[13px] max-md:border ${
                       activeTab === tab.type
-                        ? `bg-gradient-to-r ${tabColors[tab.type]} text-white shadow-md`
-                        : "text-gunpowder-500 hover:text-gunpowder-700"
+                        ? `bg-gradient-to-r ${tabColors[tab.type]} text-white shadow-md max-md:border-transparent`
+                        : "text-gunpowder-500 hover:text-gunpowder-700 max-md:bg-white max-md:border-gunpowder-200 max-md:shadow-sm"
                     }`}
                   >
                     {tab.label}
