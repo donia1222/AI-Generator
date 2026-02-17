@@ -30,7 +30,7 @@ export default function RootLayout({
       <body className="font-jakarta antialiased min-h-screen flex flex-col">
         <Header />
         <TabNav />
-        <main className="flex-1 max-md:pt-[84px] overflow-x-clip">{children}</main>
+        <main className="flex-1 max-md:pt-[60px] overflow-x-clip">{children}</main>
         <MiniPlayer />
         <footer className="bg-gunpowder-900 text-white py-8 max-md:py-6">
           <div className="max-w-[1200px] mx-auto px-6 max-md:px-4">
@@ -42,7 +42,7 @@ export default function RootLayout({
                 </a>{" "}
                 — KI Creator Suite
               </p>
-              <nav className="flex items-center gap-4 text-[13px]">
+              <nav className="flex items-center gap-2 text-[14px]">
                 <a href="/impressum" className="text-gunpowder-500 hover:text-white transition-colors">Impressum</a>
                 <span className="text-gunpowder-700">·</span>
                 <a href="/datenschutz" className="text-gunpowder-500 hover:text-white transition-colors">Datenschutz</a>
