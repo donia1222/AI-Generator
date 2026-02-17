@@ -15,7 +15,7 @@ const TAB_COLORS = [
   "#7c3aed", // Tech - purple
   "#D4813B", // Bakery - warm orange
   "#c9a84c", // Real Estate - gold
-  "#b76e79", // Salon - rose
+  "#e85d04", // Online Shop - orange
 ];
 
 const EXAMPLES = [
@@ -26,21 +26,21 @@ const EXAMPLES = [
   { label: "Tech Startup", style: "Futuristisch", text: "Eine moderne Website für ein Tech-Startup mit Gradient-Effekten, dunklem Theme, animierten Statistiken und Pricing-Tabelle" },
   { label: "Bäckerei", style: "Warm & Handgemacht", text: "Eine warme Website für eine Bäckerei mit Erdtönen, handgemachtem Feeling, Produktkarten und Über-uns-Geschichte" },
   { label: "Immobilien", style: "Elegant & Seriös", text: "Eine professionelle Website für eine Immobilienagentur mit Objekt-Karussell, Suchfiltern, dunklem Marineblau und Gold-Akzenten" },
-  { label: "Yoga Studio", style: "Zen & Natürlich", text: "Eine ruhige Website für ein Yoga-Studio mit sanften Pastellfarben, Atemanimation im Hero, Kurskalender und Lehrerprofile" },
-  { label: "Online Shop", style: "Modern & Clean", text: "Eine moderne E-Commerce Landing Page mit Produkt-Grid, Warenkorb-Icon, Kundenbewertungen und Newsletter-Anmeldung in Schwarz-Weiss-Design" },
+  { label: "Online Shop", style: "Modern & Conversion", text: "Ein vollständiger Online-Shop mit professionellem Header (Logo, Suche, Warenkorb-Icon mit Badge), Kategorie-Filter-Leiste und einem responsiven Produkt-Grid mit mindestens 12 Produktkarten. Jede Karte hat abgerundete Ecken, Produktfoto, Badge (Neu/Sale), Produktname, Bewertungssterne, Preis und einen auffälligen 'In den Warenkorb'-Button mit Hover-Effekt. Beim Klick auf eine Karte öffnet sich ein elegantes Modal mit großem Produktbild, Beschreibung, Varianten-Auswahl, Menge und Kauf-Button. Cleanes weisses Design mit dunklen Akzenten, sanfte Schatten und smooth Animationen." },
   { label: "Musikband", style: "Grunge & Retro", text: "Eine retro-inspirierte Website für eine Rockband mit körnigem Hintergrund, Tour-Daten, Albumcover-Galerie und eingebettetem Musikplayer" },
 ];
 
 
 const PROGRESS_STEPS = [
-  { pct: 8, text: "Analysiere deine Beschreibung..." },
-  { pct: 18, text: "Wähle Farbpalette und Schriften..." },
-  { pct: 30, text: "Erstelle Header und Navigation..." },
-  { pct: 45, text: "Gestalte Hero-Bereich..." },
-  { pct: 58, text: "Lade Bilder..." },
-  { pct: 70, text: "Erstelle Inhalts-Sektionen..." },
-  { pct: 82, text: "Optimiere responsives Design..." },
-  { pct: 90, text: "Letzte Feinabstimmungen..." },
+  { pct: 5,  text: "Analysiere deine Beschreibung..." },
+  { pct: 15, text: "Wähle Farbpalette und Schriften..." },
+  { pct: 28, text: "Erstelle Header und Navigation..." },
+  { pct: 42, text: "Gestalte Hero-Bereich..." },
+  { pct: 55, text: "Lade Bilder und Assets..." },
+  { pct: 67, text: "Erstelle Inhalts-Sektionen..." },
+  { pct: 78, text: "Optimiere responsives Design..." },
+  { pct: 88, text: "Letzte Feinabstimmungen..." },
+  { pct: 93, text: "Fast fertig..." },
 ];
 
 function extractHTML(text: string): string {
@@ -93,6 +93,8 @@ export default function WebCreatorPage() {
   const [editingSectionStyles, setEditingSectionStyles] = useState<Record<string, string>>({});
   const [pageTitle, setPageTitle] = useState("");
   const [showInfo, setShowInfo] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<"gpt-5.1-codex-mini" | "gpt-4o" | "gemini-3-pro" | "gemini">("gpt-5.1-codex-mini");
+  const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
 
   // Extract page title from HTML whenever resultHTML changes
   useEffect(() => {
@@ -383,16 +385,20 @@ export default function WebCreatorPage() {
   };
 
   const startProgress = useCallback(() => {
-    let step = 0;
+    let currentPct = 0;
     setProgressPct(0);
-    setProgressText("KI erstellt deine Website...");
+    setProgressText(PROGRESS_STEPS[0].text);
+
     progressRef.current = setInterval(() => {
-      if (step < PROGRESS_STEPS.length) {
-        setProgressPct(PROGRESS_STEPS[step].pct);
-        setProgressText(PROGRESS_STEPS[step].text);
-        step++;
-      }
-    }, 1800);
+      // Asymptotic curve: always moves but gets slower near 94%
+      currentPct = currentPct + (94 - currentPct) * 0.03;
+      const rounded = Math.min(Math.round(currentPct * 10) / 10, 94);
+      setProgressPct(rounded);
+
+      // Update text based on current percentage
+      const step = [...PROGRESS_STEPS].reverse().find(s => s.pct <= rounded);
+      if (step) setProgressText(step.text);
+    }, 500);
   }, []);
 
   const finishProgress = useCallback(() => {
@@ -442,7 +448,7 @@ export default function WebCreatorPage() {
         const res = await fetch("/api/generate-website", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userMessage, isModify }),
+          body: JSON.stringify({ userMessage, isModify, model: selectedModel }),
         });
         return await res.json();
       });
@@ -481,7 +487,7 @@ export default function WebCreatorPage() {
       const res = await fetch("/api/generate-website", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userMessage, isModify: true, currentHTML: resultHTMLRef.current }),
+        body: JSON.stringify({ userMessage, isModify: true, currentHTML: resultHTMLRef.current, model: selectedModel }),
       });
       const data = await res.json();
 
@@ -539,7 +545,7 @@ export default function WebCreatorPage() {
   };
 
   const openTemplateInEditor = (idx: number) => {
-    const html = TEMPLATES[idx];
+    const html = TEMPLATES[idx] ?? "";
     setCurrentHTML(html);
     setResultHTML(html);
     setLastAIHTML(html);
@@ -547,7 +553,7 @@ export default function WebCreatorPage() {
     setHasEdits(false);
 
     // Save to history
-    const templateName = TEMPLATE_NAMES[idx];
+    const templateName = TEMPLATE_NAMES[idx] ?? "";
     const newHistoryId = addToHistory({
       type: "web",
       prompt: `Vorlage: ${templateName}`,
@@ -566,7 +572,7 @@ export default function WebCreatorPage() {
 
   const selectTemplate = () => {
     setSelectedTemplate(modalTemplateIdx);
-    setCurrentHTML(TEMPLATES[modalTemplateIdx]);
+    setCurrentHTML(TEMPLATES[modalTemplateIdx] ?? "");
     setModalOpen(false);
   };
 
@@ -771,17 +777,69 @@ export default function WebCreatorPage() {
                 </div>
               )}
 
-              {/* Generate button */}
-              {!isGenerating && (
-                <div className="flex justify-center mt-5">
-                  <button
-                    onClick={handleGenerate}
-                    className="inline-flex items-center justify-center h-[58px] px-8 rounded-full text-[18px] font-semibold bg-begonia-400 text-white shadow-[0_6px_30px_rgba(254,108,117,0.35)] hover:bg-[#ff8a91] hover:shadow-[0_4px_20px_rgba(254,108,117,0.25)] hover:-translate-y-px transition-all cursor-pointer border-none max-md:h-[50px] max-md:px-6 max-md:text-[16px] max-md:w-full"
-                  >
-                    Vorschau generieren
-                  </button>
-                </div>
-              )}
+              {/* Generate button + model dropdown */}
+              {!isGenerating && (() => {
+                const AI_MODELS = [
+                  { id: "gpt-5.1-codex-mini", label: "GPT-5.1 Codex",    sub: "Präziser, detaillierter Code — etwas langsamer",  tag: "OpenAI",  color: "#10a37f" },
+                  { id: "gpt-4o",             label: "GPT-4o",            sub: "Schnell & ausgewogen — ideal für Änderungen",     tag: "OpenAI",  color: "#10a37f" },
+                  { id: "gemini-3-pro",        label: "Gemini 3 Pro",      sub: "Googles stärkstes Modell — kreativ & präzise",    tag: "Google",  color: "#4285f4" },
+                  { id: "gemini",              label: "Gemini 2.5 Flash",  sub: "Sehr schnell — gut für einfache Seiten",          tag: "Google",  color: "#4285f4" },
+                ] as const;
+                const active = AI_MODELS.find(m => m.id === selectedModel)!;
+                return (
+                  <div className="flex flex-col items-center gap-3 mt-5">
+                    {/* Model dropdown above button */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setModelDropdownOpen(o => !o)}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-semibold border border-gunpowder-200 bg-white text-gunpowder-500 hover:border-gunpowder-300 transition-all cursor-pointer"
+                      >
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: active.color }} />
+                        <span>{active.label}</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                          className={`transition-transform ${modelDropdownOpen ? "rotate-180" : ""}`}>
+                          <path d="M6 9l6 6 6-6"/>
+                        </svg>
+                      </button>
+
+                      {modelDropdownOpen && (
+                        <div className="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 bg-white border border-gunpowder-150 rounded-2xl shadow-xl py-1.5 min-w-[210px] z-50">
+                          {AI_MODELS.map(m => (
+                            <button
+                              key={m.id}
+                              onClick={() => { setSelectedModel(m.id); setModelDropdownOpen(false); }}
+                              className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors cursor-pointer border-none ${
+                                selectedModel === m.id ? "bg-gunpowder-50" : "bg-white hover:bg-gunpowder-50"
+                              }`}
+                            >
+                              <span className="w-2 h-2 rounded-full flex-shrink-0 mt-0.5" style={{ backgroundColor: m.color }} />
+                              <span className="flex-1 min-w-0">
+                                <span className="flex items-center gap-2">
+                                  <span className="text-[13px] font-semibold text-gunpowder-900">{m.label}</span>
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-gunpowder-100 text-gunpowder-400">{m.tag}</span>
+                                </span>
+                                <span className="block text-[11px] text-gunpowder-400 font-medium leading-tight mt-0.5">{m.sub}</span>
+                              </span>
+                              {selectedModel === m.id && (
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="flex-shrink-0 text-gunpowder-700">
+                                  <path d="M20 6L9 17l-5-5"/>
+                                </svg>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={handleGenerate}
+                      className="inline-flex items-center justify-center h-[58px] px-8 rounded-full text-[18px] font-semibold bg-begonia-400 text-white shadow-[0_6px_30px_rgba(254,108,117,0.35)] hover:bg-[#ff8a91] hover:shadow-[0_4px_20px_rgba(254,108,117,0.25)] hover:-translate-y-px transition-all cursor-pointer border-none max-md:h-[50px] max-md:px-6 max-md:text-[16px] max-md:w-full"
+                    >
+                      Vorschau generieren
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

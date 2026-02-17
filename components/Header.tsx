@@ -17,7 +17,7 @@ const tabs: { label: string; subtitle?: string; href: string; genType?: GenType;
   },
   {
     label: "KI Web Creator",
-    subtitle: "mit Gemini 2.5 Flash",
+    subtitle: "GPT-5.1 Codex · Gemini 3 Pro",
     href: "/web-creator",
     genType: "web",
     icon: (
