@@ -1143,10 +1143,11 @@ export default function ImageEditorPage() {
             </p>
             <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
               {[
+                "/images/bild/Unknocwn-1.png",
+                   "/images/bild/promo.png",
                 "/images/bild/IMG_6256.jpeg",
-                "/images/bild/a8ea9f30-c1aa-4e06-8abb-4c04223ff385.jpeg",
+                "/images/bild/berg.png",
                 "/images/bild/Imagen JPEG-4B55-B176-E2-0.jpeg",
-                "/images/bild/Unknown-1.png",
                 "/images/bild/snacks_1767696301406.jpg",
               ].map((src, i) => (
                 <div
