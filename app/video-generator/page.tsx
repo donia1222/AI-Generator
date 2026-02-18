@@ -62,11 +62,11 @@ export default function VideoGeneratorPage() {
 
   // Restore ongoing generation on mount
   useEffect(() => {
-    const savedJobId = sessionStorage.getItem("video_generating_jobId");
+    const savedVideoId = sessionStorage.getItem("video_generating_videoId");
     const savedPrompt = sessionStorage.getItem("video_generating_prompt");
     const savedTimestamp = sessionStorage.getItem("video_generating_timestamp");
 
-    if (savedJobId && savedTimestamp) {
+    if (savedVideoId && savedTimestamp) {
       // Check if generation is still recent (within 10 minutes)
       const elapsed = Date.now() - parseInt(savedTimestamp);
       if (elapsed < 10 * 60 * 1000) {
@@ -76,11 +76,11 @@ export default function VideoGeneratorPage() {
 
         // Resume polling
         setTimeout(() => {
-          pollVideoStatus(savedJobId, savedPrompt || "Video");
+          pollVideoStatus(savedVideoId, savedPrompt || "Video");
         }, 500);
       } else {
         // Clear old generation data
-        sessionStorage.removeItem("video_generating_jobId");
+        sessionStorage.removeItem("video_generating_videoId");
         sessionStorage.removeItem("video_generating_prompt");
         sessionStorage.removeItem("video_generating_timestamp");
       }
@@ -133,7 +133,7 @@ export default function VideoGeneratorPage() {
     generateVideo();
   };
 
-  const pollVideoStatus = async (jobId: string, fullPrompt: string) => {
+  const pollVideoStatus = async (videoId: string, fullPrompt: string) => {
     let retryCount404 = 0;
     const MAX_404_RETRIES = 3;
 
@@ -144,7 +144,7 @@ export default function VideoGeneratorPage() {
 
     const pollInterval = setInterval(async () => {
       try {
-        const statusRes = await fetch(`/api/video-status?jobId=${jobId}`);
+        const statusRes = await fetch(`/api/video-status?videoId=${videoId}`);
         const statusData = await statusRes.json();
 
         // Handle 404 errors with retry logic (job might still be creating)
@@ -193,7 +193,7 @@ export default function VideoGeneratorPage() {
           setVideoUrl(statusData.videoUrl);
 
           // Clear generation state from sessionStorage
-          sessionStorage.removeItem("video_generating_jobId");
+          sessionStorage.removeItem("video_generating_videoId");
           sessionStorage.removeItem("video_generating_prompt");
           sessionStorage.removeItem("video_generating_timestamp");
 
@@ -231,7 +231,7 @@ export default function VideoGeneratorPage() {
           setError(statusData.error || "Ein Fehler ist aufgetreten. Bitte versuche es erneut.");
 
           // Clear generation state
-          sessionStorage.removeItem("video_generating_jobId");
+          sessionStorage.removeItem("video_generating_videoId");
           sessionStorage.removeItem("video_generating_prompt");
           sessionStorage.removeItem("video_generating_timestamp");
         }
@@ -243,7 +243,7 @@ export default function VideoGeneratorPage() {
         setError("Netzwerkfehler beim Abrufen des Status.");
 
         // Clear generation state
-        sessionStorage.removeItem("video_generating_jobId");
+        sessionStorage.removeItem("video_generating_videoId");
         sessionStorage.removeItem("video_generating_prompt");
         sessionStorage.removeItem("video_generating_timestamp");
       }
@@ -295,16 +295,16 @@ export default function VideoGeneratorPage() {
         return;
       }
 
-      if (data.status === "pending" && data.jobId) {
+      if (data.status === "pending" && data.videoId) {
         // Save generation state to sessionStorage
-        sessionStorage.setItem("video_generating_jobId", data.jobId);
+        sessionStorage.setItem("video_generating_videoId", data.videoId);
         sessionStorage.setItem("video_generating_prompt", fullPrompt);
         sessionStorage.setItem("video_generating_timestamp", Date.now().toString());
 
-        // Wait a bit before starting polling to ensure job is created
+        // Start polling immediately with the videoId from Sora
         setTimeout(() => {
-          pollVideoStatus(data.jobId, fullPrompt);
-        }, 500);
+          pollVideoStatus(data.videoId, fullPrompt);
+        }, 2000);
       } else {
         finishProgress();
         setError("Unerwartete Antwort vom Server.");

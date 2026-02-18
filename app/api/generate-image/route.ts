@@ -32,29 +32,6 @@ export async function POST(req: NextRequest) {
     Authorization: `Bearer ${apiKey}`,
   };
 
-  // Log key info for debugging
-  console.log("🔑 API Key prefix:", apiKey.substring(0, 15) + "...");
-  console.log("📋 Mode:", mode, "| Model:", model, "| Size:", size, "| Quality:", quality);
-  console.log("🖼️ Image attached:", image ? `${image.name} (${(image.size / 1024).toFixed(1)}KB)` : "none");
-
-  // List available models for debugging
-  try {
-    const modelsRes = await fetch("https://api.openai.com/v1/models", { headers });
-    const modelsData = await modelsRes.json();
-    if (modelsData.data) {
-      const modelNames = modelsData.data.map((m: { id: string }) => m.id).sort();
-      console.log("📦 Modelos disponibles en este proyecto:", modelNames.join(", "));
-      const imageModels = modelNames.filter((m: string) =>
-        m.includes("dall") || m.includes("image") || m.includes("gpt-4o") || m.includes("gpt-4.1")
-      );
-      console.log("🎨 Modelos de imagen encontrados:", imageModels.length > 0 ? imageModels.join(", ") : "NINGUNO");
-    } else {
-      console.log("⚠️ Error listando modelos:", modelsData.error?.message);
-    }
-  } catch (e) {
-    console.log("⚠️ No se pudo listar modelos:", e);
-  }
-
   try {
     if (mode === "edit" && image && image.size > 0) {
       // Edit mode: use /v1/images/edits with multipart/form-data

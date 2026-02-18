@@ -5,7 +5,7 @@ import { HTMLSectionDetector } from "@/lib/html-section-detector";
 import { HTMLMerger } from "@/lib/html-merger";
 import { INCREMENTAL_MODIFY_SYSTEM_PROMPT, CROSS_SECTION_MODIFY_SYSTEM_PROMPT } from "@/lib/prompts-incremental";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 // Models that use /v1/responses instead of /v1/chat/completions
 const RESPONSES_API_MODELS = ["gpt-5.1-codex-mini", "gpt-5.2"];
@@ -151,7 +151,7 @@ async function generateWithGemini(systemPrompt: string, userMessage: string) {
   return text;
 }
 
-async function generateWithGeminiChat(systemPrompt: string, userMessage: string, geminiModel = "gemini-3-pro-preview") {
+async function generateWithGeminiChat(systemPrompt: string, userMessage: string, geminiModel = "gemini-2.5-pro-preview-05-06") {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
 
@@ -215,7 +215,7 @@ async function handleIncrementalModification(
         if (model === "gemini") {
           modified = await generateWithGemini(INCREMENTAL_MODIFY_SYSTEM_PROMPT, prompt);
         } else if (model === "gemini-3-pro") {
-          modified = await generateWithGeminiChat(INCREMENTAL_MODIFY_SYSTEM_PROMPT, prompt, "gemini-3-pro-preview");
+          modified = await generateWithGeminiChat(INCREMENTAL_MODIFY_SYSTEM_PROMPT, prompt, "gemini-2.5-pro-preview-05-06");
         } else {
           modified = await generateWithOpenAI(INCREMENTAL_MODIFY_SYSTEM_PROMPT, prompt, model);
         }
@@ -279,7 +279,7 @@ async function handleCrossSectionModification(
       if (model === "gemini") {
         modified = await generateWithGemini(CROSS_SECTION_MODIFY_SYSTEM_PROMPT, prompt);
       } else if (model === "gemini-3-pro") {
-        modified = await generateWithGeminiChat(CROSS_SECTION_MODIFY_SYSTEM_PROMPT, prompt, "gemini-3-pro-preview");
+        modified = await generateWithGeminiChat(CROSS_SECTION_MODIFY_SYSTEM_PROMPT, prompt, "gemini-2.5-pro-preview-05-06");
       } else {
         modified = await generateWithOpenAI(CROSS_SECTION_MODIFY_SYSTEM_PROMPT, prompt, model);
       }
@@ -371,7 +371,7 @@ export async function POST(req: NextRequest) {
   const generators: Record<string, GenerateFn> = {
     "gpt-5.1-codex-mini": () => generateWithOpenAI(systemPrompt, finalUserMessage, "gpt-5.1-codex-mini"),
     "gpt-4o":             () => generateWithOpenAI(systemPrompt, finalUserMessage, "gpt-4o"),
-    "gemini-3-pro":       () => generateWithGeminiChat(systemPrompt, finalUserMessage, "gemini-3-pro-preview"),
+    "gemini-3-pro":       () => generateWithGeminiChat(systemPrompt, finalUserMessage, "gemini-2.5-pro-preview-05-06"),
     "gemini":             () => generateWithGemini(systemPrompt, finalUserMessage),
   };
 

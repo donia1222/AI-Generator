@@ -314,8 +314,8 @@ export default function ImageEditorPage() {
         return;
       }
 
-      if (data.status === "pending" && data.jobId) {
-        pollVideoStatus(data.jobId, fullPrompt);
+      if (data.status === "pending" && data.videoId) {
+        pollVideoStatus(data.videoId, fullPrompt);
       } else {
         finishProgress();
         setError("Unerwartete Antwort vom Server.");
@@ -327,12 +327,12 @@ export default function ImageEditorPage() {
     }
   };
 
-  const pollVideoStatus = async (jobId: string, fullPrompt: string) => {
+  const pollVideoStatus = async (videoId: string, fullPrompt: string) => {
     if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
 
     const pollInterval = setInterval(async () => {
       try {
-        const statusRes = await fetch(`/api/video-status?jobId=${jobId}`);
+        const statusRes = await fetch(`/api/video-status?videoId=${videoId}`);
         const statusData = await statusRes.json();
 
         if (statusData.status === "error" || !statusRes.ok) {
