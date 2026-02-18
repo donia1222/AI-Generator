@@ -128,6 +128,18 @@ export function getHistoryById(id: string): HistoryItem | null {
   return null;
 }
 
+export function deleteHistoryById(id: string): void {
+  if (typeof window === "undefined") return;
+  for (const type of Object.keys(STORAGE_KEYS) as HistoryType[]) {
+    const history = getHistory(type);
+    const filtered = history.filter(item => item.id !== id);
+    if (filtered.length !== history.length) {
+      localStorage.setItem(STORAGE_KEYS[type], JSON.stringify(filtered));
+      return;
+    }
+  }
+}
+
 export function clearHistory(type?: HistoryType): void {
   if (typeof window === "undefined") return;
   if (type) {

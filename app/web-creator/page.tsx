@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { TEMPLATES, TEMPLATE_NAMES } from "@/lib/prompts";
 import { startGeneration, getGeneration, clearGeneration, subscribe } from "@/lib/generation-store";
-import { addToHistory, updateLatestHistory, getHistory, updateHistoryById, getHistoryById } from "@/lib/history";
+import { addToHistory, updateLatestHistory, getHistory, updateHistoryById, getHistoryById, deleteHistoryById } from "@/lib/history";
 import PasswordModal, { isAuthenticated } from "@/components/PasswordModal";
 import { injectEditingCapabilities } from "@/lib/iframe-editing";
 
@@ -173,12 +173,17 @@ export default function WebCreatorPage() {
   // Load user's generated websites from history
   useEffect(() => {
     const webHistory = getHistory("web").slice(0, 10); // Last 10 webs
-    setMyWebsites(webHistory.map(item => ({
+    const websites = webHistory.map(item => ({
       id: item.id,
       html: item.metadata?.html as string || "",
       prompt: item.prompt,
       createdAt: item.createdAt
-    })).filter(w => w.html));
+    })).filter(w => w.html);
+    setMyWebsites(websites);
+    // If user has generated websites, show "Meine Websites" tab by default
+    if (websites.length > 0) {
+      setPreviewTab(999);
+    }
   }, [resultModalOpen]); // Refresh when modal closes
 
   const [displayURL, setDisplayURL] = useState("");
@@ -244,6 +249,24 @@ export default function WebCreatorPage() {
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
   }, [currentHistoryId]);
+
+  // Listen for edits coming back from the web-preview new tab
+  useEffect(() => {
+    const channel = new BroadcastChannel("sora-web-preview");
+    channel.onmessage = (event) => {
+      if (event.data?.type === "sora-preview-edit" && event.data.html) {
+        const { historyId: hId, html: updatedHtml } = event.data;
+        setResultHTML(updatedHtml);
+        setCurrentHTML(updatedHtml);
+        setLastAIHTML(updatedHtml);
+        sessionStorage.setItem("web_completed_html", updatedHtml);
+        if (hId) {
+          updateHistoryById(hId, { html: updatedHtml });
+        }
+      }
+    };
+    return () => channel.close();
+  }, []);
 
   // Restore state from global store on mount + restore completed result from sessionStorage
   useEffect(() => {
@@ -357,9 +380,11 @@ export default function WebCreatorPage() {
       setResultHTML(html);
       setLastAIHTML(html);
 
-      // Only open modal if this is an active generation, not a restore
+      // Only open if this is an active generation, not a restore
       if (shouldOpenModal) {
-        setResultModalOpen(true);
+        // Update localStorage so the already-open preview tab picks up the HTML
+        localStorage.setItem("sora_preview_html", html);
+        localStorage.removeItem("sora_preview_loading");
       }
 
       // Save to history and get the generated ID
@@ -374,6 +399,8 @@ export default function WebCreatorPage() {
       if (newHistoryId) {
         setCurrentHistoryId(newHistoryId);
         sessionStorage.setItem("web_current_history_id", newHistoryId);
+        // Update preview page so it knows the history ID to save edits
+        localStorage.setItem("sora_preview_history_id", newHistoryId);
         console.log(`💾 Saved new web to history with ID: ${newHistoryId}`);
       }
 
@@ -415,6 +442,10 @@ export default function WebCreatorPage() {
       setShowPasswordModal(true);
       return;
     }
+    // Open preview window NOW (must be synchronous with user click, or browser blocks it)
+    localStorage.removeItem("sora_preview_html");
+    localStorage.setItem("sora_preview_loading", "1");
+    window.open("/web-preview", "_blank");
     generatePreview();
   };
 
@@ -549,7 +580,6 @@ export default function WebCreatorPage() {
     setCurrentHTML(html);
     setResultHTML(html);
     setLastAIHTML(html);
-    setResultModalOpen(true);
     setHasEdits(false);
 
     // Save to history
@@ -564,10 +594,16 @@ export default function WebCreatorPage() {
     if (newHistoryId) {
       setCurrentHistoryId(newHistoryId);
       sessionStorage.setItem("web_current_history_id", newHistoryId);
+      localStorage.setItem("sora_preview_history_id", newHistoryId);
     }
     sessionStorage.setItem("web_completed_html", html);
     sessionStorage.setItem("web_completed_prompt", `Vorlage: ${templateName}`);
     sessionStorage.setItem("web_completed_timestamp", Date.now().toString());
+
+    // Open in new tab (full viewport, no modal)
+    localStorage.setItem("sora_preview_html", html);
+    localStorage.removeItem("sora_preview_loading");
+    window.open("/web-preview", "_blank");
   };
 
   const selectTemplate = () => {
@@ -1000,13 +1036,18 @@ export default function WebCreatorPage() {
                     setResultHTML(website.html);
                     setLastAIHTML(website.html);
                     setCurrentHistoryId(website.id);
-                    setResultModalOpen(true);
 
                     // Save to sessionStorage so edits persist
                     sessionStorage.setItem("web_current_history_id", website.id);
                     sessionStorage.setItem("web_completed_html", website.html);
                     sessionStorage.setItem("web_completed_prompt", website.prompt);
                     sessionStorage.setItem("web_completed_timestamp", Date.now().toString());
+
+                    // Open in new tab (full viewport, no modal)
+                    localStorage.setItem("sora_preview_html", website.html);
+                    localStorage.setItem("sora_preview_history_id", website.id);
+                    localStorage.removeItem("sora_preview_loading");
+                    window.open("/web-preview", "_blank");
                     console.log(`📂 Loaded web from history: ${website.id}`);
                   }}
                 >
@@ -1023,6 +1064,20 @@ export default function WebCreatorPage() {
                       }}
                     />
                   </div>
+                  {/* Delete button - top right corner */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteHistoryById(website.id);
+                      setMyWebsites(prev => prev.filter(w => w.id !== website.id));
+                    }}
+                    className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-black/50 hover:bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer border-none"
+                    title="Löschen"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                      <path d="M18 6L6 18"/><path d="M6 6l12 12"/>
+                    </svg>
+                  </button>
                   <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white via-white/95 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 flex items-center justify-between">
                     <p className="text-[13px] max-md:text-[14px] font-bold truncate" style={{ color: "#5cb85c" }}>
@@ -1150,6 +1205,22 @@ export default function WebCreatorPage() {
                 </button>
               </div>
 
+              <button
+                onClick={() => {
+                  const freshHTML = getIframeHTML() || resultHTML;
+                  localStorage.setItem("sora_preview_html", freshHTML);
+                  localStorage.setItem("sora_preview_history_id", currentHistoryId || "");
+                  window.open("/web-preview", "_blank");
+                }}
+                className="flex items-center justify-center w-9 h-9 rounded-xl border-none bg-gunpowder-100 cursor-pointer text-gunpowder-500 hover:bg-gunpowder-200 hover:text-gunpowder-700 transition-all mr-1"
+                title="Abrir en nueva ventana"
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+              </button>
               <button
                 onClick={() => {
                   const freshHTML = getIframeHTML() || resultHTML;
@@ -1611,6 +1682,10 @@ export default function WebCreatorPage() {
           if (pendingAction === "modify") {
             handleAIModify();
           } else {
+            // Open preview tab NOW (user gesture from password confirm button)
+            localStorage.removeItem("sora_preview_html");
+            localStorage.setItem("sora_preview_loading", "1");
+            window.open("/web-preview", "_blank");
             generatePreview();
           }
           setPendingAction(null);

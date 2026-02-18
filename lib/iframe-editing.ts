@@ -120,27 +120,23 @@ export function injectEditingCapabilities(html: string): string {
   cursor: text !important;
 }
 .__sora-text-toolbar {
-  position: absolute !important;
-  bottom: 100% !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
+  position: fixed !important;
   background: white !important;
   border-radius: 12px !important;
   padding: 8px !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08) !important;
-  z-index: 99999999 !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.10) !important;
+  z-index: 2147483647 !important;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 6px !important;
-  margin-bottom: 8px !important;
-  min-width: 280px !important;
+  min-width: 300px !important;
   pointer-events: auto !important;
   animation: __sora-toolbar-in 0.15s ease-out !important;
 }
 @keyframes __sora-toolbar-in {
-  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 .__sora-text-toolbar-row {
   display: flex !important;
@@ -171,6 +167,7 @@ export function injectEditingCapabilities(html: string): string {
   transition: transform 0.1s, border-color 0.1s !important;
   padding: 0 !important;
   outline: none !important;
+  pointer-events: auto !important;
 }
 .__sora-tt-color:hover {
   transform: scale(1.2) !important;
@@ -191,6 +188,7 @@ export function injectEditingCapabilities(html: string): string {
   color: #374151 !important;
   transition: all 0.1s !important;
   white-space: nowrap !important;
+  pointer-events: auto !important;
 }
 .__sora-tt-btn:hover {
   background: #f3f4f6 !important;
@@ -216,6 +214,7 @@ export function injectEditingCapabilities(html: string): string {
   align-items: center !important;
   gap: 4px !important;
   margin-left: auto !important;
+  pointer-events: auto !important;
 }
 .__sora-tt-done:hover {
   background: #16a34a !important;
@@ -960,8 +959,11 @@ export function injectEditingCapabilities(html: string): string {
       isEditing = false;
       el.contentEditable = 'false';
       el.classList.remove('__sora-editing');
-      if (toolbar && toolbar.parentNode) toolbar.parentNode.removeChild(toolbar);
-      toolbar = null;
+      if (toolbar) {
+        if (toolbar._soraCleanup) toolbar._soraCleanup();
+        if (toolbar.parentNode) toolbar.parentNode.removeChild(toolbar);
+        toolbar = null;
+      }
       pencil.style.display = '';
       sendUpdate();
     }
@@ -985,11 +987,9 @@ export function injectEditingCapabilities(html: string): string {
         btn.className = '__sora-tt-color';
         btn.style.backgroundColor = c;
         if (c === '#ffffff') btn.style.border = '2px solid #d1d5db';
-        btn.addEventListener('mousedown', function(ev) {
-          ev.preventDefault();
+        btn.addEventListener('click', function(ev) {
           ev.stopPropagation();
           el.style.color = c;
-          // Update active state
           row1.querySelectorAll('.__sora-tt-color').forEach(function(b) { b.classList.remove('active'); });
           btn.classList.add('active');
         });
@@ -1015,8 +1015,7 @@ export function injectEditingCapabilities(html: string): string {
           btn.style.backgroundColor = c;
         }
         if (c === '#ffffff') btn.style.border = '2px solid #d1d5db';
-        btn.addEventListener('mousedown', function(ev) {
-          ev.preventDefault();
+        btn.addEventListener('click', function(ev) {
           ev.stopPropagation();
           if (c === 'transparent') {
             el.style.backgroundColor = '';
@@ -1045,8 +1044,7 @@ export function injectEditingCapabilities(html: string): string {
         var btn = document.createElement('button');
         btn.className = '__sora-tt-btn';
         btn.textContent = label;
-        btn.addEventListener('mousedown', function(ev) {
-          ev.preventDefault();
+        btn.addEventListener('click', function(ev) {
           ev.stopPropagation();
           el.style.fontSize = ttSizeMap[label];
           row3.querySelectorAll('.__sora-tt-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -1067,8 +1065,7 @@ export function injectEditingCapabilities(html: string): string {
         var btn = document.createElement('button');
         btn.className = '__sora-tt-btn';
         btn.textContent = label;
-        btn.addEventListener('mousedown', function(ev) {
-          ev.preventDefault();
+        btn.addEventListener('click', function(ev) {
           ev.stopPropagation();
           el.style.fontWeight = ttWeightMap[label];
           row4.querySelectorAll('.__sora-tt-btn:not(.__sora-tt-italic):not(.__sora-tt-underline)').forEach(function(b) { b.classList.remove('active'); });
@@ -1088,8 +1085,7 @@ export function injectEditingCapabilities(html: string): string {
       italicBtn.innerHTML = '<i>I</i>';
       italicBtn.style.fontStyle = 'italic';
       if (cs.fontStyle === 'italic') italicBtn.classList.add('active');
-      italicBtn.addEventListener('mousedown', function(ev) {
-        ev.preventDefault();
+      italicBtn.addEventListener('click', function(ev) {
         ev.stopPropagation();
         var isItalic = el.style.fontStyle === 'italic';
         el.style.fontStyle = isItalic ? 'normal' : 'italic';
@@ -1102,8 +1098,7 @@ export function injectEditingCapabilities(html: string): string {
       underBtn.className = '__sora-tt-btn __sora-tt-underline';
       underBtn.innerHTML = '<u>U</u>';
       if (cs.textDecoration.indexOf('underline') !== -1) underBtn.classList.add('active');
-      underBtn.addEventListener('mousedown', function(ev) {
-        ev.preventDefault();
+      underBtn.addEventListener('click', function(ev) {
         ev.stopPropagation();
         var isUnder = el.style.textDecoration === 'underline';
         el.style.textDecoration = isUnder ? 'none' : 'underline';
@@ -1131,8 +1126,7 @@ export function injectEditingCapabilities(html: string): string {
         btn.innerHTML = a.icon;
         btn.style.padding = '0 6px';
         if (cs.textAlign === a.val) btn.classList.add('active');
-        btn.addEventListener('mousedown', function(ev) {
-          ev.preventDefault();
+        btn.addEventListener('click', function(ev) {
           ev.stopPropagation();
           el.style.textAlign = a.val;
           row5.querySelectorAll('.__sora-tt-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -1158,8 +1152,7 @@ export function injectEditingCapabilities(html: string): string {
         btn.textContent = lh;
         btn.style.padding = '0 5px';
         btn.style.fontSize = '10px';
-        btn.addEventListener('mousedown', function(ev) {
-          ev.preventDefault();
+        btn.addEventListener('click', function(ev) {
           ev.stopPropagation();
           el.style.lineHeight = lh;
         });
@@ -1170,8 +1163,7 @@ export function injectEditingCapabilities(html: string): string {
       var doneBtn = document.createElement('button');
       doneBtn.className = '__sora-tt-done';
       doneBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> OK';
-      doneBtn.addEventListener('mousedown', function(ev) {
-        ev.preventDefault();
+      doneBtn.addEventListener('click', function(ev) {
         ev.stopPropagation();
         closeToolbar();
       });
@@ -1179,11 +1171,33 @@ export function injectEditingCapabilities(html: string): string {
 
       toolbar.appendChild(row5);
 
-      el.appendChild(toolbar);
+      // Append to BODY — never clipped by parent overflow, always on top
+      document.body.appendChild(toolbar);
 
-      // Prevent clicks inside toolbar from blurring the element
+      // Position via requestAnimationFrame so layout is complete
+      function positionToolbar() {
+        var rect = el.getBoundingClientRect();
+        var tbRect = toolbar.getBoundingClientRect();
+        var top = rect.top - tbRect.height - 10;
+        if (top < 8) top = rect.bottom + 10;
+        var left = rect.left + (rect.width / 2) - (tbRect.width / 2);
+        if (left < 8) left = 8;
+        if (left + tbRect.width > window.innerWidth - 8) left = window.innerWidth - tbRect.width - 8;
+        toolbar.style.top = top + 'px';
+        toolbar.style.left = left + 'px';
+      }
+      requestAnimationFrame(function() { requestAnimationFrame(positionToolbar); });
+      window.addEventListener('scroll', positionToolbar, true);
+      window.addEventListener('resize', positionToolbar);
+      toolbar._soraCleanup = function() {
+        window.removeEventListener('scroll', positionToolbar, true);
+        window.removeEventListener('resize', positionToolbar);
+      };
+
+      // ONLY preventDefault on mousedown to keep el focused — no stopPropagation
+      // so the document listener can still check toolbar.contains(target)
       toolbar.addEventListener('mousedown', function(ev) {
-        ev.stopPropagation();
+        ev.preventDefault();
       });
     }
 
@@ -1199,10 +1213,11 @@ export function injectEditingCapabilities(html: string): string {
       createToolbar();
     });
 
-    // Close toolbar when clicking outside the element
+    // Close toolbar when clicking outside the element AND outside the toolbar
     document.addEventListener('mousedown', function(e) {
       if (!isEditing) return;
       if (el.contains(e.target)) return;
+      if (toolbar && toolbar.contains(e.target)) return;
       closeToolbar();
     });
 
