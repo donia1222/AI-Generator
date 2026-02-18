@@ -301,32 +301,154 @@ export default function WebPreviewPage() {
   if (!loaded) return null;
 
   if (isLoading || !resultHTML) {
+    if (!isLoading) {
+      return (
+        <div className="flex items-center justify-center h-screen bg-white">
+          <div className="text-center">
+            <p className="text-gunpowder-500 mb-4">No hay ninguna web generada todavía.</p>
+            <a href="/web-creator" className="inline-flex items-center gap-2 px-5 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-semibold hover:bg-purple-700 transition-all">
+              ← Zurück zum Generator
+            </a>
+          </div>
+        </div>
+      );
+    }
+
+    // Skeleton sections revealed progressively based on progress
+    const pct = progressPct;
+    const showNav     = pct >= 0;
+    const showHero    = pct >= 10;
+    const showCards   = pct >= 28;
+    const showSection2= pct >= 45;
+    const showSection3= pct >= 62;
+    const showFooter  = pct >= 80;
+
     return (
-      <div className="flex items-center justify-center h-screen bg-white">
-        <div className="text-center">
-          {isLoading ? (
-            <div className="w-full max-w-sm px-2">
-              <p className="text-gunpowder-700 font-semibold text-lg mb-1 text-center">Website wird erstellt...</p>
-              <p className="text-gunpowder-400 text-sm mb-6 text-center">{progressText}</p>
-              <div className="w-full h-2.5 bg-gunpowder-100 rounded-full overflow-hidden mb-2">
-                <div
-                  className="h-full rounded-full transition-all duration-500 ease-out"
-                  style={{
-                    width: `${progressPct}%`,
-                    background: "linear-gradient(90deg, #7c3aed, #a855f7)",
-                  }}
-                />
+      <div className="h-screen flex flex-col bg-white overflow-hidden">
+        {/* Skeleton website + centered progress overlay */}
+        <div className="flex-1 overflow-hidden relative" style={{position:'relative'}}>
+          <style>{`
+            @keyframes sora-shimmer {
+              0% { background-position: -600px 0; }
+              100% { background-position: 600px 0; }
+            }
+            .skel {
+              background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+              background-size: 600px 100%;
+              animation: sora-shimmer 1.6s infinite linear;
+              border-radius: 6px;
+            }
+            .skel-dark {
+              background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+              background-size: 600px 100%;
+              animation: sora-shimmer 1.6s infinite linear;
+              border-radius: 6px;
+            }
+            .skel-fade-in {
+              animation: skel-appear 0.6s ease-out forwards;
+            }
+            @keyframes skel-appear {
+              from { opacity: 0; transform: translateY(12px); }
+              to   { opacity: 1; transform: translateY(0); }
+            }
+          `}</style>
+
+          {/* Nav */}
+          {showNav && (
+            <div className="skel-fade-in flex items-center justify-between px-10 py-5 border-b border-gray-100">
+              <div className="skel h-6 w-28" />
+              <div className="flex gap-4">
+                {[60,50,55,50].map((w,i) => <div key={i} className="skel h-4" style={{width:`${w}px`}} />)}
               </div>
-              <p className="text-right text-xs font-semibold text-gunpowder-400">{Math.round(progressPct)}%</p>
+              <div className="skel h-9 w-24 rounded-lg" />
             </div>
-          ) : (
-            <>
-              <p className="text-gunpowder-500 mb-4">No hay ninguna web generada todavía.</p>
-              <a href="/web-creator" className="inline-flex items-center gap-2 px-5 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-semibold hover:bg-purple-700 transition-all">
-                ← Volver al generador
-              </a>
-            </>
           )}
+
+          {/* Hero */}
+          {showHero && (
+            <div className="skel-fade-in relative mx-6 mt-4 rounded-2xl overflow-hidden" style={{height:'260px', background:'#1a1a2e'}}>
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-8">
+                <div className="skel-dark h-10 w-2/3 rounded-lg" />
+                <div className="skel-dark h-6 w-1/2 rounded-md" />
+                <div className="flex gap-3 mt-2">
+                  <div className="skel-dark h-11 w-32 rounded-xl" />
+                  <div className="skel-dark h-11 w-28 rounded-xl" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Cards row */}
+          {showCards && (
+            <div className="skel-fade-in grid grid-cols-3 gap-4 px-6 mt-5">
+              {[1,2,3].map(i => (
+                <div key={i} className="rounded-xl border border-gray-100 p-4 flex flex-col gap-2.5">
+                  <div className="skel h-32 w-full rounded-lg" />
+                  <div className="skel h-5 w-3/4" />
+                  <div className="skel h-4 w-full" />
+                  <div className="skel h-4 w-5/6" />
+                  <div className="skel h-9 w-28 rounded-lg mt-1" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Section 2 */}
+          {showSection2 && (
+            <div className="skel-fade-in flex gap-6 px-6 mt-5">
+              <div className="skel flex-1 rounded-xl" style={{height:'120px'}} />
+              <div className="flex-1 flex flex-col justify-center gap-3">
+                <div className="skel h-6 w-3/4" />
+                <div className="skel h-4 w-full" />
+                <div className="skel h-4 w-5/6" />
+                <div className="skel h-4 w-4/6" />
+              </div>
+            </div>
+          )}
+
+          {/* Section 3: cols */}
+          {showSection3 && (
+            <div className="skel-fade-in grid grid-cols-4 gap-3 px-6 mt-5">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="flex flex-col gap-2 items-center">
+                  <div className="skel w-12 h-12 rounded-full" />
+                  <div className="skel h-4 w-20" />
+                  <div className="skel h-3 w-full" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Footer */}
+          {showFooter && (
+            <div className="skel-fade-in mx-6 mt-5 rounded-xl p-5 flex justify-between" style={{background:'#111'}}>
+              <div className="skel-dark h-5 w-24" />
+              <div className="flex gap-6">
+                {[3,3,3].map((n,gi) => (
+                  <div key={gi} className="flex flex-col gap-2">
+                    {Array.from({length:n}).map((_,i) => <div key={i} className="skel-dark h-3 w-16" />)}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Progress overlay — centered over the skeleton */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl px-8 py-6 w-[380px] max-w-[90vw]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-bold text-gunpowder-800">Website wird erstellt...</span>
+              <span className="text-sm font-bold text-purple-600">{Math.round(pct)}%</span>
+            </div>
+            <div className="w-full h-2.5 bg-gunpowder-100 rounded-full overflow-hidden mb-2">
+              <div
+                className="h-full rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${pct}%`, background: "linear-gradient(90deg, #7c3aed, #a855f7)" }}
+              />
+            </div>
+            <p className="text-xs text-gunpowder-400">{progressText}</p>
+          </div>
         </div>
       </div>
     );
