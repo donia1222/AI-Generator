@@ -10,6 +10,7 @@ export interface HistoryItem {
   metadata?: Record<string, string>;
 }
 
+
 const STORAGE_KEYS: Record<HistoryType, string> = {
   video: "history_video",
   music: "history_music",
