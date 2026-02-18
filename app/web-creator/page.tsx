@@ -129,6 +129,7 @@ export default function WebCreatorPage() {
   const iframeResultRef = useRef<HTMLIFrameElement>(null);
   const resultHTMLRef = useRef(resultHTML);
   resultHTMLRef.current = resultHTML;
+  const previewWindowRef = useRef<Window | null>(null);
 
   // Extract clean HTML directly from the iframe DOM (bypasses postMessage)
   const getIframeHTML = useCallback(() => {
@@ -415,16 +416,17 @@ export default function WebCreatorPage() {
     let currentPct = 0;
     setProgressPct(0);
     setProgressText(PROGRESS_STEPS[0].text);
+    localStorage.setItem("sora_preview_progress", JSON.stringify({ pct: 0, text: PROGRESS_STEPS[0].text }));
 
     progressRef.current = setInterval(() => {
-      // Asymptotic curve: always moves but gets slower near 94%
       currentPct = currentPct + (94 - currentPct) * 0.03;
       const rounded = Math.min(Math.round(currentPct * 10) / 10, 94);
       setProgressPct(rounded);
-
-      // Update text based on current percentage
       const step = [...PROGRESS_STEPS].reverse().find(s => s.pct <= rounded);
-      if (step) setProgressText(step.text);
+      if (step) {
+        setProgressText(step.text);
+        localStorage.setItem("sora_preview_progress", JSON.stringify({ pct: rounded, text: step.text }));
+      }
     }, 500);
   }, []);
 
@@ -432,6 +434,7 @@ export default function WebCreatorPage() {
     if (progressRef.current) clearInterval(progressRef.current);
     setProgressPct(100);
     setProgressText("Fertig!");
+    localStorage.setItem("sora_preview_progress", JSON.stringify({ pct: 100, text: "Fertig!" }));
     setTimeout(() => setIsGenerating(false), 800);
   }, []);
 
@@ -442,7 +445,7 @@ export default function WebCreatorPage() {
       setShowPasswordModal(true);
       return;
     }
-    // Open preview window NOW (must be synchronous with user click, or browser blocks it)
+    // Already authenticated — open window now (user gesture context)
     localStorage.removeItem("sora_preview_html");
     localStorage.setItem("sora_preview_loading", "1");
     window.open("/web-preview", "_blank");
@@ -1677,20 +1680,28 @@ export default function WebCreatorPage() {
 
       <PasswordModal
         open={showPasswordModal}
+        onBeforeCheck={() => {
+          // Called synchronously on "Bestätigen" click — still in user gesture context
+          if (pendingAction === "generate") {
+            localStorage.removeItem("sora_preview_html");
+            localStorage.setItem("sora_preview_loading", "1");
+            return window.open("/web-preview", "_blank");
+          }
+          return null;
+        }}
         onSuccess={() => {
           setShowPasswordModal(false);
           if (pendingAction === "modify") {
             handleAIModify();
           } else {
-            // Open preview tab NOW (user gesture from password confirm button)
-            localStorage.removeItem("sora_preview_html");
-            localStorage.setItem("sora_preview_loading", "1");
-            window.open("/web-preview", "_blank");
             generatePreview();
           }
           setPendingAction(null);
         }}
-        onCancel={() => { setShowPasswordModal(false); setPendingAction(null); }}
+        onCancel={() => {
+          setShowPasswordModal(false);
+          setPendingAction(null);
+        }}
       />
     </>
   );

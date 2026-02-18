@@ -96,6 +96,8 @@ export default function WebPreviewPage() {
   }, [historyId]);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [progressPct, setProgressPct] = useState(0);
+  const [progressText, setProgressText] = useState("Website wird erstellt...");
 
   // Load HTML from localStorage on mount, or wait if still generating
   useEffect(() => {
@@ -125,6 +127,13 @@ export default function WebPreviewPage() {
     const onStorage = (e: StorageEvent) => {
       if (e.key === "sora_preview_html" && e.newValue) {
         loadFromStorage();
+      }
+      if (e.key === "sora_preview_progress" && e.newValue) {
+        try {
+          const { pct, text } = JSON.parse(e.newValue);
+          setProgressPct(pct);
+          setProgressText(text);
+        } catch { /* ignore */ }
       }
     };
     window.addEventListener("storage", onStorage);
@@ -296,11 +305,20 @@ export default function WebPreviewPage() {
       <div className="flex items-center justify-center h-screen bg-white">
         <div className="text-center">
           {isLoading ? (
-            <>
-              <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-gunpowder-700 font-semibold text-lg mb-1">Website wird erstellt...</p>
-              <p className="text-gunpowder-400 text-sm">Dieses Fenster wird automatisch aktualisiert</p>
-            </>
+            <div className="w-full max-w-sm px-2">
+              <p className="text-gunpowder-700 font-semibold text-lg mb-1 text-center">Website wird erstellt...</p>
+              <p className="text-gunpowder-400 text-sm mb-6 text-center">{progressText}</p>
+              <div className="w-full h-2.5 bg-gunpowder-100 rounded-full overflow-hidden mb-2">
+                <div
+                  className="h-full rounded-full transition-all duration-500 ease-out"
+                  style={{
+                    width: `${progressPct}%`,
+                    background: "linear-gradient(90deg, #7c3aed, #a855f7)",
+                  }}
+                />
+              </div>
+              <p className="text-right text-xs font-semibold text-gunpowder-400">{Math.round(progressPct)}%</p>
+            </div>
           ) : (
             <>
               <p className="text-gunpowder-500 mb-4">No hay ninguna web generada todavía.</p>

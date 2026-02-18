@@ -17,9 +17,10 @@ interface PasswordModalProps {
   open: boolean;
   onSuccess: () => void;
   onCancel: () => void;
+  onBeforeCheck?: () => Window | null; // called synchronously before async fetch (user gesture context)
 }
 
-export default function PasswordModal({ open, onSuccess, onCancel }: PasswordModalProps) {
+export default function PasswordModal({ open, onSuccess, onCancel, onBeforeCheck }: PasswordModalProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -30,6 +31,9 @@ export default function PasswordModal({ open, onSuccess, onCancel }: PasswordMod
     if (!password.trim()) return;
     setChecking(true);
     setError(false);
+
+    // Call onBeforeCheck SYNCHRONOUSLY here — still in user gesture context, before await
+    const preWin = onBeforeCheck?.() ?? null;
 
     try {
       const res = await fetch("/api/verify-password", {
@@ -44,9 +48,12 @@ export default function PasswordModal({ open, onSuccess, onCancel }: PasswordMod
         setPassword("");
         onSuccess();
       } else {
+        // Wrong password — close the pre-opened window
+        preWin?.close();
         setError(true);
       }
     } catch {
+      preWin?.close();
       setError(true);
     } finally {
       setChecking(false);
