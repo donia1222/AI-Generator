@@ -1,0 +1,1091 @@
+<!DOCTYPE html><html lang="de"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUMINA | Premium Online Shop</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap');
+
+        :root {
+            --primary: #111111;
+            --secondary: #6c757d;
+            --accent: #000000;
+            --bg-light: #ffffff;
+            --bg-off: #f8f9fa;
+            --badge-new: #27ae60;
+            --badge-sale: #e74c3c;
+            --border: rgba(0,0,0,0.08);
+            --shadow-sm: 0 4px 12px rgba(0,0,0,0.04);
+            --shadow-md: 0 10px 30px rgba(0,0,0,0.08);
+            --shadow-lg: 0 25px 50px rgba(0,0,0,0.12);
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --font-main: 'Plus Jakarta Sans', sans-serif;
+            --font-serif: 'Playfair Display', serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-light);
+            color: var(--primary);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* GLOBAL POINTER EVENTS RULE (MANDATORY) */
+        a, button, .btn {
+            pointer-events: none;
+            cursor: default;
+        }
+        
+        /* Exception for Mobile Menu Toggle to allow viewing on mobile */
+        label[for="menu-toggle"] {
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        /* UTILITIES */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .section-padding {
+            padding: 120px 0;
+        }
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* TYPOGRAPHY */
+        h1, h2, h3, h4 {
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+        }
+
+        h2 {
+            font-size: 48px;
+            margin-bottom: 24px;
+        }
+
+        p {
+            color: var(--secondary);
+            font-size: 18px;
+            margin-bottom: 24px;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            height: 90px;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .logo {
+            font-family: var(--font-serif);
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 40px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 500;
+            font-size: 16px;
+            transition: color 0.3s ease;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .icon-btn {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--bg-off);
+            border: 1px solid var(--border);
+            position: relative;
+            color: var(--primary);
+        }
+
+        .cart-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            background: var(--primary);
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* MOBILE MENU */
+        #menu-toggle { display: none; }
+        .hamburger { display: none; flex-direction: column; gap: 6px; cursor: pointer; }
+        .hamburger span { width: 24px; height: 2px; background: var(--primary); }
+        .mobile-menu {
+            display: none;
+            position: absolute;
+            top: 90px;
+            left: 0;
+            width: 100%;
+            background: white;
+            padding: 24px;
+            border-bottom: 1px solid var(--border);
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* HERO SECTION */
+        .hero {
+            height: 100vh;
+            width: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            margin-bottom: 0;
+            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.4)), url("https://picsum.photos/seed/modern-minimalist-living-room-luxury/1920/1080");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        .hero-content {
+            max-width: 900px;
+            padding: 0 24px;
+            z-index: 2;
+            transform: translateY(20px);
+        }
+
+        .hero h1 {
+            font-size: 80px;
+            font-family: var(--font-serif);
+            margin-bottom: 24px;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .hero p {
+            color: rgba(255,255,255,0.9);
+            font-size: 22px;
+            margin-bottom: 40px;
+            font-weight: 300;
+        }
+
+        .btn-hero {
+            background: white;
+            color: black;
+            padding: 18px 48px;
+            border-radius: 50px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            font-size: 18px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        /* FILTER BAR */
+        .filter-section {
+            padding: 40px 0;
+            background: var(--bg-light);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 90px;
+            z-index: 900;
+        }
+
+        .filter-container {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scrollbar-width: none;
+        }
+        
+        .filter-container::-webkit-scrollbar { display: none; }
+
+        .filter-pill {
+            padding: 10px 24px;
+            border-radius: 100px;
+            border: 1px solid var(--border);
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            background: white;
+            color: var(--secondary);
+        }
+
+        .filter-pill.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* PRODUCT GRID */
+        .products-section {
+            background: var(--bg-off);
+        }
+
+        .grid-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 40px;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 32px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            position: relative;
+            group:hover;
+        }
+
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card-image-wrapper {
+            position: relative;
+            padding-top: 120%; /* Aspect Ratio */
+            overflow: hidden;
+            background: #f0f0f0;
+        }
+
+        .card-image-wrapper img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s ease;
+        }
+
+        .product-card:hover .card-image-wrapper img {
+            transform: scale(1.05);
+        }
+
+        .product-badge {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            z-index: 2;
+        }
+
+        .badge-new { background: white; color: var(--primary); }
+        .badge-sale { background: var(--badge-sale); color: white; }
+
+        .card-actions {
+            position: absolute;
+            right: 16px;
+            top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            opacity: 0;
+            transform: translateX(20px);
+            transition: all 0.3s ease;
+        }
+
+        .product-card:hover .card-actions {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .action-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            color: var(--primary);
+        }
+
+        .card-content {
+            padding: 24px;
+        }
+
+        .product-category {
+            font-size: 12px;
+            color: var(--secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .product-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--primary);
+        }
+
+        .product-rating {
+            color: #f1c40f;
+            font-size: 14px;
+            margin-bottom: 12px;
+            display: flex;
+            gap: 2px;
+        }
+
+        .product-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+        }
+
+        .price {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .price-old {
+            text-decoration: line-through;
+            color: var(--secondary);
+            font-size: 16px;
+            margin-right: 8px;
+            font-weight: 400;
+        }
+
+        .add-to-cart {
+            background: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .product-card:hover .add-to-cart {
+            background: #333;
+        }
+
+        /* ABOUT SECTION */
+        .about-section {
+            background: white;
+        }
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+        }
+
+        .about-image {
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            height: 600px;
+        }
+
+        .about-content h2 {
+            font-family: var(--font-serif);
+            font-size: 56px;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 40px;
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 1px solid var(--border);
+        }
+
+        .stat-item h4 {
+            font-size: 32px;
+            margin-bottom: 4px;
+        }
+
+        .stat-item span {
+            color: var(--secondary);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* TESTIMONIALS */
+        .testimonials {
+            background: #111;
+            color: white;
+            text-align: center;
+        }
+
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin-top: 60px;
+        }
+
+        .testimonial-card {
+            background: rgba(255,255,255,0.05);
+            padding: 40px;
+            border-radius: var(--radius-md);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            text-align: left;
+        }
+
+        .quote-icon {
+            font-size: 40px;
+            color: rgba(255,255,255,0.2);
+            font-family: serif;
+            margin-bottom: 20px;
+            line-height: 1;
+        }
+
+        .review-text {
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 24px;
+            font-size: 16px;
+        }
+
+        .reviewer {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .reviewer img {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+        }
+
+        .reviewer-info h5 {
+            font-size: 16px;
+            margin-bottom: 2px;
+        }
+
+        .reviewer-info span {
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+        }
+
+        /* CTA SECTION */
+        .cta-section {
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            text-align: center;
+            padding: 140px 0;
+        }
+
+        .cta-content h2 {
+            font-size: 64px;
+            font-family: var(--font-serif);
+            margin-bottom: 24px;
+        }
+
+        .btn-cta {
+            background: var(--primary);
+            color: white;
+            padding: 20px 60px;
+            font-size: 20px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 20px;
+        }
+
+        /* FOOTER */
+        footer {
+            background: white;
+            padding: 100px 0 40px;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 80px;
+        }
+
+        .footer-brand h3 {
+            font-family: var(--font-serif);
+            font-size: 28px;
+            margin-bottom: 24px;
+        }
+
+        .footer-col h4 {
+            font-size: 16px;
+            margin-bottom: 24px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 16px;
+        }
+
+        .footer-links a {
+            color: var(--secondary);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-bottom {
+            display: flex;
+            justify-content: space-between;
+            padding-top: 40px;
+            border-top: 1px solid var(--border);
+            color: var(--secondary);
+            font-size: 14px;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            h1 { font-size: 64px; }
+            h2 { font-size: 40px; }
+            .about-grid { grid-template-columns: 1fr; }
+            .about-image { height: 400px; order: -1; }
+            .testimonial-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links, .nav-actions { display: none; }
+            #menu-toggle:checked ~ .mobile-menu { display: flex; }
+            .hamburger { display: flex; }
+            .hero h1 { font-size: 48px; }
+            .product-grid { grid-template-columns: 1fr; }
+            .footer-grid { grid-template-columns: 1fr; gap: 40px; }
+            .section-padding { padding: 80px 0; }
+        }
+
+        /* MODAL SIMULATION (Visual Only) */
+        .modal-trigger {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SECTION:NAVBAR -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="logo" style="position: relative;">LUMINA.</a>
+            
+            <input type="checkbox" id="menu-toggle">
+            <label for="menu-toggle" class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </label>
+
+            <div class="nav-links">
+                <a href="#" style="position: relative;">Home</a>
+                <a href="#" style="position: relative;">Shop</a>
+                <a href="#" style="position: relative;">Kollektionen</a>
+                <a href="#" style="position: relative;">Über uns</a>
+                <a href="#" style="position: relative;">Journal</a>
+            </div>
+
+            <div class="nav-actions">
+                <a href="#" class="icon-btn">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg>
+                </a>
+                <a href="#" class="icon-btn" style="overflow: visible;">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 01-8 0"></path></svg>
+                    <span class="cart-badge">3</span>
+                </a>
+            </div>
+
+            <div class="mobile-menu">
+                <a href="#" style="position: relative;">Home</a>
+                <a href="#" style="position: relative;">Shop</a>
+                <a href="#" style="position: relative;">Kollektionen</a>
+                <a href="#" style="position: relative;">Über uns</a>
+                <a href="#" style="position: relative;">Kontakt</a>
+            </div>
+        </div>
+    </nav>
+    <!-- /SECTION:NAVBAR -->
+
+    <!-- SECTION:HERO -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1 style="position: relative;">Minimalismus für Ihr Zuhause.</h1>
+            <p style="position: relative;">Entdecken Sie zeitloses Design, das Eleganz und Funktionalität vereint. Exklusive Möbel und Accessoires für den modernen Lebensstil.</p>
+            <a href="#" class="btn-hero" style="position: relative;">Kollektion ansehen</a>
+        </div>
+    </section>
+    <!-- /SECTION:HERO -->
+
+    <!-- SECTION:FILTERS -->
+    <div class="filter-section">
+        <div class="container">
+            <div class="filter-container">
+                <a href="#" class="filter-pill active" style="position: relative;">Alle Produkte</a>
+                <a href="#" class="filter-pill" style="position: relative;">Neuheiten</a>
+                <a href="#" class="filter-pill" style="position: relative;">Möbel</a>
+                <a href="#" class="filter-pill" style="position: relative;">Beleuchtung</a>
+                <a href="#" class="filter-pill" style="position: relative;">Accessoires</a>
+                <a href="#" class="filter-pill" style="position: relative;">Küche</a>
+                <a href="#" class="filter-pill" style="position: relative;">Textilien</a>
+                <a href="#" class="filter-pill" style="position: relative;">Sale</a>
+            </div>
+        </div>
+    </div>
+    <!-- /SECTION:FILTERS -->
+
+    <!-- SECTION:FEATURES (PRODUCT GRID) -->
+    <section class="products-section section-padding">
+        <div class="container">
+            <div class="grid-header">
+                <div>
+                    <h2 style="position: relative;">Unsere Bestseller</h2>
+                    <p style="margin-bottom: 0px; position: relative;">Ausgewählte Stücke für Ihren persönlichen Stil.</p>
+                </div>
+            </div>
+
+            <div class="product-grid">
+                
+                <!-- Product 1 -->
+                <div class="product-card">
+                    <div class="card-image-wrapper">
+                        <span class="product-badge badge-new">Neu</span>
+                        <img src="https://picsum.photos/seed/modern-minimalist-chair-design/600/800" loading="lazy" alt="Stuhl">
+                        <div class="card-actions">
+                            <a href="#" class="action-btn" style="position: relative;">♥</a>
+                            <a href="#" class="action-btn" style="position: relative;">↗</a>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <span class="product-category" style="position: relative;">Möbel</span>
+                        <h3 class="product-title" style="position: relative;">Lounge Chair "Aero"</h3>
+                        <div class="product-rating">★★★★★ <span style="color: rgb(204, 204, 204); font-size: 12px; margin-left: 4px; position: relative;">(24)</span></div>
+                        <div class="product-footer">
+                            <span class="price" style="position: relative;">€349.00</span>
+                            <a href="#" class="add-to-cart" style="position: relative;">In den Warenkorb</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 2 -->
+                <div class="product-card">
+                    <div class="card-image-wrapper">
+                        <img src="https://picsum.photos/seed/scandinavian-lamp-light/600/800" loading="lazy" alt="Lampe">
+                        <div class="card-actions">
+                            <a href="#" class="action-btn" style="position: relative;">♥</a>
+                            <a href="#" class="action-btn" style="position: relative;">↗</a>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <span class="product-category" style="position: relative;">Beleuchtung</span>
+                        <h3 class="product-title" style="position: relative;">Stehlampe "Lumina"</h3>
+                        <div class="product-rating">★★★★☆ <span style="color: rgb(204, 204, 204); font-size: 12px; margin-left: 4px; position: relative;">(18)</span></div>
+                        <div class="product-footer">
+                            <span class="price" style="position: relative;">€189.00</span>
+                            <a href="#" class="add-to-cart" style="position: relative;">In den Warenkorb</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 3 -->
+                <div class="product-card">
+                    <div class="card-image-wrapper">
+                        <span class="product-badge badge-sale">-20%</span>
+                        <img src="https://picsum.photos/seed/ceramic-vase-white-art/600/800" loading="lazy" alt="Vase">
+                        <div class="card-actions">
+                            <a href="#" class="action-btn" style="position: relative;">♥</a>
+                            <a href="#" class="action-btn" style="position: relative;">↗</a>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <span class="product-category" style="position: relative;">Deko</span>
+                        <h3 class="product-title" style="position: relative;">Keramikvase "Pure"</h3>
+                        <div class="product-rating">★★★★★ <span style="color: rgb(204, 204, 204); font-size: 12px; margin-left: 4px; position: relative;">(42)</span></div>
+                        <div class="product-footer">
+                            <div><span class="price-old" style="position: relative;">€59.00</span><span class="price" style="position: relative;">€47.20</span></div>
+                            <a href="#" class="add-to-cart" style="position: relative;">In den Warenkorb</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 4 -->
+                <div class="product-card">
+                    <div class="card-image-wrapper">
+                        <img src="https://picsum.photos/seed/oak-coffee-table-wood/600/800" loading="lazy" alt="Tisch">
+                    </div>
+                    <div class="card-content">
+                        <span class="product-category" style="position: relative;">Möbel</span>
+                        <h3 class="product-title" style="position: relative;">Beistelltisch "Oak"</h3>
+                        <div class="product-rating">★★★★☆</div>
+                        <div class="product-footer">
+                            <span class="price" style="position: relative;">€229.00</span>
+                            <a href="#" class="add-to-cart" style="position: relative;">In den Warenkorb</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 5 -->
+                <div class="product-card">
+                    <div class="card-image-wrapper">
+                        <img src="https://picsum.photos/seed/luxury-watch-black-minimal/600/800" loading="lazy" alt="Uhr">
+                    </div>
+                    <div class="card-content">
+                        <span class="product-category" style="position: relative;">Accessoires</span>
+                        <h3 class="product-title" style="position: relative;">Wanduhr "Minimal"</h3>
+                        <div class="product-rating">★★★★★</div>
+                        <div class="product-footer">
+                            <span class="price" style="position: relative;">€89.00</span>
+                            <a href="#" class="add-to-cart" style="position: relative;">In den Warenkorb</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 6 -->
+                <div class="product-card">
+                    <div class="card-image-wrapper">
+                        <span class="product-badge badge-new">Neu</span>
+                        <img src="https://picsum.photos/seed/leather-bag-tan-fashion/600/800" loading="lazy" alt="Tasche">
+                    </div>
+                    <div class="card-content">
+                        <span class="product-category" style="position: relative;">Lifestyle</span>
+                        <h3 class="product-title" style="position: relative;">Leder Tote Bag</h3>
+                        <div class="product-rating">★★★★★</div>
+                        <div class="product-footer">
+                            <span class="price" style="position: relative;">€159.00</span>
+                            <a href="#" class="add-to-cart" style="position: relative;">In den Warenkorb</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 7 -->
+                <div class="product-card">
+                    <div class="card-image-wrapper">
+                        <img src="https://picsum.photos/seed/wireless-headphones-tech/600/800" loading="lazy" alt="Audio">
+                    </div>
+                    <div class="card-content">
+                        <span class="product-category" style="position: relative;">Tech</span>
+                        <h3 class="product-title" style="position: relative;">Hifi Kopfhörer</h3>
+                        <div class="product-rating">★★★★☆</div>
+                        <div class="product-footer">
+                            <span class="price" style="position: relative;">€299.00</span>
+                            <a href="#" class="add-to-cart" style="position: relative;">In den Warenkorb</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 8 -->
+                <div class="product-card">
+                    <div class="card-image-wrapper">
+                        <span class="product-badge badge-sale">-15%</span>
+                        <img src="https://picsum.photos/seed/sneakers-white-clean-shoe/600/800" loading="lazy" alt="Schuhe">
+                    </div>
+                    <div class="card-content">
+                        <span class="product-category" style="position: relative;">Mode</span>
+                        <h3 class="product-title" style="position: relative;">Urban Sneakers</h3>
+                        <div class="product-rating">★★★★★</div>
+                        <div class="product-footer">
+                            <div><span class="price-old" style="position: relative;">€120.00</span><span class="price" style="position: relative;">€102.00</span></div>
+                            <a href="#" class="add-to-cart" style="position: relative;">In den Warenkorb</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 9 -->
+                <div class="product-card">
+                    <div class="card-image-wrapper">
+                        <img src="https://picsum.photos/seed/smart-home-speaker-device/600/800" loading="lazy" alt="Speaker">
+                    </div>
+                    <div class="card-content">
+                        <span class="product-category" style="position: relative;">Tech</span>
+                        <h3 class="product-title" style="position: relative;">Smart Speaker</h3>
+                        <div class="product-rating">★★★★☆</div>
+                        <div class="product-footer">
+                            <span class="price" style="position: relative;">€149.00</span>
+                            <a href="#" class="add-to-cart" style="position: relative;">In den Warenkorb</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 10 -->
+                <div class="product-card">
+                    <div class="card-image-wrapper">
+                        <img src="https://picsum.photos/seed/designer-sunglasses-summer/600/800" loading="lazy" alt="Brille">
+                    </div>
+                    <div class="card-content">
+                        <span class="product-category" style="position: relative;">Accessoires</span>
+                        <h3 class="product-title" style="position: relative;">Sonnenbrille "Retro"</h3>
+                        <div class="product-rating">★★★★★</div>
+                        <div class="product-footer">
+                            <span class="price" style="position: relative;">€129.00</span>
+                            <a href="#" class="add-to-cart" style="position: relative;">In den Warenkorb</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 11 -->
+                <div class="product-card">
+                    <div class="card-image-wrapper">
+                        <img src="https://picsum.photos/seed/mechanical-keyboard-work/600/800" loading="lazy" alt="Keyboard">
+                    </div>
+                    <div class="card-content">
+                        <span class="product-category" style="position: relative;">Office</span>
+                        <h3 class="product-title" style="position: relative;">Mech Keyboard</h3>
+                        <div class="product-rating">★★★★★</div>
+                        <div class="product-footer">
+                            <span class="price" style="position: relative;">€189.00</span>
+                            <a href="#" class="add-to-cart" style="position: relative;">In den Warenkorb</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 12 -->
+                <div class="product-card">
+                    <div class="card-image-wrapper">
+                        <span class="product-badge badge-new">Neu</span>
+                        <img src="https://picsum.photos/seed/perfume-bottle-glass-scent/600/800" loading="lazy" alt="Parfum">
+                    </div>
+                    <div class="card-content">
+                        <span class="product-category" style="position: relative;">Beauty</span>
+                        <h3 class="product-title" style="position: relative;">Eau de Parfum</h3>
+                        <div class="product-rating">★★★★☆</div>
+                        <div class="product-footer">
+                            <span class="price" style="position: relative;">€95.00</span>
+                            <a href="#" class="add-to-cart" style="position: relative;">In den Warenkorb</a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+    <!-- /SECTION:FEATURES -->
+
+    <!-- SECTION:ABOUT -->
+    <section class="about-section section-padding" style="position: relative;">
+        <div class="container">
+            <div class="about-grid">
+                <div class="about-content">
+                    <span style="color: var(--secondary); text-transform: uppercase; letter-spacing: 2px; font-weight: 600; display: block; margin-bottom: 16px; position: relative;">Unsere Geschichte</span>
+                    <h2 style="position: relative;">Design mit Bewusstsein.</h2>
+                    <p style="position: relative;">Bei LUMINA glauben wir daran, dass gutes Design nicht nur schön aussehen, sondern sich auch gut anfühlen muss. Jedes Stück in unserer Kollektion wird sorgfältig ausgewählt, um Ästhetik mit Nachhaltigkeit zu verbinden.</p>
+                    <p style="position: relative;">Wir arbeiten direkt mit Handwerkern und Designern zusammen, um sicherzustellen, dass jedes Produkt höchsten Qualitätsstandards entspricht und unter fairen Bedingungen hergestellt wird.</p>
+                    
+                    <div class="stats-row">
+                        <div class="stat-item">
+                            <h4 style="position: relative;">10k+</h4>
+                            <span style="position: relative;">Zufriedene Kunden</span>
+                        </div>
+                        <div class="stat-item">
+                            <h4 style="position: relative;">500+</h4>
+                            <span style="position: relative;">Premium Produkte</span>
+                        </div>
+                        <div class="stat-item">
+                            <h4 style="position: relative;">24h</h4>
+                            <span style="position: relative;">Express Versand</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="about-image">
+                    <img src="https://picsum.photos/seed/architectural-interior-design-studio/800/1000" loading="lazy" alt="Interior Design Studio">
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- /SECTION:ABOUT -->
+
+    <!-- SECTION:TESTIMONIALS -->
+    <section class="testimonials section-padding" style="position: relative;">
+        <div class="container">
+            <span style="color: rgba(255, 255, 255, 0.6); text-transform: uppercase; letter-spacing: 2px; font-weight: 600; position: relative;">Kundenstimmen</span>
+            <h2 style="color: white; margin-top: 16px; position: relative;">Was unsere Kunden sagen</h2>
+            
+            <div class="testimonial-grid">
+                <div class="testimonial-card">
+                    <div class="quote-icon">“</div>
+                    <p class="review-text" style="position: relative;">Ich bin absolut begeistert von der Qualität des Sessels. Der Stoff fühlt sich unglaublich hochwertig an und die Lieferung war super schnell. Endlich habe ich mein Traumstück gefunden.</p>
+                    <div class="reviewer">
+                        <img src="https://picsum.photos/seed/portrait-woman-smile-1/100/100" alt="Sarah">
+                        <div class="reviewer-info">
+                            <h5 style="position: relative;">Sarah M.</h5>
+                            <span style="position: relative;">Innenarchitektin</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card">
+                    <div class="quote-icon">“</div>
+                    <p class="review-text" style="position: relative;">Der Kundenservice ist erstklassig. Ich hatte eine Frage zu den Maßen und erhielt innerhalb von Minuten eine Antwort. Die Lampe sieht in echt noch besser aus als auf den Fotos.</p>
+                    <div class="reviewer">
+                        <img src="https://picsum.photos/seed/portrait-man-glasses-2/100/100" alt="Thomas">
+                        <div class="reviewer-info">
+                            <h5 style="position: relative;">Thomas K.</h5>
+                            <span style="position: relative;">Architekt</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card">
+                    <div class="quote-icon">“</div>
+                    <p class="review-text" style="position: relative;">LUMINA ist mein Go-To Shop für Geschenke und Deko. Die Auswahl ist kuratiert und stilvoll, fernab vom Mainstream. Die Verpackung ist zudem sehr liebevoll gestaltet.</p>
+                    <div class="reviewer">
+                        <img src="https://picsum.photos/seed/portrait-woman-creative-3/100/100" alt="Julia">
+                        <div class="reviewer-info">
+                            <h5 style="position: relative;">Julia W.</h5>
+                            <span style="position: relative;">Grafikdesignerin</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- /SECTION:TESTIMONIALS -->
+
+    <!-- SECTION:CTA -->
+    <section class="cta-section" style="position: relative;">
+        <div class="container">
+            <div class="cta-content">
+                <h2 style="position: relative;">Bereit für ein Upgrade?</h2>
+                <p style="position: relative;">Melden Sie sich für unseren Newsletter an und erhalten Sie 10% Rabatt auf Ihre erste Bestellung.</p>
+                <a href="#" class="btn-cta" style="position: relative;">Jetzt Shoppen</a>
+            </div>
+        </div>
+    </section>
+    <!-- /SECTION:CTA -->
+
+    <!-- SECTION:FOOTER -->
+    <footer style="position: relative;">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <h3 style="position: relative;">LUMINA.</h3>
+                    <p style="font-size: 15px; position: relative;">Premium Interior Design und Lifestyle Produkte für anspruchsvolle Kunden. Wir verbinden Ästhetik mit Qualität.</p>
+                </div>
+                
+                <div class="footer-col">
+                    <h4 style="position: relative;">Shop</h4>
+                    <ul class="footer-links">
+                        <li><a href="#" style="position: relative;">Neuheiten</a></li>
+                        <li><a href="#" style="position: relative;">Bestseller</a></li>
+                        <li><a href="#" style="position: relative;">Sale</a></li>
+                        <li><a href="#" style="position: relative;">Geschenkkarten</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4 style="position: relative;">Unternehmen</h4>
+                    <ul class="footer-links">
+                        <li><a href="#" style="position: relative;">Über uns</a></li>
+                        <li><a href="#" style="position: relative;">Karriere</a></li>
+                        <li><a href="#" style="position: relative;">Presse</a></li>
+                        <li><a href="#" style="position: relative;">Nachhaltigkeit</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4 style="position: relative;">Hilfe</h4>
+                    <ul class="footer-links">
+                        <li><a href="#" style="position: relative;">Versand &amp; Rückgabe</a></li>
+                        <li><a href="#" style="position: relative;">FAQ</a></li>
+                        <li><a href="#" style="position: relative;">Kontakt</a></li>
+                        <li><a href="#" style="position: relative;">Datenschutz</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <span style="position: relative;">© 2026 LUMINA GmbH. Alle Rechte vorbehalten.</span>
+                <div style="display:flex; gap:20px;">
+                    <a href="#" style="position: relative;">Instagram</a>
+                    <a href="#" style="position: relative;">Pinterest</a>
+                    <a href="#" style="position: relative;">Facebook</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- /SECTION:FOOTER -->
+
+
+
+
+
+
+
+</body></html>
