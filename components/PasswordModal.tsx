@@ -6,11 +6,11 @@ const SESSION_KEY = "gen_auth";
 
 export function isAuthenticated(): boolean {
   if (typeof window === "undefined") return false;
-  return sessionStorage.getItem(SESSION_KEY) === "1";
+  return localStorage.getItem(SESSION_KEY) === "1";
 }
 
 export function setAuthenticated(): void {
-  sessionStorage.setItem(SESSION_KEY, "1");
+  localStorage.setItem(SESSION_KEY, "1");
 }
 
 interface PasswordModalProps {
