@@ -129,7 +129,6 @@ export default function WebCreatorPage() {
   const iframeResultRef = useRef<HTMLIFrameElement>(null);
   const resultHTMLRef = useRef(resultHTML);
   resultHTMLRef.current = resultHTML;
-  const previewWindowRef = useRef<Window | null>(null);
 
   // Extract clean HTML directly from the iframe DOM (bypasses postMessage)
   const getIframeHTML = useCallback(() => {
