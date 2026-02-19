@@ -4,6 +4,7 @@ export const maxDuration = 120;
 
 const OPENAI_BASE = "https://api.openai.com/v1";
 
+
 export async function POST(req: NextRequest) {
   const incomingForm = await req.formData();
   const mode = incomingForm.get("mode") as string; // "generate" | "edit"
